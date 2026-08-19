@@ -46,9 +46,9 @@ Frontend framework decision to be confirmed at next sync.
 
 ## Modules
 
-### Confirmed (18 pts)
+### Confirmed (17 pts)
 
-#### Web (11 pts)
+#### Web (10 pts)
 
 | Module | Type | Pts | Notes |
 |--------|------|-----|-------|
@@ -97,9 +97,9 @@ Frontend framework decision to be confirmed at next sync.
 
 | | Confirmed | If all additional | Max |
 |-|-----------|-------------------|-----|
-| Major pts | 14 | +2 | 16 |
-| Minor pts | 4 | +5 | 9 |
-| **Total** | **18** | **+7** | **25** |
+| Major pts | 12 | +2 | 14 |
+| Minor pts | 5 | +4 | 9 |
+| **Total** | **17** | **+6** | **23** |
 
 Required to pass: **14 pts** — covered by confirmed modules alone.
 
