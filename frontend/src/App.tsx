@@ -1,4 +1,5 @@
 import { Button } from './ds/Button'
+import { Card } from './ds/Card'
 
 function App() {
   return (
@@ -18,6 +19,11 @@ function App() {
         <Button size="md">Medium</Button>
         <Button size="lg">Large</Button>
       </div>
+
+      <Card className="p-6" hover>
+        <p className="text-ink-700 mb-4">A card holds content.</p>
+        <Button>Action</Button>
+      </Card>
     </div>
   )
 }
