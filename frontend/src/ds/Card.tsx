@@ -7,7 +7,7 @@ export function Card({
 }: HTMLAttributes<HTMLDivElement> & { hover?: boolean }) {
   return (
     <div
-      className={`rounded-3xl bg-white/70 border border-cream-200 shadow-[0_1px_2px_rgba(70,50,40,0.05)] ${
+      className={`rounded-3xl bg-cream-50/70 border border-cream-200 shadow-[0_1px_2px_rgba(70,50,40,0.05)] ${
         hover ? 'transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(70,50,40,0.1)]' : ''
       } ${className}`}
       {...rest}
