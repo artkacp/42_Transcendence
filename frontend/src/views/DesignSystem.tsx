@@ -1,5 +1,6 @@
 import { Button } from '../ds/Button'
 import { Card } from '../ds/Card'
+import { Badge } from '../ds/Badge'
 
 export function DesignSystem() {
   return (
@@ -21,6 +22,17 @@ export function DesignSystem() {
           <Button size="sm">Small</Button>
           <Button size="md">Medium</Button>
           <Button size="lg">Large</Button>
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="font-display text-2xl text-ink-900">Badge</h2>
+
+        <div className="flex gap-2 items-center flex-wrap">
+          <Badge>neutral</Badge>
+          <Badge tone="success">adopted</Badge>
+          <Badge tone="warning">pending</Badge>
+          <Badge tone="danger">denied</Badge>
         </div>
       </section>
 
