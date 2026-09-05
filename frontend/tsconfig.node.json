@@ -6,6 +6,7 @@
     "types": ["node"],
     "skipLibCheck": true,
     "strict": true,
+    "composite": true,
 
     /* Bundler mode */
     "module": "nodenext",
