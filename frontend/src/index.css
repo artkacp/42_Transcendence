@@ -1,0 +1,40 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-display: 'Fraunces', ui-serif, serif;
+  --font-sans: 'Outfit', ui-sans-serif, sans-serif;
+
+  --color-cream-50: oklch(0.985 0.012 75);
+  --color-cream-100: oklch(0.965 0.018 72);
+  --color-cream-200: oklch(0.93 0.025 70);
+  --color-cream-300: oklch(0.88 0.032 68);
+
+  --color-ink-900: oklch(0.24 0.02 45);
+  --color-ink-700: oklch(0.36 0.025 45);
+  --color-ink-500: oklch(0.5 0.025 48);
+  --color-ink-400: oklch(0.6 0.02 50);
+
+  --color-terra-50: oklch(0.96 0.025 48);
+  --color-terra-100: oklch(0.93 0.04 45);
+  --color-terra-400: oklch(0.72 0.12 40);
+  --color-terra-500: oklch(0.63 0.14 38);
+  --color-terra-600: oklch(0.56 0.14 36);
+
+  --color-sage-50: oklch(0.96 0.02 140);
+  --color-sage-100: oklch(0.92 0.03 140);
+  --color-sage-500: oklch(0.6 0.06 140);
+  --color-sage-600: oklch(0.5 0.07 142);
+
+  --color-honey-100: oklch(0.94 0.05 85);
+  --color-honey-400: oklch(0.8 0.12 80);
+
+  --color-danger-100: oklch(0.93 0.05 25);
+  --color-danger-600: oklch(0.55 0.15 25);
+}
+
+body {
+  background-color: var(--color-cream-50);
+  color: var(--color-ink-900);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
