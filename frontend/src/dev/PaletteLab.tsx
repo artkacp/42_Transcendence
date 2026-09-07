@@ -16,6 +16,10 @@ const css = (t: Token) => `oklch(${t.l.toFixed(3)} ${t.c.toFixed(3)} ${Math.roun
 /** Reads the palette currently in effect, whichever CSS file is imported. */
 function readFromCss(): Token[] {
   const style = getComputedStyle(document.documentElement)
+
+  const missing = NAMES.filter((n) => !style.getPropertyValue(`--color-${n}`).trim())
+  if (missing.length) console.warn('PaletteLab: no such tokens in CSS:', missing)
+
   return NAMES.map((name) => {
     const raw = style.getPropertyValue(`--color-${name}`).trim()
     const m = raw.match(/oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)/)

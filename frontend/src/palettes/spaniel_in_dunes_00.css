@@ -1,0 +1,26 @@
+@theme {
+  --font-display: 'Fraunces', ui-serif, serif;
+  --font-sans: 'Outfit', ui-sans-serif, sans-serif;
+
+  --color-cream-50: oklch(0.940 0.070 120);
+  --color-cream-100: oklch(0.910 0.080 119);
+  --color-cream-200: oklch(0.870 0.090 118);
+  --color-cream-300: oklch(0.820 0.095 117);
+  --color-ink-900: oklch(0.485 0.012 107);
+  --color-ink-700: oklch(0.400 0.014 107);
+  --color-ink-500: oklch(0.530 0.014 110);
+  --color-ink-400: oklch(0.630 0.012 112);
+  --color-terra-50: oklch(0.940 0.030 216);
+  --color-terra-100: oklch(0.890 0.045 216);
+  --color-terra-400: oklch(0.600 0.080 216);
+  --color-terra-500: oklch(0.500 0.090 216);
+  --color-terra-600: oklch(0.250 0.026 48);
+  --color-sage-50: oklch(0.945 0.060 113);
+  --color-sage-100: oklch(0.895 0.110 113);
+  --color-sage-500: oklch(0.700 0.160 160);
+  --color-sage-600: oklch(0.585 0.204 197);
+  --color-honey-100: oklch(0.815 0.100 159);
+  --color-honey-400: oklch(0.700 0.130 155);
+  --color-danger-100: oklch(0.665 0.084 360);
+  --color-danger-600: oklch(0.235 0.126 303);
+}

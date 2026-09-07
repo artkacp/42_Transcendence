@@ -1,0 +1,36 @@
+@theme {
+  --font-display: 'Fraunces', ui-serif, serif;
+  --font-sans: 'Outfit', ui-sans-serif, sans-serif;
+
+  --color-cream-50: oklch(0.980 0.035 88);
+  --color-cream-100: oklch(0.945 0.055 87);
+  --color-cream-200: oklch(0.895 0.075 86);
+  --color-cream-300: oklch(0.840 0.070 85);
+
+  --color-ink-900: oklch(0.300 0.030 62);
+  --color-ink-700: oklch(0.390 0.030 64);
+  --color-ink-500: oklch(0.555 0.028 68);
+  --color-ink-400: oklch(0.640 0.026 70);
+
+  --color-terra-50: oklch(0.955 0.022 218);
+  --color-terra-100: oklch(0.910 0.045 218);
+  --color-terra-400: oklch(0.660 0.110 218);
+  --color-terra-500: oklch(0.545 0.135 218);
+  --color-terra-600: oklch(0.470 0.120 218);
+  --color-terra-700: oklch(0.360 0.040 52);
+
+  --color-sage-50: oklch(0.950 0.020 124);
+  --color-sage-100: oklch(0.875 0.065 122);
+  --color-sage-500: oklch(0.560 0.105 126);
+  --color-sage-600: oklch(0.440 0.085 128);
+
+  --color-honey-100: oklch(0.955 0.070 90);
+  --color-honey-400: oklch(0.780 0.120 90);
+
+  --color-ok-600: oklch(0.480 0.100 150);
+  --color-ok-100: oklch(0.930 0.040 150);
+  --color-warn-600: oklch(0.520 0.110 70);
+  --color-warn-100: oklch(0.940 0.050 80);
+  --color-danger-100: oklch(0.900 0.045 35);
+  --color-danger-600: oklch(0.420 0.106 0);
+}

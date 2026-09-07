@@ -2,8 +2,9 @@
 @import './palettes/spaniel_in_dunes.css';
 /*@import './palettes/mockup.css';*/
 
+/* index.css */
 body {
-  background-color: var(--color-cream-50);
+  background-color: var(--color-cream-200);
   color: var(--color-ink-900);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
