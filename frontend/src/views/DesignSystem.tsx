@@ -14,7 +14,7 @@ const TOKENS = [
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="mb-10">
-      <h2 className="font-display text-2xl text-ink-900 mb-4">{title}</h2>
+      <h2 className="font-display text-2xl text-text mb-4">{title}</h2>
       {children}
     </section>
   )
@@ -23,7 +23,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="mb-4">
-      <p className="text-xs uppercase tracking-wide text-ink-400 mb-2">{label}</p>
+      <p className="text-xs uppercase tracking-wide text-text-subtle mb-2">{label}</p>
       <div className="flex flex-wrap items-center gap-3">{children}</div>
     </div>
   )
@@ -32,25 +32,25 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 export function DesignSystem() {
   return (
     <div className="max-w-3xl px-6 py-8">
-      <h1 className="font-display text-4xl text-ink-900 mb-8">Design system</h1>
+      <h1 className="font-display text-4xl text-text mb-8">Design system</h1>
 
       <Section title="Palette">
         <div className="grid grid-cols-4 gap-3 sm:grid-cols-7">
           {TOKENS.map((name) => (
             <div key={name}>
               <div
-                className="h-12 rounded-xl border border-cream-300"
+                className="h-12 rounded-xl border border-border"
                 style={{ background: `var(--color-${name})` }}
               />
-              <p className="mt-1 text-[10px] text-ink-500">{name}</p>
+              <p className="mt-1 text-[10px] text-text-muted">{name}</p>
             </div>
           ))}
         </div>
       </Section>
 
       <Section title="Typography">
-        <p className="font-display text-3xl text-ink-900">Fraunces — display</p>
-        <p className="font-sans text-base text-ink-700 mt-1">
+        <p className="font-display text-3xl text-text">Fraunces — display</p>
+        <p className="font-sans text-base text-text mt-1">
           Outfit — body text. A calm senior cat looking for a reading corner.
         </p>
       </Section>
@@ -105,11 +105,11 @@ export function DesignSystem() {
       <Section title="Card">
         <div className="grid gap-4 sm:grid-cols-2">
           <Card className="p-5">
-            <p className="text-ink-700 mb-3">A plain surface.</p>
+            <p className="text-text mb-3">A plain surface.</p>
             <Button size="sm">Action</Button>
           </Card>
           <Card hover className="p-5">
-            <p className="text-ink-700 mb-3">This one lifts on hover.</p>
+            <p className="text-text mb-3">This one lifts on hover.</p>
             <Button size="sm" variant="secondary">Action</Button>
           </Card>
         </div>

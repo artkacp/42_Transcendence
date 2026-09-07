@@ -2,6 +2,25 @@
 @import './palettes/spaniel_in_dunes.css';
 /*@import './palettes/mockup.css';*/
 
+@theme {
+  --color-primary: var(--color-terra-500);
+  --color-primary-hover: var(--color-terra-600);
+  --color-on-primary: var(--color-cream-50);
+  --color-secondary: var(--color-sage-100);
+  --color-secondary-hover: var(--color-sage-500);
+  --color-secondary-active: var(--color-sage-600);
+  --color-on-secondary: var(--color-sage-600);
+  --color-surface: var(--color-cream-50);
+  --color-surface-raised: var(--color-cream-100);
+  --color-border: var(--color-cream-200);
+  --color-text: var(--color-ink-900);
+  --color-text-muted: var(--color-ink-500);
+  --color-text-subtle: var(--color-ink-400);
+  --color-danger: var(--color-danger-600);
+  --color-danger-soft: var(--color-danger-100);
+  --color-warning-soft: var(--color-honey-100);
+}
+
 /* index.css */
 body {
   background-color: var(--color-cream-200);
