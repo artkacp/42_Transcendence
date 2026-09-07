@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 type Token = { name: string; l: number; c: number; h: number }
 
@@ -16,10 +16,8 @@ const css = (t: Token) => `oklch(${t.l.toFixed(3)} ${t.c.toFixed(3)} ${Math.roun
 /** Reads the palette currently in effect, whichever CSS file is imported. */
 function readFromCss(): Token[] {
   const style = getComputedStyle(document.documentElement)
-
   const missing = NAMES.filter((n) => !style.getPropertyValue(`--color-${n}`).trim())
   if (missing.length) console.warn('PaletteLab: no such tokens in CSS:', missing)
-
   return NAMES.map((name) => {
     const raw = style.getPropertyValue(`--color-${name}`).trim()
     const m = raw.match(/oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)/)
@@ -30,12 +28,8 @@ function readFromCss(): Token[] {
 }
 
 export function PaletteLab() {
-  const [tokens, setTokens] = useState<Token[]>([])
+  const [tokens, setTokens] = useState<Token[]>(readFromCss)
   const [copied, setCopied] = useState(false)
-
-  useEffect(() => {
-    setTokens(readFromCss())
-  }, [])
 
   const update = (i: number, key: 'l' | 'c' | 'h', value: number) => {
     const next = tokens.map((t, j) => (j === i ? { ...t, [key]: value } : t))
@@ -56,7 +50,7 @@ ${tokens.map((t) => `  --color-${t.name}: ${css(t)};`).join('\n')}
 `
 
   const copy = () => {
-    navigator.clipboard.writeText(output)
+    void navigator.clipboard.writeText(output)
     setCopied(true)
     window.setTimeout(() => setCopied(false), 1500)
   }

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Heart, Plus, Trash2 } from 'lucide-react'
 import { Badge, Button, Card, IconButton } from '../ds'
 
@@ -10,7 +11,7 @@ const TOKENS = [
   'danger-100', 'danger-600',
 ]
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="mb-10">
       <h2 className="font-display text-2xl text-ink-900 mb-4">{title}</h2>
@@ -19,7 +20,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
+function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="mb-4">
       <p className="text-xs uppercase tracking-wide text-ink-400 mb-2">{label}</p>
@@ -50,7 +51,7 @@ export function DesignSystem() {
       <Section title="Typography">
         <p className="font-display text-3xl text-ink-900">Fraunces — display</p>
         <p className="font-sans text-base text-ink-700 mt-1">
-          Outfit — body text. Пёс ищет дом.
+          Outfit — body text. A calm senior cat looking for a reading corner.
         </p>
       </Section>
 
@@ -63,13 +64,13 @@ export function DesignSystem() {
           <Button disabled>Disabled</Button>
         </Row>
 
-        <Row label="Sizes — только габариты, цвет один">
+        <Row label="Sizes — geometry only, colour stays the same">
           <Button size="sm">Small</Button>
           <Button size="md">Medium</Button>
           <Button size="lg">Large</Button>
         </Row>
 
-        <Row label="Variants × sizes — оси независимы">
+        <Row label="Variants × sizes — independent axes">
           <Button size="sm" variant="secondary">Small secondary</Button>
           <Button size="md" variant="ghost">Medium ghost</Button>
           <Button size="lg" variant="danger">Large danger</Button>
