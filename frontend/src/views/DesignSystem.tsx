@@ -1,15 +1,7 @@
 import type { ReactNode } from 'react'
 import { Heart, Plus, Trash2 } from 'lucide-react'
 import { Badge, Button, Card, IconButton } from '../ds'
-
-const TOKENS = [
-  'cream-50', 'cream-100', 'cream-200', 'cream-300',
-  'ink-900', 'ink-700', 'ink-500', 'ink-400',
-  'terra-50', 'terra-100', 'terra-400', 'terra-500', 'terra-600',
-  'sage-50', 'sage-100', 'sage-500', 'sage-600',
-  'honey-100', 'honey-400',
-  'danger-100', 'danger-600',
-]
+import { TOKEN_NAMES } from '../palettes/tokens'
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -36,10 +28,10 @@ export function DesignSystem() {
 
       <Section title="Palette">
         <div className="grid grid-cols-4 gap-3 sm:grid-cols-7">
-          {TOKENS.map((name) => (
+          {TOKEN_NAMES.map((name) => (
             <div key={name}>
               <div
-                className="h-12 rounded-xl border border-ink-900/20"
+                className="h-12 rounded-xl border border-border"
                 style={{ backgroundColor: `var(--color-${name})` }}
               />
               <p className="mt-1 text-[10px] text-text-muted">{name}</p>
