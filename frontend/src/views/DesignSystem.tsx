@@ -39,8 +39,8 @@ export function DesignSystem() {
           {TOKENS.map((name) => (
             <div key={name}>
               <div
-                className="h-12 rounded-xl border border-border"
-                style={{ background: `var(--color-${name})` }}
+                className="h-12 rounded-xl border border-ink-900/20"
+                style={{ backgroundColor: `var(--color-${name})` }}
               />
               <p className="mt-1 text-[10px] text-text-muted">{name}</p>
             </div>
