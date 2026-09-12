@@ -49,11 +49,15 @@ ${tokens.map((t) => `  --color-${t.name}: ${css(t)};`).join('\n')}
 }
 `
 
-  const copy = () => {
-    void navigator.clipboard.writeText(output)
+const copy = async () => {
+  try {
+    await navigator.clipboard.writeText(output)
     setCopied(true)
     window.setTimeout(() => setCopied(false), 1500)
+  } catch (err) {
+    console.warn('PaletteLab: failed to copy palette file to clipboard', err)
   }
+}
 
   const reset = () => {
     for (const n of NAMES) {
