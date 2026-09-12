@@ -12,6 +12,7 @@
   --color-on-secondary: var(--color-sage-600);
   --color-surface: var(--color-cream-50);
   --color-surface-raised: var(--color-cream-100);
+  --color-surface-sunken: var(--color-cream-200);
   --color-border: var(--color-cream-200);
   --color-text: var(--color-ink-900);
   --color-text-muted: var(--color-ink-500);
@@ -23,8 +24,8 @@
 
 /* index.css */
 body {
-  background-color: var(--color-cream-200);
-  color: var(--color-ink-900);
+  background-color: var(--color-surface-sunken);
+  color: var(--color-text);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
