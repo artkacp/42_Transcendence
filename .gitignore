@@ -138,3 +138,8 @@ a.out
 *.a
 *.o
 *.so
+
+.claude/settings.local.json
+.local/
+
+CLAUDE.md
