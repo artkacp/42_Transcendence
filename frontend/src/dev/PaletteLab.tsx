@@ -1,24 +1,16 @@
 import { useState } from 'react'
+import { TOKEN_NAMES } from '../palettes/tokens'
 
 type Token = { name: string; l: number; c: number; h: number }
-
-const NAMES = [
-  'cream-50', 'cream-100', 'cream-200', 'cream-300',
-  'ink-900', 'ink-700', 'ink-500', 'ink-400',
-  'terra-50', 'terra-100', 'terra-400', 'terra-500', 'terra-600',
-  'sage-50', 'sage-100', 'sage-500', 'sage-600',
-  'honey-100', 'honey-400',
-  'danger-100', 'danger-600',
-]
 
 const css = (t: Token) => `oklch(${t.l.toFixed(3)} ${t.c.toFixed(3)} ${Math.round(t.h)})`
 
 /** Reads the palette currently in effect, whichever CSS file is imported. */
 function readFromCss(): Token[] {
   const style = getComputedStyle(document.documentElement)
-  const missing = NAMES.filter((n) => !style.getPropertyValue(`--color-${n}`).trim())
+  const missing = TOKEN_NAMES.filter((n) => !style.getPropertyValue(`--color-${n}`).trim())
   if (missing.length) console.warn('PaletteLab: no such tokens in CSS:', missing)
-  return NAMES.map((name) => {
+  return TOKEN_NAMES.map((name) => {
     const raw = style.getPropertyValue(`--color-${name}`).trim()
     const m = raw.match(/oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)/)
     return m
@@ -41,7 +33,8 @@ export function PaletteLab() {
     )
   }
 
-  const output = `@theme {
+  // `static` matters: plain @theme prunes tokens this file cannot prove are used.
+  const output = `@theme static {
   --font-display: 'Fraunces', ui-serif, serif;
   --font-sans: 'Outfit', ui-sans-serif, sans-serif;
 
@@ -49,18 +42,18 @@ ${tokens.map((t) => `  --color-${t.name}: ${css(t)};`).join('\n')}
 }
 `
 
-const copy = async () => {
-  try {
-    await navigator.clipboard.writeText(output)
-    setCopied(true)
-    window.setTimeout(() => setCopied(false), 1500)
-  } catch (err) {
-    console.warn('PaletteLab: failed to copy palette file to clipboard', err)
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(output)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1500)
+    } catch (err) {
+      console.warn('PaletteLab: failed to copy palette file to clipboard', err)
+    }
   }
-}
 
   const reset = () => {
-    for (const n of NAMES) {
+    for (const n of TOKEN_NAMES) {
       document.documentElement.style.removeProperty(`--color-${n}`)
     }
     setTokens(readFromCss())
