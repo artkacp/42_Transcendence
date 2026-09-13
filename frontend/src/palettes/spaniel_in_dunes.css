@@ -30,7 +30,9 @@
   --color-honey-600: oklch(0.550 0.120 90);
 
   --color-danger-100: oklch(0.900 0.120 35);
+  --color-danger-200: oklch(0.820 0.145 35);
   --color-danger-300: oklch(0.730 0.160 35);
   --color-danger-400: oklch(0.600 0.190 35);
+  --color-danger-500: oklch(0.490 0.210 35);
   --color-danger-600: oklch(0.385 0.210 35);
 }

@@ -5,7 +5,7 @@ export const TOKEN_NAMES = [
   'terra-50', 'terra-100', 'terra-400', 'terra-500', 'terra-600',
   'sage-50', 'sage-100', 'sage-300', 'sage-500', 'sage-600',
   'honey-100', 'honey-400', 'honey-500', 'honey-600',
-  'danger-100', 'danger-300', 'danger-400', 'danger-600',
+  'danger-100', 'danger-200', 'danger-300', 'danger-400', 'danger-500', 'danger-600',
 ] as const
 
 export type TokenName = (typeof TOKEN_NAMES)[number]

@@ -3,10 +3,10 @@ import type { HTMLAttributes } from 'react'
 type Tone = 'primary' | 'success' | 'warning' | 'danger'
 
 const tones: Record<Tone, string> = {
-  primary: 'bg-gradient-to-r from-progress-from to-progress-to',
-  success: 'bg-gradient-to-r from-success-from to-success-to',
-  warning: 'bg-gradient-to-r from-warning-from to-warning-to',
-  danger: 'bg-gradient-to-r from-danger-from to-danger-to',
+  primary: 'bg-[image:var(--gradient-progress)]',
+  success: 'bg-[image:var(--gradient-success)]',
+  warning: 'bg-[image:var(--gradient-warning)]',
+  danger: 'bg-[image:var(--gradient-danger)]',
 }
 
 export interface ProgressProps extends Omit<HTMLAttributes<HTMLDivElement>, 'role'> {
