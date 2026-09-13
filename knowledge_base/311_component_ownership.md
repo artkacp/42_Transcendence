@@ -5,25 +5,29 @@ chat, because chat is where the previous split got lost.
 
 Update the status column when a PR opens or merges.
 
-| Component  | Owner    | PR  | Status   |
-|------------|----------|-----|----------|
-| Button     | oostapen | #6  | merged   |
-| IconButton | oostapen | #6  | merged   |
-| Card       | oostapen | #6  | merged   |
-| Badge      | oostapen | #6  | merged   |
-| Select     | iskaraag | #5  | merged   |
-| Toggle     | iskaraag | #7  | open     |
-| Chip       | iskaraag | #8  | open     |
-| Avatar     | iskaraag | #9  | open     |
-| EmptyState | iskaraag | #10 | approved |
-| Progress   | oostapen | —   | next     |
-| Stat       | oostapen | —   | next     |
-| Input      | iskaraag | —   | —        |
-| Textarea   | iskaraag | —   | —        |
-| Tabs       | iskaraag | —   | —        |
-| Modal      | iskaraag | —   | —        |
-| Toast      | iskaraag | —   | —        |
-| Pagination | oostapen | —   | —        |
+| Component  | Owner    | PR  | Status               |
+|------------|----------|-----|----------------------|
+| Button     | oostapen | #6  | merged               |
+| IconButton | oostapen | #6  | merged               |
+| Card       | oostapen | #6  | merged               |
+| Badge      | oostapen | #6  | merged               |
+| Select     | iskaraag | #5  | merged, not wired up |
+| Toggle     | iskaraag | #7  | open                 |
+| Chip       | iskaraag | #8  | open                 |
+| Avatar     | iskaraag | #9  | open                 |
+| EmptyState | iskaraag | #10 | approved             |
+| Progress   | oostapen | #13 | in review            |
+| Stat       | oostapen | —   | next                 |
+| Input      | iskaraag | —   | —                    |
+| Textarea   | iskaraag | —   | —                    |
+| Tabs       | iskaraag | —   | —                    |
+| Modal      | iskaraag | —   | —                    |
+| Toast      | iskaraag | —   | —                    |
+| Pagination | oostapen | —   | —                    |
+
+"merged, not wired up" — the file is in `ds/` but has no export line in
+`ds/index.ts` and no block in the design-kit view, so it cannot be used or
+reviewed from the app yet.
 
 Target is 17 components — the Custom design system module asks for a
 minimum of 10.

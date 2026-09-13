@@ -52,12 +52,17 @@ overlay yet. New components must not add to this list.
 
 ## Every component goes in the design-kit view
 
-`?view=design` (`frontend/src/views/DesignSystem.tsx`) shows every
-component in its main states. This is UI-11.1 and it is what evaluators
-will open.
+`frontend/src/views/DesignSystem.tsx` shows every component in its main
+states. Right now it is the whole app — `App.tsx:16` renders it directly;
+the `?view=` routing from the prototype is not wired up yet. When it is,
+the view will live at `?view=design`.
 
-A component that is not in the style guide cannot be reviewed without
-reading the source, and does not count toward the module.
+This is UI-11.1 and it is what evaluators will open. A component that is
+not in the style guide cannot be reviewed without reading the source, and
+does not count toward the module.
+
+Being in `ds/` is not enough — the component also needs its export line in
+`ds/index.ts`.
 
 ## Branch from main
 
