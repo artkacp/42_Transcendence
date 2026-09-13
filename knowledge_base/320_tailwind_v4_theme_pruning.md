@@ -59,6 +59,11 @@ Palette files use `@theme static`, not `@theme`:
 can prove. This is the right call for a file whose whole purpose is to be
 enumerated.
 
+The PaletteLab export template writes `@theme static` as well. Before that
+was fixed, exporting a palette from the lab silently dropped the keyword,
+so pasting the export back into a palette file reintroduced the bug — the
+tool undid the fix every time it was used.
+
 ## Verify after any palette change
 
 ```bash
@@ -72,6 +77,10 @@ writing. Fewer means something was pruned.
 Note `[0-9]\+`, not `[0-9]*`. The loose pattern also matches truncated
 semantic-role names (`--color-text-`, `--color-on-`) and reports 35
 instead of 28.
+
+Both palette files need the keyword — `spaniel_in_dunes.css` and
+`mockup.css`. A palette that is not currently imported is easy to forget,
+and the failure only shows up when someone switches to it.
 
 ## The general rule
 
