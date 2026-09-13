@@ -1,9 +1,24 @@
+import { lazy, Suspense } from 'react'
+import { DesignSystem } from './views/DesignSystem'
+
+const PaletteLab = import.meta.env.DEV
+  ? lazy(() => import('./dev/PaletteLab').then((m) => ({ default: m.PaletteLab })))
+  : null
+
 function App() {
+  const labOpen = PaletteLab !== null && new URLSearchParams(window.location.search).has('lab')
+
   return (
-    <div className="p-10">
-      <h1 className="font-display text-4xl text-terra-500">Pawfect Match</h1>
-      <p className="text-ink-500 mt-2">Tokens are working.</p>
-    </div>
+    <>
+      <div className={labOpen ? 'pr-80' : ''}>
+        <DesignSystem />
+      </div>
+      {labOpen && (
+        <Suspense fallback={null}>
+          <PaletteLab />
+        </Suspense>
+      )}
+    </>
   )
 }
 
