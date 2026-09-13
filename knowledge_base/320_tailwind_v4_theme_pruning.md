@@ -17,7 +17,8 @@ style={{ backgroundColor: `var(--color-${name})` }}
 ```
 
 The scanner never sees the literal, so there is no proof, so the variable
-is dropped from the compiled `:root` block.
+is dropped from the compiled `:root` block. When this was found the
+palette had 21 tokens:
 
 ```
   spaniel_in_dunes.css              compiled CSS
@@ -27,8 +28,8 @@ is dropped from the compiled `:root` block.
                                       7 gone, no error
 ```
 
-Missing on first discovery: `cream-300`, `ink-700`, `terra-50`,
-`terra-100`, `terra-400`, `sage-50`, `honey-400`.
+Missing: `cream-300`, `ink-700`, `terra-50`, `terra-100`, `terra-400`,
+`sage-50`, `honey-400`.
 
 ## Why it is dangerous
 
@@ -65,12 +66,12 @@ npm run build
 grep -o -- '--color-[a-z]*-[0-9]\+' dist/assets/*.css | sed 's/.*://' | sort -u | wc -l
 ```
 
-Must equal the number of tokens in the palette — 21 at the time of
+Must equal the number of tokens in the palette — 28 at the time of
 writing. Fewer means something was pruned.
 
 Note `[0-9]\+`, not `[0-9]*`. The loose pattern also matches truncated
-semantic-role names (`--color-text-`, `--color-on-`) and inflates the
-count from 21 to 27.
+semantic-role names (`--color-text-`, `--color-on-`) and reports 35
+instead of 28.
 
 ## The general rule
 
