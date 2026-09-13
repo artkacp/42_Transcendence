@@ -1,11 +1,12 @@
 import type { HTMLAttributes } from 'react'
 
-type Tone = 'primary' | 'success' | 'danger'
+type Tone = 'primary' | 'success' | 'warning' | 'danger'
 
 const tones: Record<Tone, string> = {
-  primary: 'bg-primary',
-  success: 'bg-secondary-hover',
-  danger: 'bg-danger',
+  primary: 'bg-gradient-to-r from-progress-from to-progress-to',
+  success: 'bg-gradient-to-r from-success-from to-success-to',
+  warning: 'bg-gradient-to-r from-warning-from to-warning-to',
+  danger: 'bg-gradient-to-r from-danger-from to-danger-to',
 }
 
 export interface ProgressProps extends Omit<HTMLAttributes<HTMLDivElement>, 'role'> {
