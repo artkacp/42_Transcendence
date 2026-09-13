@@ -27,6 +27,11 @@ Available roles are defined in `frontend/src/index.css`. If a component
 needs a role that does not exist yet, add the role — do not reach into the
 palette.
 
+Known exceptions, to be migrated: `Select.tsx` came from a branch that
+predated the tokens, and the `ghost` variant in `Button.tsx` uses
+`ink-900/10` because there is no semantic role for a translucent hover
+overlay yet. New components must not add to this list.
+
 ## Component rules
 
 - One component per file, filename matches the export.
@@ -40,6 +45,9 @@ palette.
 - Decorative icons and emoji need `aria-hidden="true"` — a chevron next to
   a `<select>` or an emoji next to a heading carries no information a
   screen reader needs.
+- Attributes the component computes itself — `role`, `aria-valuenow` on a
+  progress bar — are excluded from the public props, so a caller cannot
+  make the announced state disagree with what is rendered.
 - React 19: `ref` is a normal prop. No `forwardRef`, no `displayName`.
 
 ## Every component goes in the design-kit view
@@ -60,12 +68,14 @@ target `main`.
 ## Before opening a PR
 
 ```bash
+cd frontend
 npm run lint && npm run build
 ```
 
 Plus a clean Chrome console on the production preview:
 
 ```bash
+cd frontend
 npm run build && npx vite preview
 ```
 

@@ -67,6 +67,7 @@ tool undid the fix every time it was used.
 ## Verify after any palette change
 
 ```bash
+cd frontend
 npm run build
 grep -o -- '--color-[a-z]*-[0-9]\+' dist/assets/*.css | sed 's/.*://' | sort -u | wc -l
 ```
