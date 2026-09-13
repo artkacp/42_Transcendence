@@ -9,8 +9,10 @@ const tones: Record<Tone, string> = {
   danger: 'bg-[image:var(--gradient-danger)]',
 }
 
-export interface ProgressProps extends Omit<HTMLAttributes<HTMLDivElement>, 'role'> {
-  /** 0–100. Values outside the range are clamped. */
+type OwnedAria = 'role' | 'aria-valuenow' | 'aria-valuemin' | 'aria-valuemax' | 'aria-label'
+
+export interface ProgressProps extends Omit<HTMLAttributes<HTMLDivElement>, OwnedAria> {
+  /** 0-100. Values outside the range are clamped. */
   value: number
   tone?: Tone
   label?: string
