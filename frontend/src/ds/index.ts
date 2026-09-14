@@ -1,4 +1,5 @@
 export { Button, IconButton } from './Button'
 export { Card } from './Card'
 export { Badge } from './Badge'
+export { EmptyState } from './EmptyState'
 export { Toggle } from './Toggle'
