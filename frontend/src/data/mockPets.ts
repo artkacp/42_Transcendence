@@ -39,7 +39,7 @@ export const SAMPLE_PETS: Pet[] = [
 		sex: 'male',
 		city: 'Warszawa',
 		traits: ['friendly', 'playful'],
-		emoji: '🐕',
+		emoji: '🐶',
 		publisherName: 'Murat',
 		adopted: false,
 		vaccinated: true,
@@ -73,7 +73,7 @@ export const SAMPLE_PETS: Pet[] = [
 		sex: 'male',
 		city: 'Kraków',
 		traits: ['friendly', 'energetic'],
-		emoji: '🐕',
+		emoji: '🐶',
 		publisherName: 'Ben',
 		adopted: false,
 		vaccinated: false,
@@ -107,7 +107,7 @@ export const SAMPLE_PETS: Pet[] = [
         sex: 'male',
         city: 'Poznań',
         traits: ['loyal', 'protective'],
-        emoji: '🐕',
+        emoji: '🐶',
         publisherName: 'Alex',
         adopted: false,
         vaccinated: true,
@@ -116,6 +116,7 @@ export const SAMPLE_PETS: Pet[] = [
 ];
 
 export const AGE_BUCKETS: { id: string; label: string; test: (age: number) => boolean }[] = [
+	{ id: 'all', label: 'Any age', test: () => true },
 	{ id: 'puppy', label: 'Puppy (0–1)', test: (age: number) => age < 1 },
 	{ id: 'young', label: 'Young (1–3)', test: (age: number) => age >= 1 && age < 3 },
 	{ id: 'adult', label: 'Adult (3–7)', test: (age: number) => age >= 3 && age < 7 },
