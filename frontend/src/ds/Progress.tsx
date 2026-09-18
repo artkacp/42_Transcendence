@@ -34,11 +34,13 @@ export function Progress({
       aria-valuemin={0}
       aria-valuemax={100}
       aria-label={label}
-      className={`h-2 w-full overflow-hidden rounded-full bg-surface-sunken ${className}`}
+      className={`h-2 w-full overflow-hidden rounded-full bg-track ${className}`}
       {...rest}
     >
       <div
-        className={`h-full rounded-full transition-[width] duration-300 ease-out ${tones[tone]}`}
+        className={`h-full rounded-full transition-[width] duration-300 ease-out ${
+          pct > 0 ? 'min-w-1.5' : ''
+        } ${tones[tone]}`}
         style={{ width: `${pct}%` }}
       />
     </div>
