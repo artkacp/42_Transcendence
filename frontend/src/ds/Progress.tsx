@@ -26,6 +26,7 @@ export function Progress({
   ...rest
 }: ProgressProps) {
   const pct = Math.min(100, Math.max(0, Math.round(value)))
+  const fillMin = pct > 0 ? 'min-w-2.5' : ''
 
   return (
     <div
@@ -34,13 +35,11 @@ export function Progress({
       aria-valuemin={0}
       aria-valuemax={100}
       aria-label={label}
-      className={`h-2 w-full overflow-hidden rounded-full bg-track ${className}`}
+      className={`h-2 w-full overflow-hidden rounded-full bg-track shadow-[var(--shadow-track-inset)] ${className}`}
       {...rest}
     >
       <div
-        className={`h-full rounded-full transition-[width] duration-300 ease-out ${
-          pct > 0 ? 'min-w-1.5' : ''
-        } ${tones[tone]}`}
+        className={`h-full rounded-r-full transition-[width] duration-300 ease-out ${fillMin} ${tones[tone]}`}
         style={{ width: `${pct}%` }}
       />
     </div>
