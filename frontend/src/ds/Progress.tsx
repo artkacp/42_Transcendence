@@ -15,7 +15,7 @@ export interface ProgressProps extends Omit<HTMLAttributes<HTMLDivElement>, Owne
   /** 0-100. Values outside the range are clamped. */
   value: number
   tone?: Tone
-  label?: string
+  label: string
 }
 
 export function Progress({
