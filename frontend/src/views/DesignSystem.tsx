@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { Heart, Plus, Trash2 } from 'lucide-react'
 import { TOKEN_NAMES } from '../palettes/tokens'
 import { Badge, Button, Card, IconButton, Progress } from '../ds'
@@ -96,11 +96,25 @@ export function DesignSystem() {
 
         <Row label="Edge values — clamped">
           <div className="w-full max-w-sm space-y-3">
-            <Progress value={0} tone="warning" label="Not started" />
-            <Progress value={1} tone="warning" label="Barely started" />
-            <Progress value={3} tone="warning" label="Just started" />
-            <Progress value={100} tone="warning" label="Done" />
-            <Progress value={150} tone="warning" label="Over 100, clamped" />
+            {[
+              { value: 0, label: 'Not started' },
+              { value: 1, label: 'Barely started' },
+              { value: 3, label: 'Just started' },
+              { value: 100, label: 'Done' },
+              { value: 150, label: 'Over 100, clamped' },
+            ].map(({ value, label }) => (
+              <Progress
+                key={label}
+                value={value}
+                tone="warning"
+                label={label}
+                style={
+                  {
+                    '--gradient-warning': 'var(--gradient-danger)',
+                  } as CSSProperties
+                }
+              />
+            ))}
           </div>
         </Row>
       </Section>
