@@ -97,6 +97,8 @@ export function DesignSystem() {
         <Row label="Edge values — clamped">
           <div className="w-full max-w-sm space-y-3">
             <Progress value={0} tone="warning" label="Not started" />
+            <Progress value={1} tone="warning" label="Barely started" />
+            <Progress value={3} tone="warning" label="Just started" />
             <Progress value={100} tone="warning" label="Done" />
             <Progress value={150} tone="warning" label="Over 100, clamped" />
           </div>
