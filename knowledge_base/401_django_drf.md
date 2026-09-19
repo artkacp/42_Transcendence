@@ -38,6 +38,8 @@ Typical flow: request hits a URL → router forwards to a ViewSet action → ser
 
 ## Project structure convention
 
+The following is based on the TRD proposal and is subject to adjustment during implementation:
+
 ```
 backend/
   project/          ← Django project (settings, root urls)

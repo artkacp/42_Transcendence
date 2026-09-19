@@ -69,6 +69,16 @@ Do not overuse it: for data you filter or join on regularly, a proper column wit
 
 ## Soft deletes vs. hard deletes
 
-Hard deletes (actual `DELETE`) are simpler and work well here. If a pet is deleted, cascading FKs clean up inquiries and messages automatically. The TRD assumes hard deletes.
+Hard deletes (actual `DELETE`) are confirmed. If a pet is deleted, cascading FKs clean up inquiries and messages. The one exception is `analytics_event.pet_id` — that FK is **nullable with SET NULL** (not CASCADE), so analytics history survives pet deletion. The feature snapshot in `analytics_event.metadata` (JSONB) preserves the pet's attributes at event time, so per-user history remains correct even after the pet row is gone.
 
-Soft deletes (adding an `is_deleted` / `deleted_at` column) add complexity — every query needs a filter, and you need a custom manager to exclude deleted rows. Avoid unless there is a specific requirement to keep deleted records.
+---
+
+## analytics_event — SQLAlchemy-owned table
+
+This table is **not** managed by Django ORM. It is created by a hand-written `RunSQL` Django migration and mapped by SQLAlchemy. Django never reads or writes it.
+
+The `metadata` JSONB column stores a snapshot of the pet's 8 features at event time (species, breed, age, size, sex, vaccinated, neutered, traits). This snapshot serves two pipelines:
+- **Prometheus** — the same values stamp the counter labels at increment time
+- **SQLAlchemy / per-user analytics** — the values persist after the pet is deleted
+
+See note 520 for the full SQLAlchemy setup and write pattern.

@@ -6,7 +6,11 @@ How we design and structure the API. Applies to all backend contributors.
 
 ## URL layout
 
-All API routes are prefixed `/api/`. Within that, routes are grouped by app:
+The following URL structure is based on the TRD proposal and is subject to adjustment during implementation.
+
+The API has two namespaces with different auth models:
+
+### App API — JWT authenticated
 
 ```
 /api/auth/          ← registration, login, token refresh, logout
@@ -14,9 +18,17 @@ All API routes are prefixed `/api/`. Within that, routes are grouped by app:
 /api/pets/          ← listings, browse, adopt flow
 /api/inquiries/     ← threads, messages, attachments
 /api/notifications/ ← notification list + mark-read
-/api/analytics/     ← event ingest, summary, daily series
+/api/analytics/     ← platform dashboard (PromQL proxy) + per-user rollups
 /api/cities/        ← static city list
 ```
+
+### Public API — API key authenticated
+
+```
+/api/public/v1/     ← read-only, third-party access
+```
+
+Authenticated by a hashed `X-API-Key` header. Keys are long-lived, stored hashed (shown once at creation), and rate-limited at 60 requests/min per key via Django's `LocMemCache`-backed throttle. An OpenAPI schema and docs page are served alongside. This is a separate trust boundary from the SPA — keys are never mixed into the JWT session flow. See note 420 for the JWT side.
 
 ---
 

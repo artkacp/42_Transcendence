@@ -10,6 +10,8 @@ It's mandatory per the subject. Beyond that, PostgreSQL is a good fit: full ACID
 
 SQLite is not an option (doesn't survive Docker restarts well, single-writer, no `pg_trgm`).
 
+**pg_trgm** is a PostgreSQL extension that enables fast similarity and pattern searches on text. It works by splitting text into overlapping 3-character chunks ("trigrams") and indexing them. This makes wildcard searches like `ILIKE '%labrador%'` efficient even on large tables — without it, those queries do a full table scan. Used for the pet search-by-name/breed feature.
+
 ---
 
 ## Running via Docker
