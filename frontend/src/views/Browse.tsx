@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { SAMPLE_PETS, CITIES, BREEDS_BY_SPECIES, ALL_TRAITS, AGE_BUCKETS, type Species, type PetSize } from '../data/mockPets'
+import { type Pet, USERS, SAMPLE_PETS, CITIES, BREEDS_BY_SPECIES, ALL_TRAITS, AGE_BUCKETS, type Species, type PetSize } from '../data/types'
 import { Select, Chip, Avatar, EmptyState, Button, Card, Badge } from '../ds'
 
 export function Browse() {
@@ -14,6 +14,8 @@ export function Browse() {
 	const [trait, setTrait] = useState('all')
 	const [vaccinatedOnly, setVaccinatedOnly] = useState(false)
 	const [neuteredOnly, setNeuteredOnly] = useState(false)
+
+	const getOwner = (ownerId: string) => USERS.find((u) => u.id === ownerId)
 
 	const breedOptions = species === 'all' ? [...BREEDS_BY_SPECIES.dog, ...BREEDS_BY_SPECIES.cat] : BREEDS_BY_SPECIES[species]
 	const handleSpeciesChange = (next: Species | 'all') => {
@@ -59,13 +61,13 @@ export function Browse() {
 			<div className="flex flex-wrap items-end justify-between gap-4">
 				<div>
 					<h1 className="font-display text-4xl font-black tracking-tight">
-						Find your <span className="text-terra-500">person</span>.
+						Find your <span className="text-primary">person</span>.
 					</h1>
-					<p className="mt-1 text-sm text-ink-500">They just happen to have four legs. Or wings.</p>
+					<p className="mt-1 text-sm text-text-muted">They just happen to have four legs. Or wings.</p>
 				</div>
 				<div className="flex items-center gap-3">
-				<p className="text-sm text-ink-400">
-					<span className="font-semibold text-ink-900">{results.length}</span> pals available
+				<p className="text-sm text-text-subtle">
+					<span className="font-semibold text-text">{results.length}</span> pals available
 				</p>
 				<Button size="sm" variant="secondary">
 					Rehome a pet
@@ -78,7 +80,8 @@ export function Browse() {
 				placeholder="Search by name, breed, or trait…"
 				value={q}
 				onChange={(e) => setQ(e.target.value)}
-				className="w-full rounded-full border border-cream-200 bg-cream-50/70 py-2 pl-4 pr-4 text-sm text-ink-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terra-500"
+				aria-label="Search pets"
+				className="w-full rounded-full border border-border bg-surface/70 py-2 pl-4 pr-4 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
 				/>
 			</div>
 			<div className="flex flex-wrap items-center gap-2">
@@ -150,40 +153,43 @@ export function Browse() {
 				/>
 				) : (
 				<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-					{results.map((p) => (
-						<Card key={p.id} hover className="cursor-pointer overflow-hidden">
-							<div className="relative flex h-40 items-center justify-center bg-sage-100">
-								<span className="text-7xl" aria-hidden>
-									{p.emoji}
-								</span>
-								{p.adopted && (
-								<Badge tone="success" className="absolute left-3 top-3">
-									adopted 🎉
-								</Badge>
-								)}
-							</div>
-							<div className="p-4">
-								<div className="flex items-baseline justify-between gap-2">
-									<h3 className="font-display text-xl font-bold">{p.name}</h3>
-									<span className="text-xs text-ink-400">{p.city}</span>
+					{results.map((p) => {
+						const owner = getOwner(p.ownerId)
+						return (
+							<Card key={p.id} hover className="cursor-pointer overflow-hidden">
+								<div className="relative flex h-40 items-center justify-center bg-secondary">
+									<span className="text-7xl" aria-hidden>
+										{p.emoji}
+									</span>
+									{p.adoptedById && (
+									<Badge tone="success" className="absolute left-3 top-3">
+										adopted 🎉
+									</Badge>
+									)}
 								</div>
-								<p className="text-sm text-ink-500">
-									{p.breed} · {p.age} {p.age === 1 ? 'yr' : 'yrs'} · {p.sex}
-								</p>
-								<div className="mt-3 flex items-center justify-between">
-									<div className="flex gap-1.5">
-										{p.traits.slice(0, 2).map((t) => (
-											<Badge key={t}>{t}</Badge>
-										))}
+								<div className="p-4">
+									<div className="flex items-baseline justify-between gap-2">
+										<h3 className="font-display text-xl font-bold">{p.name}</h3>
+										<span className="text-xs text-text-subtle">{p.city}</span>
 									</div>
-									<div className="flex items-center gap-1.5">
-										<Avatar name={p.publisherName} size="sm" />
-										<span className="text-xs text-ink-400">{p.publisherName}</span>
+									<p className="text-sm text-text-muted">
+										{p.breed} · {p.age} {p.age === 1 ? 'yr' : 'yrs'} · {p.sex}
+									</p>
+									<div className="mt-3 flex items-center justify-between">
+										<div className="flex gap-1.5">
+											{p.traits.slice(0, 2).map((t) => (
+												<Badge key={t}>{t}</Badge>
+											))}
+										</div>
+										<div className="flex items-center gap-1.5">
+											<Avatar name={owner?.name ?? 'Unknown'} src={owner?.avatar} size="sm" />
+											<span className="text-xs text-text-subtle">{owner?.name ?? 'Unknown'}</span>
+										</div>
 									</div>
 								</div>
-							</div>
-						</Card>
-					))}
+							</Card>
+						)
+					})}
 				</div>
 			)}
 		</div>
