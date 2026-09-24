@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react'
+import { useState, type CSSProperties, type ReactNode } from 'react'
 import { Heart, Plus, Trash2 } from 'lucide-react'
 import { TOKEN_NAMES } from '../palettes/tokens'
 import { Badge, Button, Card, IconButton, Progress } from '../ds'
@@ -17,6 +17,50 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
     <div className="mb-4">
       <p className="text-xs uppercase tracking-wide text-text-subtle mb-2">{label}</p>
       <div className="flex flex-wrap items-center gap-3">{children}</div>
+    </div>
+  )
+}
+
+/* ★ミ( ･)ﾉ TEMPORARY — crayon tone lab. Remove before the PR, together with
+   the 'lab' tone in Progress.tsx.
+   [░] → [▒] → [▓] → [█] (◔ ◑) Three colour pickers feed --lab-a/b/c, which
+   the 'lab' tone reads as its gradient stops; the slider drives the fill.
+   Tune here with the other bars in view, then paste the printed triple into
+   crayonStops. Native colour inputs are sRGB hex — once a tone feels right,
+   convert it to OKLCH in Progress.tsx and drop the chroma a notch: the same
+   colour reads more like pigment and less like a screen. */
+function CrayonLab() {
+  const [a, setA] = useState('#CDE8EC')
+  const [b, setB] = useState('#5EA7A7')
+  const [c, setC] = useState('#A9D3E6')
+  const [v, setV] = useState(72)
+  return (
+    <div className="w-full max-w-sm space-y-3">
+      <div className="flex items-center gap-2 text-xs text-text-muted">
+        <input type="color" value={a} onChange={(e) => setA(e.target.value)} aria-label="Start colour" />
+        <input type="color" value={b} onChange={(e) => setB(e.target.value)} aria-label="Middle colour" />
+        <input type="color" value={c} onChange={(e) => setC(e.target.value)} aria-label="End colour" />
+        <input
+          type="range"
+          min={0}
+          max={100}
+          value={v}
+          onChange={(e) => setV(Number(e.target.value))}
+          className="flex-1"
+          aria-label="Fill amount"
+        />
+        <span className="w-8">{v}%</span>
+      </div>
+      <Progress
+        value={v}
+        variant="crayon"
+        tone="lab"
+        label="Tone lab"
+        style={{ '--lab-a': a, '--lab-b': b, '--lab-c': c } as CSSProperties}
+      />
+      <p className="font-mono text-[10px] text-text-muted">
+        {a} · {b} · {c}
+      </p>
     </div>
   )
 }
@@ -86,14 +130,21 @@ export function DesignSystem() {
       </Section>
 
       <Section title="Progress">
+        {/* [░] → [▒] → [▓] → [█] (◔ ◑) FILL — value is the only knob.
+            0 empty · 50 half · 100 full · anything above 100 clamps to 100.
+            Showcase values are fixed on purpose: a living style guide shows
+            states, it does not let the reader change them. */}
         <Row label="Tones">
           <div className="w-full max-w-sm space-y-3">
-            <Progress value={35} label="Upload progress" />
+            <Progress value={100} label="Upload progress" />
             <Progress value={72} tone="success" label="Complete" />
             <Progress value={18} tone="danger" label="Failed upload" />
           </div>
         </Row>
 
+        {/* ★ミ( ･)ﾉ NOTE: this row overrides --gradient-warning with the danger
+            gradient inline, so the bars read red while the tone says warning.
+            Drop the style block once warning has its own tuned gradient. */}
         <Row label="Edge values — clamped">
           <div className="w-full max-w-sm space-y-3">
             {[
@@ -117,6 +168,29 @@ export function DesignSystem() {
             ))}
           </div>
         </Row>
+
+        {/* ★ミ( ･)ﾉ crayon variant — start
+            [░] → [▒] → [▓] → [█] (◔ ◑) Set value per bar to inspect the fill:
+            [░] value={3}    entry ramp and the left rounded end
+            [▒] value={35}   leading edge mid-groove, skew clearly visible
+            [▓] value={72}   most of the hatching, right end still open
+            [█] value={100}  full groove, both ends closed
+            The hatching is rolled once per mounted bar, so changing value
+            moves the edge over stationary strokes — they never re-scatter. */}
+        <Row label="Crayon variant">
+          <div className="w-full max-w-sm space-y-3">
+            <Progress value={100} variant="crayon" label="Crayon, primary" />
+            <Progress value={100} variant="crayon" tone="success" label="Crayon, success" />
+            <Progress value={108} variant="crayon" tone="warning" label="Crayon, warning" />
+            <Progress value={100} variant="crayon" tone="danger" label="Crayon, danger" />
+          </div>
+        </Row>
+
+        {/* ★ミ( ･)ﾉ TEMPORARY tone lab — remove before the PR */}
+        <Row label="Tone lab — scratch">
+          <CrayonLab />
+        </Row>
+        {/* ★ミ( ･)ﾉ crayon variant — end */}
       </Section>
 
       <Section title="Badge">

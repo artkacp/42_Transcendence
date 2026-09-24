@@ -26,7 +26,17 @@
 :root {
   --shadow-track-inset: inset 0 1px 1px oklch(0.300 0.030 64 / 0.10),
                         inset 0 -1px 0 oklch(1 0 0 / 0.18);
-
+    --crayon-angle: -11.63deg;
+  /*★ミ( ･)ﾉ*/
+  --gradient-crayon-primary: linear-gradient(to right,
+    var(--color-terra-50), #5EA7A7 26%, var(--color-terra-100));
+  --gradient-crayon-success: linear-gradient(to right,
+    var(--color-sage-50), var(--color-sage-300));
+  --gradient-crayon-warning: linear-gradient(to right,
+    var(--color-honey-100), var(--color-honey-400));
+  --gradient-crayon-danger: linear-gradient(to right,
+    var(--color-danger-100), var(--color-danger-200));
+  /*★ミ( ･)ﾉ*/
   --gradient-progress: linear-gradient(
     to right,
     var(--color-terra-400),
