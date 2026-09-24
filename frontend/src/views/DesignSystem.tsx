@@ -1,7 +1,6 @@
-import { useState, type CSSProperties, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Heart, Plus, Trash2 } from 'lucide-react'
 import { TOKEN_NAMES } from '../palettes/tokens'
-import { ToneSwatches } from '../components/ToneSwatches'
 import { Badge, Button, Card, IconButton, Progress } from '../ds'
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -41,9 +40,8 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
       Chroma is the pigment knob: 0.03-0.08 reads as crayon, above 0.12 it
       starts looking like a screen colour. Palette steps run hot because they
       were tuned for solid fills — expect to pull C down after loading one.
-   5. Save final copies a ready-to-paste FINAL_STOPS block; paste it over the
-      one in components/ToneSwatches.tsx, and update LAB_DEFAULTS below to
-      match.
+   5. Save final copies a ready-to-paste block; paste the values over
+      crayonStops in ds/Progress.tsx and update LAB_DEFAULTS below to match.
 
    WHY OKLCH AND NOT A COLOUR PICKER
    The native picker is sRGB hex only and there is no lossless way back. More
@@ -57,8 +55,8 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 type Triple = [number, number, number]
 type LabTone = 'primary' | 'success' | 'danger'
 
-/* Keep in sync with FINAL_STOPS in components/ToneSwatches.tsx — the lab
-   should always open on what actually ships. */
+/* Keep in sync with crayonStops in ds/Progress.tsx — the lab should always
+   open on what actually ships. */
 const LAB_DEFAULTS: Record<LabTone, [Triple, Triple, Triple]> = {
   primary: [
     [0.6, 0.12, 218],
@@ -122,12 +120,12 @@ function CrayonLab() {
   const stops = all[tone]
 
   const finalBlock =
-    'const FINAL_STOPS: Record<ToneName, [Triple, Triple, Triple]> = {\n' +
+    'const crayonStops: Record<Tone, [string, string, string]> = {\n' +
     LAB_TONES.map((t) => {
-      const rows = all[t].map((s) => `    [${s[0]}, ${s[1]}, ${s[2]}]`).join(',\n')
-      return `  ${t}: [\n${rows},\n  ]`
-    }).join(',\n') +
-    ',\n}'
+      const row = all[t].map((s) => `'${cssLab(s)}'`).join(', ')
+      return `  ${t}: [${row}],`
+    }).join('\n') +
+    '\n}'
 
   const set = (k: 0 | 1 | 2, val: number) =>
     setAll((prev) => ({
@@ -171,21 +169,15 @@ function CrayonLab() {
             type="button"
             onClick={() => setTone(t)}
             aria-label={`Edit ${t}`}
+            aria-pressed={tone === t}
             className={`block w-full rounded-lg p-1 text-left ${tone === t ? 'bg-surface-raised' : ''}`}
           >
             <span className="mb-0.5 block font-mono text-[10px] text-text-subtle">{t}</span>
             <Progress
               value={v}
               variant="crayon"
-              tone="lab"
+              crayonStopsOverride={[cssLab(all[t][0]), cssLab(all[t][1]), cssLab(all[t][2])]}
               label={`${t} preview`}
-              style={
-                {
-                  '--lab-a': cssLab(all[t][0]),
-                  '--lab-b': cssLab(all[t][1]),
-                  '--lab-c': cssLab(all[t][2]),
-                } as CSSProperties
-              }
             />
           </button>
         ))}
@@ -212,6 +204,7 @@ function CrayonLab() {
             onClick={() => setStop(i)}
             title={stopNames[i]}
             aria-label={`Edit ${stopNames[i]} stop`}
+            aria-pressed={stop === i}
             className={`size-8 rounded border ${stop === i ? 'border-text' : 'border-border'}`}
             style={{ backgroundColor: cssLab(s) }}
           />
@@ -272,7 +265,6 @@ function CrayonLab() {
     </div>
   )
 }
-/* ★ミ( ･)ﾉ TEMPORARY — crayon tone lab END */
 
 export function DesignSystem() {
   const [labMode, setLabMode] = useState(false)
@@ -359,12 +351,40 @@ export function DesignSystem() {
       </Section>
 
       <Section title="Progress">
- 
-        {/* ★ミ( ･)ﾉ Crayon — three final pastel bars, or the lab when toggled.
-            The old four-bar row that sat here is gone: it duplicated these
-            three at the same value and only muddied the comparison. */}
+        {/* [░] → [▒] → [▓] → [█] (◔ ◑) FILL — value is the only knob.
+            0 empty · 50 half · 100 full · above 100 clamps. */}
+        <Row label="Tones">
+          <div className="w-full max-w-sm space-y-3">
+            <Progress value={35} label="Upload progress" />
+            <Progress value={72} tone="success" label="Complete" />
+            <Progress value={18} tone="danger" label="Failed upload" />
+          </div>
+        </Row>
+
+        <Row label="Edge values — clamped">
+          <div className="w-full max-w-sm space-y-3">
+            {[
+              { value: 0, label: 'Not started' },
+              { value: 1, label: 'Barely started' },
+              { value: 3, label: 'Just started' },
+              { value: 100, label: 'Done' },
+              { value: 150, label: 'Over 100, clamped' },
+            ].map(({ value, label }) => (
+              <Progress key={label} value={value} tone="warning" label={label} />
+            ))}
+          </div>
+        </Row>
+
         <Row label={labMode ? 'Crayon — tone lab' : 'Crayon — pastel'}>
-          {labMode ? <CrayonLab /> : <ToneSwatches />}
+          {labMode ? (
+            <CrayonLab />
+          ) : (
+            <div className="w-full max-w-sm space-y-3">
+              <Progress value={100} variant="crayon" label="Crayon, primary" />
+              <Progress value={100} variant="crayon" tone="success" label="Crayon, success" />
+              <Progress value={100} variant="crayon" tone="danger" label="Crayon, danger" />
+            </div>
+          )}
         </Row>
       </Section>
 
