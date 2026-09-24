@@ -13,6 +13,7 @@ services:
   backend:
     build:
       context: ./backend
+    # This overrides the Daphne CMD defined in the Dockerfile.
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - ./backend:/app
