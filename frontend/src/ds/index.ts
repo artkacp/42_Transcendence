@@ -1,6 +1,7 @@
 export { Button, IconButton } from './Button'
 export { Card } from './Card'
 export { Badge } from './Badge'
+export { Progress } from './Progress'
 export { Chip } from './Chip'
 export { Avatar } from './Avatar'
 export { EmptyState } from './EmptyState'

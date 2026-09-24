@@ -1,7 +1,7 @@
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { Heart, Plus, Trash2 } from 'lucide-react'
-import { Badge, Button, Card, IconButton } from '../ds'
 import { TOKEN_NAMES } from '../palettes/tokens'
+import { Badge, Button, Card, IconButton, Progress } from '../ds'
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -82,6 +82,40 @@ export function DesignSystem() {
           <IconButton label="Delete listing">
             <Trash2 size={18} />
           </IconButton>
+        </Row>
+      </Section>
+
+      <Section title="Progress">
+        <Row label="Tones">
+          <div className="w-full max-w-sm space-y-3">
+            <Progress value={35} label="Upload progress" />
+            <Progress value={72} tone="success" label="Complete" />
+            <Progress value={18} tone="danger" label="Failed upload" />
+          </div>
+        </Row>
+
+        <Row label="Edge values — clamped">
+          <div className="w-full max-w-sm space-y-3">
+            {[
+              { value: 0, label: 'Not started' },
+              { value: 1, label: 'Barely started' },
+              { value: 3, label: 'Just started' },
+              { value: 100, label: 'Done' },
+              { value: 150, label: 'Over 100, clamped' },
+            ].map(({ value, label }) => (
+              <Progress
+                key={label}
+                value={value}
+                tone="warning"
+                label={label}
+                style={
+                  {
+                    '--gradient-warning': 'var(--gradient-danger)',
+                  } as CSSProperties
+                }
+              />
+            ))}
+          </div>
         </Row>
       </Section>
 
