@@ -2,18 +2,24 @@ import { type CSSProperties } from 'react'
 import { Progress } from '../ds'
 
 /* ★ミ( ･)ﾉ FINAL crayon tones — three bars, read-only.
+
    [░] → [▒] → [▓] → [█] (◔ ◑) Values were picked in the tone lab and baked in
-   here. Sea & sky / dune grass / sand & sunset — the dunes photo the palette
-   came from. Warning is deliberately absent: four pastels in a row stopped
-   reading as separate states.
-   To re-tune, switch the showcase to Lab mode, adjust, hit Save final and
-   paste the block over FINAL_STOPS. */
+   here. Sea & sky / dune grass / sand & sunset — after the dunes photo the
+   palette came from. Warning is deliberately absent: four pastels in a row
+   stopped reading as separate states.
+
+   danger ends on danger-600, the same step the Danger button sits on, so the
+   bar and the button read as one family.
+
+   To re-tune: toggle the showcase to Lab mode, adjust, hit Save final, paste
+   the block over FINAL_STOPS. Keep LAB_DEFAULTS in DesignSystem.tsx in sync
+   with these values, or the lab opens on something other than what ships. */
 
 type Triple = [number, number, number]
 type ToneName = 'primary' | 'success' | 'danger'
 
 const css = (l: number, c: number, h: number) => `oklch(${l} ${c} ${h})`
-/* ★ミ( ･)ﾉ FINAL crayon tones — three bars, read-only.*/
+
 const FINAL_STOPS: Record<ToneName, [Triple, Triple, Triple]> = {
   primary: [
     [0.6, 0.12, 218],
@@ -30,7 +36,8 @@ const FINAL_STOPS: Record<ToneName, [Triple, Triple, Triple]> = {
     [0.82, 0.145, 35],
     [0.385, 0.21, 35],
   ],
-  }
+}
+
 const TONES: ToneName[] = ['primary', 'success', 'danger']
 
 export function ToneSwatches() {

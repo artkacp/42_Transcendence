@@ -22,8 +22,14 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
   )
 }
 
-/* ★ミ( ･)ﾉ TEMPORARY — crayon tone lab. Remove before the PR, together with
-   the 'lab' tone in Progress.tsx and the Lab/Final toggle below.
+/* ★ミ( ･)ﾉ CRAYON TONE LAB — a keeper, not scratch.
+
+   The lab stays in the design kit on purpose. Picking a crayon tone is not a
+   one-off: the palette will move, the page background will move, and every
+   time it does these three bars have to be judged again, side by side, on the
+   real background. A screenshot cannot answer that; this can. It also answers
+   the defence question "custom design system or shadcn" better than any
+   component does — the tool that produced the colours ships with them.
 
    [░] → [▒] → [▓] → [█] (◔ ◑) HOW TO USE
    1. Toggle to Lab mode at the top of the page.
@@ -36,30 +42,38 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
       starts looking like a screen colour. Palette steps run hot because they
       were tuned for solid fills — expect to pull C down after loading one.
    5. Save final copies a ready-to-paste FINAL_STOPS block; paste it over the
-      one in components/ToneSwatches.tsx.
+      one in components/ToneSwatches.tsx, and update LAB_DEFAULTS below to
+      match.
 
-   OKLCH rather than a native colour picker: the picker is sRGB hex only, and
-   there is no lossless way back. Sliders wear accent-text-subtle so the
-   browser default blue does not fight the palette while you judge colour. */
+   WHY OKLCH AND NOT A COLOUR PICKER
+   The native picker is sRGB hex only and there is no lossless way back. More
+   importantly, in a picker saturation and lightness move together, so hitting
+   the pigment range is guesswork. Here chroma is one slider.
+
+   PRESETS mirror spaniel_in_dunes.css by hand. If the palette changes they
+   drift — acceptable for a tuning aid, but worth a glance when the palette is
+   next touched. */
 
 type Triple = [number, number, number]
 type LabTone = 'primary' | 'success' | 'danger'
 
+/* Keep in sync with FINAL_STOPS in components/ToneSwatches.tsx — the lab
+   should always open on what actually ships. */
 const LAB_DEFAULTS: Record<LabTone, [Triple, Triple, Triple]> = {
   primary: [
     [0.6, 0.12, 218],
-    [0.935, 0.038, 190],
+    [0.855, 0.06, 218],
     [0.48, 0.135, 218],
   ],
   success: [
-    [0.595, 0.105, 122],
     [0.875, 0.065, 122],
+    [0.6, 0.12, 218],
     [0.595, 0.105, 122],
   ],
- danger: [
+  danger: [
     [0.82, 0.145, 35],
-    [0.6, 0.19, 35],
-    [0.45, 0.2, 35],
+    [0.82, 0.145, 35],
+    [0.385, 0.21, 35],
   ],
 }
 
@@ -265,7 +279,8 @@ export function DesignSystem() {
 
   return (
     <div className="max-w-3xl px-6 py-8">
-      {/* ★ミ( ･)ﾉ TEMPORARY toggle — remove with CrayonLab before the PR */}
+      {/* Label shows the CURRENT state, not the target — a button that reads
+          "Final mode" while the lab is open is a coin flip to interpret. */}
       <div className="mb-6 flex items-center gap-3">
         <button
           type="button"
@@ -275,10 +290,10 @@ export function DesignSystem() {
             labMode ? 'bg-text text-surface' : 'bg-surface-raised text-text'
           }`}
         >
-          {labMode ? 'Final mode' : 'Lab mode'}
+          {labMode ? 'Lab mode' : 'Final mode'}
         </button>
         <span className="text-xs text-text-muted">
-          {labMode ? 'Editable crayon lab' : 'Fixed pastel bars'}
+          {labMode ? 'Tune the crayon tones' : 'Tap to tune the crayon tones'}
         </span>
       </div>
 
