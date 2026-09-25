@@ -351,30 +351,6 @@ export function DesignSystem() {
       </Section>
 
       <Section title="Progress">
-        {/* [░] → [▒] → [▓] → [█] (◔ ◑) FILL — value is the only knob.
-            0 empty · 50 half · 100 full · above 100 clamps. */}
-        <Row label="Tones">
-          <div className="w-full max-w-sm space-y-3">
-            <Progress value={35} label="Upload progress" />
-            <Progress value={72} tone="success" label="Complete" />
-            <Progress value={18} tone="danger" label="Failed upload" />
-          </div>
-        </Row>
-
-        <Row label="Edge values — clamped">
-          <div className="w-full max-w-sm space-y-3">
-            {[
-              { value: 0, label: 'Not started' },
-              { value: 1, label: 'Barely started' },
-              { value: 3, label: 'Just started' },
-              { value: 100, label: 'Done' },
-              { value: 150, label: 'Over 100, clamped' },
-            ].map(({ value, label }) => (
-              <Progress key={label} value={value} tone="warning" label={label} />
-            ))}
-          </div>
-        </Row>
-
         <Row label={labMode ? 'Crayon — tone lab' : 'Crayon — pastel'}>
           {labMode ? (
             <CrayonLab />
