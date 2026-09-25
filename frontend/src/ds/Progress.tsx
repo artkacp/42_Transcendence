@@ -444,7 +444,7 @@ export function Progress({
       aria-valuemin={0}
       aria-valuemax={100}
       aria-label={label}
-      className={`h-2 w-full overflow-hidden rounded-full bg-track shadow-[var(--shadow-track-inset)] ${className}`}
+      className={`h-2 w-full overflow-hidden rounded-full bg-track shadow-(--shadow-track-inset) ${className}`}
       {...rest}
     >
       <div
