@@ -103,7 +103,8 @@ const FG_WIDTH_SPREAD = 0.9
 const DARK_START = 0.72
 
 // CHANGE: increase this for more overlap near 100%.
-const DARK_DENSITY = 7
+const DARK_DENSITY = 3.9
+
 
 // CHANGE: increase these only if the dark pigment needs more weight.
 const DARK_WIDTH_BASE = 1.0
@@ -126,6 +127,9 @@ const END_CAP_START = 286
 
 // CHANGE: keep the cap slightly softer than a flat solid fill.
 const END_CAP_OPACITY = 0.92
+
+// CHANGE: the cap's final edge follows the same lean as the crayon strokes.
+const END_CAP_SKEW = SKEW
 
 interface Stroke {
   d: string
@@ -418,10 +422,11 @@ export function Progress({
                 />
               ))}
 
-              {/* CHANGE: solid end cap closes the rounded groove section.
-                  It follows the same gradient instead of adding more strokes. */}
+              {/* CHANGE: the end cap keeps the hatch angle but extends far enough
+                  to fully cover the rounded end of the groove. */}
               <path
-                d={`M${END_CAP_START},4 H303 A13,13 0 0 1 303,30 H${END_CAP_START} Z`}
+                d={`M${END_CAP_START},4 H320 V30 H${END_CAP_START} Z`}
+                transform={`translate(0,17) skewX(${END_CAP_SKEW}) translate(0,-17)`}
                 fill={`url(#${gradientId})`}
                 opacity={END_CAP_OPACITY}
               />
