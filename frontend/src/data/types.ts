@@ -14,7 +14,6 @@ export interface Pet {
 	description: string
 	traits: string[]
 	emoji: string
-	tile: string
 	photo: string | null
 	ownerId: string
 	adoptedById: string | null
@@ -59,7 +58,6 @@ export const SAMPLE_PETS: Pet[] = [
 		city: 'Warszawa',
 		traits: ['friendly', 'playful'],
 		emoji: '🐕',
-		tile: 'bg-honey-100',
 		photo: null,
 		ownerId: 'u1',
 		adoptedById: null,
@@ -79,7 +77,6 @@ export const SAMPLE_PETS: Pet[] = [
 		city: 'Gdańsk',
 		traits: ['wild', 'shy'],
 		emoji: '🐈‍⬛',
-		tile: 'bg-honey-100',
 		photo: null,
 		ownerId: 'u2',
 		adoptedById: null,
@@ -99,7 +96,6 @@ export const SAMPLE_PETS: Pet[] = [
 		city: 'Kraków',
 		traits: ['friendly', 'energetic'],
 		emoji: '🐶',
-		tile: 'bg-honey-100',
 		photo: null,
 		ownerId: 'u3',
 		adoptedById: null,
@@ -119,7 +115,6 @@ export const SAMPLE_PETS: Pet[] = [
 		city: 'Wrocław',
 		traits: ['calm', 'cuddly'],
 		emoji: '🐈',
-		tile: 'bg-honey-100',
 		photo: null,
 		ownerId: 'u4',
 		adoptedById: null,
@@ -139,7 +134,6 @@ export const SAMPLE_PETS: Pet[] = [
 		city: 'Poznań',
 		traits: ['loyal', 'protective'],
 		emoji: '🐕‍🦺',
-		tile: 'bg-honey-100',
 		photo: null,
 		ownerId: 'u5',
 		adoptedById: null,
