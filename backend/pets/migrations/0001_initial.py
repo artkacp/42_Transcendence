@@ -109,7 +109,7 @@ class Migration(migrations.Migration):
                         name="pet_age_valid_range",
                     ),
                     models.CheckConstraint(
-                        condition=models.Q(("story__length__gte", 20)),
+                        condition=models.Q(story__regex=r"[\s\S]{20}"),
                         name="pet_story_min_length",
                     ),
                 ],

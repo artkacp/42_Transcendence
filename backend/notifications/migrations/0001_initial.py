@@ -60,7 +60,7 @@ class Migration(migrations.Migration):
                 "indexes": [
                     models.Index(
                         fields=["recipient", "-created_at"],
-                        name="notification_recipient_created_idx",
+                        name="notif_recipient_created_idx",
                     ),
                     models.Index(
                         condition=models.Q(("is_read", False)),
