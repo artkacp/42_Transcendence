@@ -282,10 +282,10 @@ export function DesignSystem() {
             labMode ? 'bg-text text-surface' : 'bg-surface-raised text-text'
           }`}
         >
-          {labMode ? 'Lab mode' : 'Final mode'}
+          {labMode ? 'Design lab' : 'Lab mode'}
         </button>
         <span className="text-xs text-text-muted">
-          {labMode ? 'Tune the crayon tones' : 'Tap to tune the crayon tones'}
+          {labMode ? 'Tap to see the result' : 'Tap to tune the crayon tones'}
         </span>
       </div>
 
