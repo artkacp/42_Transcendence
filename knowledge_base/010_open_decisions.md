@@ -27,7 +27,6 @@ These are unresolved design questions from the TRD. Full context in TRD section 
 |---|----------|--------|
 | Q-19 | Where friend requests surface in the UI | F6 (Friends view UI). Backend task B3 can proceed without this. |
 | Q-20 | Per-user metrics: which metrics, rendered where, visible to whom | A5 (SQLAlchemy store & /analytics/me/) |
-| Q-22 | Does the ORM module require the external ORM to own its schema (Alembic)? Current plan is mapping-only — SQLAlchemy maps a table created by a Django RunSQL migration, no Alembic. If the module requires DDL ownership, Alembic must come in beside Django migrations. | A5 |
 | Q-23 | Definitions of active / seeker / rehomer and sign-ups under a feature slice | A3 (Prometheus metrics), A4 (dashboard endpoint) |
 | Q-25 | Sign-off on distinct-count adaptations under Prometheus. Unique visitors, DAU, and seekers/rehomers come from in-process per-day sets exposed as gauges (Prometheus cannot deduplicate people). These reset on process restart and are not backfilled. Unique visitors are not sliceable by pet feature. | A3, A4 |
 
@@ -41,3 +40,4 @@ These are unresolved design questions from the TRD. Full context in TRD section 
 | 9 | Task management tool | **Notion.** Implementation plan and task assignments are managed there. Each task has scope, requirement references, and acceptance criteria. | 2026-09-03 |
 | 11 | Frontend framework | **React 19 + TypeScript + Vite + Tailwind v4.** Confirmed by merged `feat/frontend-scaffold`. Design system approach (shadcn vs. custom) is tracked separately as open decision #1. | 2026-09-12 |
 | 12 | Routing and CORS | **nginx as reverse proxy, single origin, port 443 only.** Browser connects to nginx; nginx routes `/` to frontend static files, `/api/` to Django, `/ws/` to Django (WebSocket upgrade). No CORS configuration needed. Backend port not exposed. Confirmed by faikhan and oostapen in Slack. | 2026-09-12 |
+| Q-22 | ORM schema ownership | **Mapping-only — confirmed.** Django creates the `analytics_event` table via a hand-written `RunSQL` migration. SQLAlchemy maps the existing table and owns all reads and writes; it never calls `create_all()` or uses Alembic. Single migration tool (`manage.py migrate`), cleaner Docker startup. Subject requirement ("use an ORM for the database") is fully satisfied. See note 520. | 2026-09-27 |
