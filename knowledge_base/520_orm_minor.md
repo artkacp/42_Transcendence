@@ -21,7 +21,7 @@ The `analytics_event` table is created by a hand-written `RunSQL` Django migrati
 
 The app's `ready()` method compares SQLAlchemy's mapped columns against `information_schema` at startup and refuses to start if they diverge — the mapping cannot silently drift from the migration.
 
-If the ORM Minor module is later assessed to require the ORM to own its schema (Q-22), Alembic would need to come in alongside Django migrations. This is the reversible path: the same declarative `Event` model becomes Alembic's source of truth and the `RunSQL` migration is retired. Cheap to reverse now, awkward after the schema is written.
+Alembic is not used. The project requirement ("use an ORM for the database") is satisfied by SQLAlchemy owning all reads and writes on the table. Schema management stays with Django's single migration tool. Decision confirmed 2026-09-27.
 
 ---
 
