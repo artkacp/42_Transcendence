@@ -4,6 +4,23 @@ The technical baseline defines the minimum technical shape of the application. T
 
 ---
 
+## Confirmed stack (as of TRD v3.0, 2026-09-01)
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 19 + TypeScript + Vite + Tailwind v4 + shadcn/ui |
+| Backend | Django + DRF + Django Channels — single Daphne ASGI process |
+| Database | PostgreSQL — Django ORM for all domain tables; SQLAlchemy for analytics only |
+| Platform analytics | Prometheus + Grafana (not PostgreSQL) |
+| Per-user analytics | SQLAlchemy-owned `analytics_event` table in PostgreSQL |
+| WebSocket | Django Channels with in-memory channel layer (single-process — no broker) |
+| Public API | `/api/public/v1/` — hashed API key auth, rate limiting, OpenAPI docs |
+| Media storage | Local disk via `FileSystemStorage` (`MEDIA_ROOT`) |
+
+The single-process constraint is a correctness rule, not a preference — the in-memory channel layer requires it, and it makes Prometheus scraping trivial (one target).
+
+---
+
 ## Application architecture
 
 Three components are required:

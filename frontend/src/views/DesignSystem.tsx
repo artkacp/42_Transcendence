@@ -1,7 +1,8 @@
+
 import { useState, type ReactNode } from 'react'
 import { Heart, Plus, Trash2 } from 'lucide-react'
 import { TOKEN_NAMES } from '../palettes/tokens'
-import { Badge, Button, Card, IconButton, Progress } from '../ds'
+import { Badge, Button, Card, IconButton, Progress, Select, Chip, Toggle, Avatar, EmptyState} from '../ds'
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -268,6 +269,9 @@ function CrayonLab() {
 
 export function DesignSystem() {
   const [labMode, setLabMode] = useState(false)
+  const [selectValue, setSelectValue] = useState('medium')
+  const [toggleValue, setToggleValue] = useState(true)
+  const [chipValue, setChipValue] = useState('dog')
 
   return (
     <div className="max-w-3xl px-6 py-8">
@@ -347,6 +351,63 @@ export function DesignSystem() {
           <IconButton label="Delete listing">
             <Trash2 size={18} />
           </IconButton>
+        </Row>
+      </Section>
+
+      <Section title="Select">
+        <Row label="Sizes">
+          <Select
+            aria-label="Example select"
+            options={[
+              { value: 'small', label: 'Small' },
+              { value: 'medium', label: 'Medium' },
+              { value: 'large', label: 'Large' },
+            ]}
+            value={selectValue}
+            onChange={(e) => setSelectValue(e.target.value)}
+          />
+        </Row>
+      </Section>
+
+      <Section title="Chip">
+        <Row label="Selectable">
+          <Chip active={chipValue === 'dog'} onClick={() => setChipValue('dog')}>
+            🐕 Dogs
+          </Chip>
+          <Chip active={chipValue === 'cat'} onClick={() => setChipValue('cat')}>
+            🐈 Cats
+          </Chip>
+        </Row>
+      </Section>
+
+      <Section title="Toggle">
+        <Row label="States">
+          <Toggle checked={toggleValue} onChange={setToggleValue} label="Vaccinated" />
+          <Toggle checked={false} onChange={() => {}} label="Disabled example" disabled />
+        </Row>
+      </Section>
+
+      <Section title="Avatar">
+        <Row label="Sizes & states">
+          <Avatar name="Artur Kacprzycki" size="sm" online />
+          <Avatar name="Oleksiy Ostapenko" size="md" online />
+          <Avatar name="Sarait Hernandez" size="lg" online />
+          <Avatar name="Isshak" size="md" online={false} />
+          <Avatar name="Faizan Khan" size="md" />
+        </Row>
+      </Section>
+
+      <Section title="EmptyState">
+        <Row label="Variants">
+          <div className="w-full space-y-4">
+            <EmptyState
+              emoji="🔍"
+              title="No pals match those filters"
+              hint="Try clearing the search — someone fluffy is out there."
+              action={<Button variant="secondary" size="sm">Clear filters</Button>}
+            />
+            <EmptyState title="Nothing here yet" />
+          </div>
         </Row>
       </Section>
 

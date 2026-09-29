@@ -11,7 +11,7 @@ Summary of tools chosen, pending, or deferred for the project.
 | Version control | Git | Done |
 | Remote repository | GitHub | Done |
 | Communication | Slack group chat | Done |
-| Task tracking | TBD — Notion or GitHub Issues | Pending |
+| Task tracking | Notion — implementation plan and task assignments | Done |
 | .env sharing | Template committed, each person fills their own copy | Done |
 | API testing | TBD — needs review | Pending |
 | Database client | Flexible, VS Code extension acceptable | Flexible |

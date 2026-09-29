@@ -1,5 +1,11 @@
 # 500 — Index: Database (501–599)
 
-This section covers the database layer: schema design, models, migrations, relationships, and data access patterns.
+Database layer: setup, ORM, schema design, and data access patterns.
 
-Notes here will include the schema overview, table definitions and relationships, migration strategy, and any database-specific decisions.
+| Note | Title |
+|------|-------|
+| 501 | PostgreSQL — setup & basics |
+| 510 | Django ORM |
+| 511 | Django models in depth — fields, constraints, migrations (accounts walkthrough) |
+| 520 | ORM Minor (open decision #7) |
+| 530 | Data modeling & indexing |
