@@ -2,7 +2,8 @@
 
 Vite + React 19 + TypeScript + Tailwind CSS v4.
 
-**Never touched frontend before? Start here. Four commands, three minutes.**
+---
+
 ## Prerequisites
 
 Node >= 22.12 (Vite 8). No sudo on 42 machines — install to your home:
@@ -21,9 +22,12 @@ source ~/.zshrc && node -v && npm -v
 ```
 
 `sha256sum` must print `OK` — otherwise stop. `node -v` must show `v22.12` or later.
+
 ---
 
 ## Quick start
+
+**Never touched frontend before? Start here. Four commands, three minutes.**
 
 On a 42 machine, from the repo root:
 
