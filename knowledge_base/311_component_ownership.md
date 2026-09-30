@@ -11,11 +11,11 @@ Update the status column when a PR opens or merges.
 | IconButton | oostapen | #6  | merged               |
 | Card       | oostapen | #6  | merged               |
 | Badge      | oostapen | #6  | merged               |
-| Select     | iskaraag | #5  | merged, not wired up |
-| Toggle     | iskaraag | #7  | open                 |
-| Chip       | iskaraag | #8  | open                 |
-| Avatar     | iskaraag | #9  | open                 |
-| EmptyState | iskaraag | #10 | approved             |
+| Select     | iskaraag | #5  | merged               |
+| Toggle     | iskaraag | #7  | merged               |
+| Chip       | iskaraag | #8  | merged               |
+| Avatar     | iskaraag | #9  | merged               |
+| EmptyState | iskaraag | #10 | merged               |
 | Progress   | oostapen | #13 | in review            |
 | Stat       | oostapen | —   | next                 |
 | Input      | iskaraag | —   | —                    |
