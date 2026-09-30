@@ -3,7 +3,24 @@
 Vite + React 19 + TypeScript + Tailwind CSS v4.
 
 **Never touched frontend before? Start here. Four commands, three minutes.**
+## Prerequisites
 
+Node >= 22.12 (Vite 8). No sudo on 42 machines — install to your home:
+
+```bash
+cd /tmp
+curl -fsSLO https://nodejs.org/dist/latest-v22.x/SHASUMS256.txt
+FILE=$(grep 'linux-x64.tar.xz' SHASUMS256.txt | awk '{print $2}')
+curl -fsSLO https://nodejs.org/dist/latest-v22.x/$FILE
+grep " $FILE\$" SHASUMS256.txt | sha256sum -c -
+mkdir -p ~/.local/node
+tar -xJf $FILE -C ~/.local/node --strip-components=1
+grep -qxF 'export PATH="$HOME/.local/node/bin:$PATH"' ~/.zshrc || \
+  echo 'export PATH="$HOME/.local/node/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc && node -v && npm -v
+```
+
+`sha256sum` must print `OK` — otherwise stop. `node -v` must show `v22.12` or later.
 ---
 
 ## Quick start
