@@ -1,15 +1,9 @@
 import { useId, useMemo, type HTMLAttributes } from 'react'
 
-type Tone = 'primary' | 'success' | 'warning' | 'danger'
-type CrayonTone = Exclude<Tone, 'warning'>
+// (◕_◕) Progress is crayon-only. The plain bar (and the warning tone it
+// carried) lives under the git tag ds-progress-plain-v1.
+type Tone = 'primary' | 'success' | 'danger'
 type CrayonSize = 'md' | 'sm'
-
-const tones: Record<Tone, string> = {
-  primary: 'bg-[image:var(--gradient-progress)]',
-  success: 'bg-[image:var(--gradient-success)]',
-  warning: 'bg-[image:var(--gradient-warning)]',
-  danger: 'bg-[image:var(--gradient-danger)]',
-}
 
 /* (⟳ _◔) TONE SATURATION — the crayon gradient stops, written as oklch(L C H)
    so the crayon gamma is tunable independently of the UI palette.
@@ -27,7 +21,7 @@ const tones: Record<Tone, string> = {
    (⟳ ◑) These are the values the tone lab in the design kit produced. To
    retune, open Lab mode there, adjust, hit Save final and paste the block
    over this one. */
-const crayonStops: Record<CrayonTone, [string, string, string]> = {
+const crayonStops: Record<Tone, [string, string, string]> = {
   primary: ['oklch(0.6 0.12 218)', 'oklch(0.855 0.06 218)', 'oklch(0.48 0.135 218)'],
   success: ['oklch(0.875 0.065 122)', 'oklch(0.6 0.12 218)', 'oklch(0.595 0.105 122)'],
   danger: ['oklch(0.82 0.145 35)', 'oklch(0.82 0.145 35)', 'oklch(0.385 0.21 35)'],
@@ -46,11 +40,10 @@ type BaseProps = Omit<HTMLAttributes<HTMLDivElement>, OwnedAria> & {
   crayonStopsOverride?: [string, string, string]
 }
 
-type VariantProps =
-  | { variant?: 'plain'; tone?: Tone; size?: never }
-  | { variant: 'crayon'; tone?: CrayonTone; size?: CrayonSize }
-
-export type ProgressProps = BaseProps & VariantProps
+export type ProgressProps = BaseProps & {
+  tone?: Tone
+  size?: CrayonSize
+}
 
 const SKEW = -11.63
 
@@ -348,16 +341,10 @@ function rollHatching(len: number, weight: number, spread: number): Hatching {
   return { bg, fg }
 }
 
-const NO_HATCHING: Hatching = {
-  bg: [],
-  fg: [],
-}
-
 export function Progress({
   value,
   tone = 'primary',
   label,
-  variant = 'plain',
   size = 'md',
   crayonStopsOverride,
   className = '',
@@ -370,147 +357,15 @@ export function Progress({
   const { len, className: heightClass, weight, spread } = CRAYON_SIZES[size]
 
   const hatching = useMemo(
-    () => (variant === 'crayon' ? rollHatching(len, weight, spread) : NO_HATCHING),
-    [variant, len, weight, spread]
+    () => rollHatching(len, weight, spread),
+    [len, weight, spread]
   )
 
-  if (variant === 'crayon') {
-    // (◔_◔) tone is still typed Tone here: destructuring loses the link to
-    // variant. The API already bans warning for crayon; this guards JS callers.
-    const crayonTone: CrayonTone = tone === 'warning' ? 'primary' : tone
-    const [a, b, c] = crayonStopsOverride ?? crayonStops[crayonTone]
+  const [a, b, c] = crayonStopsOverride ?? crayonStops[tone]
 
-    const gradientId = `cg-${uid}`
-    const fillClipId = `cr-${uid}`
-    const grooveClipId = `cw-${uid}`
-
-    return (
-      <div
-        role="progressbar"
-        aria-valuenow={pct}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-label={label}
-        className={`w-full ${className}`}
-        {...rest}
-      >
-        <svg
-          viewBox={`0 0 ${len} 34`}
-          preserveAspectRatio="none"
-          className={`block ${heightClass} w-full`}
-          aria-hidden="true"
-        >
-          <defs>
-            <linearGradient
-              id={gradientId}
-              gradientUnits="userSpaceOnUse"
-              x1="2"
-              y1="4"
-              x2={len - 8}
-              y2="66"
-            >
-              <stop offset="0" stopColor={a} />
-              <stop offset="0.1" stopColor={b} />
-              <stop offset="1" stopColor={c} />
-            </linearGradient>
-
-            <clipPath id={grooveClipId}>
-              <path d={groove(len)} />
-            </clipPath>
-
-            <clipPath id={fillClipId}>
-              <rect
-                x="0"
-                y="0"
-                width={(pct / 100) * (len + 4)}
-                height="34"
-                transform={`translate(0,17) skewX(${SKEW}) translate(0,-17)`}
-              />
-            </clipPath>
-          </defs>
-
-          <path
-            d={`M14,5 C${(len * 90) / BASE_LEN},2 ${(len * 210) / BASE_LEN},8 ${len - 14},4`}
-            fill="none"
-            stroke="var(--color-text-muted)"
-            strokeWidth={0.9 * weight}
-            opacity="0.65"
-            strokeLinecap="round"
-          />
-
-          <path
-            d={`M10,29 C${(len * 90) / BASE_LEN},32 ${(len * 220) / BASE_LEN},26 ${len - 10},30`}
-            fill="none"
-            stroke="var(--color-text-muted)"
-            strokeWidth={0.8 * weight}
-            opacity="0.55"
-            strokeLinecap="round"
-          />
-
-          <path
-            d="M15,4 C6,8 4,16 5,24 C6,28 8,30 12,31"
-            fill="none"
-            stroke="var(--color-text-muted)"
-            strokeWidth={0.9 * weight}
-            opacity="0.6"
-            strokeLinecap="round"
-          />
-
-          <path
-            d={`M${len - 15},3 C${len - 6},8 ${len - 4},16 ${len - 5},24 C${len - 6},28 ${len - 8},30 ${len - 12},31`}
-            fill="none"
-            stroke="var(--color-text-muted)"
-            strokeWidth={0.9 * weight}
-            opacity="0.6"
-            strokeLinecap="round"
-          />
-
-          <g clipPath={`url(#${grooveClipId})`}>
-            <g clipPath={`url(#${fillClipId})`}>
-              <path
-                d={wash(len)}
-                fill={`url(#${gradientId})`}
-                opacity={WASH_OPACITY}
-              />
-
-              {hatching.bg.map((stroke, index) => (
-                <path
-                  key={`bg-${index}`}
-                  d={stroke.d}
-                  stroke={`url(#${gradientId})`}
-                  strokeWidth={stroke.w}
-                  strokeLinecap="round"
-                  opacity={stroke.o}
-                  fill="none"
-                />
-              ))}
-
-              {hatching.fg.map((stroke, index) => (
-                <path
-                  key={`fg-${index}`}
-                  d={stroke.d}
-                  stroke={`url(#${gradientId})`}
-                  strokeWidth={stroke.w}
-                  strokeLinecap="round"
-                  opacity={stroke.o}
-                  fill="none"
-                />
-              ))}
-
-              {/* CHANGE: the end cap keeps the hatch angle but extends far enough
-                  to fully cover the rounded end of the groove. */}
-              <path
-                d={`M${len - END_CAP_INSET},4 H${len} V30 H${len - END_CAP_INSET} Z`}
-                transform={`translate(0,17) skewX(${END_CAP_SKEW}) translate(0,-17)`}
-                fill={`url(#${gradientId})`}
-                opacity={END_CAP_OPACITY}
-              />
-            </g>
-          </g>
-        </svg>
-      </div>
-    )
-  }
+  const gradientId = `cg-${uid}`
+  const fillClipId = `cr-${uid}`
+  const grooveClipId = `cw-${uid}`
 
   return (
     <div
@@ -519,15 +374,123 @@ export function Progress({
       aria-valuemin={0}
       aria-valuemax={100}
       aria-label={label}
-      className={`h-2 w-full overflow-hidden rounded-full bg-track shadow-(--shadow-track-inset) ${className}`}
+      className={`w-full ${className}`}
       {...rest}
     >
-      <div
-        className={`h-full rounded-r-full transition-[width] duration-300 ease-out ${
-          pct > 0 ? 'min-w-2.5' : ''
-        } ${tones[tone]}`}
-        style={{ width: `${pct}%` }}
-      />
+      <svg
+        viewBox={`0 0 ${len} 34`}
+        preserveAspectRatio="none"
+        className={`block ${heightClass} w-full`}
+        aria-hidden="true"
+      >
+        <defs>
+          <linearGradient
+            id={gradientId}
+            gradientUnits="userSpaceOnUse"
+            x1="2"
+            y1="4"
+            x2={len - 8}
+            y2="66"
+          >
+            <stop offset="0" stopColor={a} />
+            <stop offset="0.1" stopColor={b} />
+            <stop offset="1" stopColor={c} />
+          </linearGradient>
+
+          <clipPath id={grooveClipId}>
+            <path d={groove(len)} />
+          </clipPath>
+
+          <clipPath id={fillClipId}>
+            <rect
+              x="0"
+              y="0"
+              width={(pct / 100) * (len + 4)}
+              height="34"
+              transform={`translate(0,17) skewX(${SKEW}) translate(0,-17)`}
+            />
+          </clipPath>
+        </defs>
+
+        <path
+          d={`M14,5 C${(len * 90) / BASE_LEN},2 ${(len * 210) / BASE_LEN},8 ${len - 14},4`}
+          fill="none"
+          stroke="var(--color-text-muted)"
+          strokeWidth={0.9 * weight}
+          opacity="0.65"
+          strokeLinecap="round"
+        />
+
+        <path
+          d={`M10,29 C${(len * 90) / BASE_LEN},32 ${(len * 220) / BASE_LEN},26 ${len - 10},30`}
+          fill="none"
+          stroke="var(--color-text-muted)"
+          strokeWidth={0.8 * weight}
+          opacity="0.55"
+          strokeLinecap="round"
+        />
+
+        <path
+          d="M15,4 C6,8 4,16 5,24 C6,28 8,30 12,31"
+          fill="none"
+          stroke="var(--color-text-muted)"
+          strokeWidth={0.9 * weight}
+          opacity="0.6"
+          strokeLinecap="round"
+        />
+
+        <path
+          d={`M${len - 15},3 C${len - 6},8 ${len - 4},16 ${len - 5},24 C${len - 6},28 ${len - 8},30 ${len - 12},31`}
+          fill="none"
+          stroke="var(--color-text-muted)"
+          strokeWidth={0.9 * weight}
+          opacity="0.6"
+          strokeLinecap="round"
+        />
+
+        <g clipPath={`url(#${grooveClipId})`}>
+          <g clipPath={`url(#${fillClipId})`}>
+            <path
+              d={wash(len)}
+              fill={`url(#${gradientId})`}
+              opacity={WASH_OPACITY}
+            />
+
+            {hatching.bg.map((stroke, index) => (
+              <path
+                key={`bg-${index}`}
+                d={stroke.d}
+                stroke={`url(#${gradientId})`}
+                strokeWidth={stroke.w}
+                strokeLinecap="round"
+                opacity={stroke.o}
+                fill="none"
+              />
+            ))}
+
+            {hatching.fg.map((stroke, index) => (
+              <path
+                key={`fg-${index}`}
+                d={stroke.d}
+                stroke={`url(#${gradientId})`}
+                strokeWidth={stroke.w}
+                strokeLinecap="round"
+                opacity={stroke.o}
+                fill="none"
+              />
+            ))}
+
+            {/* CHANGE: the end cap keeps the hatch angle but extends far enough
+                to fully cover the rounded end of the groove. */}
+            <path
+              d={`M${len - END_CAP_INSET},4 H${len} V30 H${len - END_CAP_INSET} Z`}
+              transform={`translate(0,17) skewX(${END_CAP_SKEW}) translate(0,-17)`}
+              fill={`url(#${gradientId})`}
+              opacity={END_CAP_OPACITY}
+            />
+          </g>
+        </g>
+      </svg>
     </div>
   )
 }

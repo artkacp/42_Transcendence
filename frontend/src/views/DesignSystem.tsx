@@ -121,7 +121,7 @@ function CrayonLab() {
   const stops = all[tone]
 
   const finalBlock =
-    'const crayonStops: Record<CrayonTone, [string, string, string]> = {\n' +
+    'const crayonStops: Record<Tone, [string, string, string]> = {\n' +
     LAB_TONES.map((t) => {
       const row = all[t].map((s) => `'${cssLab(s)}'`).join(', ')
       return `  ${t}: [${row}],`
@@ -176,7 +176,6 @@ function CrayonLab() {
             <span className="mb-0.5 block font-mono text-[10px] text-text-subtle">{t}</span>
             <Progress
               value={v}
-              variant="crayon"
               crayonStopsOverride={[cssLab(all[t][0]), cssLab(all[t][1]), cssLab(all[t][2])]}
               label={`${t} preview`}
             />
@@ -417,29 +416,18 @@ export function DesignSystem() {
             <CrayonLab />
           ) : (
             <div className="w-full max-w-sm space-y-3">
-              <Progress value={100} variant="crayon" label="Crayon, primary" />
-              <Progress value={100} variant="crayon" tone="success" label="Crayon, success" />
-              <Progress value={100} variant="crayon" tone="danger" label="Crayon, danger" />
-              <Progress value={0} variant="crayon" label="Crayon, empty" />
-              <Progress value={45} variant="crayon" size="sm" label="Crayon sm, primary" />
-              <Progress value={70} variant="crayon" size="sm" tone="danger" label="Crayon sm, danger" />
-              <Progress value={0} variant="crayon" size="sm" label="Crayon sm, empty" />
+              <Progress value={100} label="Crayon, primary" />
+              <Progress value={100} tone="success" label="Crayon, success" />
+              <Progress value={100} tone="danger" label="Crayon, danger" />
+              <Progress value={0} label="Crayon, empty" />
             </div>
           )}
         </Row>
-        <Row label="Plain — tones">
+        <Row label="Crayon — sm">
           <div className="w-full max-w-sm space-y-3">
-            <Progress value={60} label="Plain, primary" />
-            <Progress value={60} tone="success" label="Plain, success" />
-            <Progress value={60} tone="warning" label="Plain, warning" />
-            <Progress value={60} tone="danger" label="Plain, danger" />
-          </div>
-        </Row>
-        <Row label="Plain — edge values">
-          <div className="w-full max-w-sm space-y-3">
-            <Progress value={0} label="Plain, empty" />
-            <Progress value={2} label="Plain, almost empty" />
-            <Progress value={100} label="Plain, full" />
+            <Progress value={45} size="sm" label="Crayon sm, primary" />
+            <Progress value={70} size="sm" tone="danger" label="Crayon sm, danger" />
+            <Progress value={0} size="sm" label="Crayon sm, empty" />
           </div>
         </Row>
       </Section>
