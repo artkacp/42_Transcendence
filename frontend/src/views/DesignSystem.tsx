@@ -121,7 +121,7 @@ function CrayonLab() {
   const stops = all[tone]
 
   const finalBlock =
-    'const crayonStops: Record<Tone, [string, string, string]> = {\n' +
+    'const crayonStops: Record<CrayonTone, [string, string, string]> = {\n' +
     LAB_TONES.map((t) => {
       const row = all[t].map((s) => `'${cssLab(s)}'`).join(', ')
       return `  ${t}: [${row}],`

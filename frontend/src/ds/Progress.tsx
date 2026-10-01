@@ -1,7 +1,7 @@
 import { useId, useMemo, type HTMLAttributes } from 'react'
 
 type Tone = 'primary' | 'success' | 'warning' | 'danger'
-type Variant = 'plain' | 'crayon'
+type CrayonTone = Exclude<Tone, 'warning'>
 
 const tones: Record<Tone, string> = {
   primary: 'bg-[image:var(--gradient-progress)]',
@@ -18,15 +18,17 @@ const tones: Record<Tone, string> = {
        where it starts looking like a screen colour. danger deliberately runs
        past that, up to 0.21, so the bar rhymes with the Danger button which
        sits on --color-danger-600 (L 0.385).
-   H — hue, carried over from the matching palette family.
+   H — hue, carried over from the matching palette family. Exception:
+       success borrows primary hue 218 for its mid-stop on purpose, a blue
+       glint inside the green.
+   warning has no crayon tone: too light on cream to read as pigment.
 
    (⟳ ◑) These are the values the tone lab in the design kit produced. To
    retune, open Lab mode there, adjust, hit Save final and paste the block
    over this one. */
-const crayonStops: Record<Tone, [string, string, string]> = {
+const crayonStops: Record<CrayonTone, [string, string, string]> = {
   primary: ['oklch(0.6 0.12 218)', 'oklch(0.855 0.06 218)', 'oklch(0.48 0.135 218)'],
   success: ['oklch(0.875 0.065 122)', 'oklch(0.6 0.12 218)', 'oklch(0.595 0.105 122)'],
-  warning: ['oklch(0.94 0.045 90)', 'oklch(0.88 0.065 90)', 'oklch(0.74 0.09 90)'],
   danger: ['oklch(0.82 0.145 35)', 'oklch(0.82 0.145 35)', 'oklch(0.385 0.21 35)'],
 }
 
@@ -37,14 +39,17 @@ type OwnedAria =
   | 'aria-valuemax'
   | 'aria-label'
 
-export interface ProgressProps
-  extends Omit<HTMLAttributes<HTMLDivElement>, OwnedAria> {
+type BaseProps = Omit<HTMLAttributes<HTMLDivElement>, OwnedAria> & {
   value: number
-  tone?: Tone
   label: string
-  variant?: Variant
   crayonStopsOverride?: [string, string, string]
 }
+
+type VariantProps =
+  | { variant?: 'plain'; tone?: Tone }
+  | { variant: 'crayon'; tone?: CrayonTone }
+
+export type ProgressProps = BaseProps & VariantProps
 
 const SKEW = -11.63
 
@@ -303,7 +308,10 @@ export function Progress({
   )
 
   if (variant === 'crayon') {
-    const [a, b, c] = crayonStopsOverride ?? crayonStops[tone]
+    // (◔_◔) tone is still typed Tone here: destructuring loses the link to
+    // variant. The API already bans warning for crayon; this guards JS callers.
+    const crayonTone: CrayonTone = tone === 'warning' ? 'primary' : tone
+    const [a, b, c] = crayonStopsOverride ?? crayonStops[crayonTone]
 
     const gradientId = `cg-${uid}`
     const fillClipId = `cr-${uid}`
