@@ -2,7 +2,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import { useState } from 'react'
 import { Heart, Plus, Trash2 } from 'lucide-react'
 import { TOKEN_NAMES } from '../palettes/tokens'
-import { Badge, Button, Card, IconButton, Progress, Select, Chip, Toggle, Avatar, EmptyState} from '../ds'
+import { Badge, Button, Card, IconButton, Progress, Select, Chip, Toggle, Avatar, EmptyState, Input} from '../ds'
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -26,6 +26,7 @@ export function DesignSystem() {
   const [selectValue, setSelectValue] = useState('medium')
   const [toggleValue, setToggleValue] = useState(true)
   const [chipValue, setChipValue] = useState('dog')
+  const [inputValue, setInputValue] = useState('')
   return (
     <div className="max-w-3xl px-6 py-8">
       <h1 className="font-display text-4xl text-text mb-8">Design system</h1>
@@ -143,6 +144,15 @@ export function DesignSystem() {
             />
             <EmptyState title="Nothing here yet" />
           </div>
+        </Row>
+      </Section>
+
+      <Section title="Input">
+        <Row label="States">
+          <Input label="Pet name" placeholder="e.g. Cookie" value={inputValue} onChange={(e) => setInputValue(e.target.value)} />
+        </Row>
+        <Row label="With error">
+          <Input label="Story" placeholder="Tell us about the fluffy one" error="Must be at least 20 characters" />
         </Row>
       </Section>
 
