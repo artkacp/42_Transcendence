@@ -420,8 +420,27 @@ export function DesignSystem() {
               <Progress value={100} variant="crayon" label="Crayon, primary" />
               <Progress value={100} variant="crayon" tone="success" label="Crayon, success" />
               <Progress value={100} variant="crayon" tone="danger" label="Crayon, danger" />
+              <Progress value={0} variant="crayon" label="Crayon, empty" />
+              <Progress value={45} variant="crayon" size="sm" label="Crayon sm, primary" />
+              <Progress value={70} variant="crayon" size="sm" tone="danger" label="Crayon sm, danger" />
+              <Progress value={0} variant="crayon" size="sm" label="Crayon sm, empty" />
             </div>
           )}
+        </Row>
+        <Row label="Plain — tones">
+          <div className="w-full max-w-sm space-y-3">
+            <Progress value={60} label="Plain, primary" />
+            <Progress value={60} tone="success" label="Plain, success" />
+            <Progress value={60} tone="warning" label="Plain, warning" />
+            <Progress value={60} tone="danger" label="Plain, danger" />
+          </div>
+        </Row>
+        <Row label="Plain — edge values">
+          <div className="w-full max-w-sm space-y-3">
+            <Progress value={0} label="Plain, empty" />
+            <Progress value={2} label="Plain, almost empty" />
+            <Progress value={100} label="Plain, full" />
+          </div>
         </Row>
       </Section>
 
