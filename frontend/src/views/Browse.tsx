@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { type Pet, USERS, SAMPLE_PETS, CITIES, BREEDS_BY_SPECIES, ALL_TRAITS, AGE_BUCKETS, type Species, type PetSize } from '../data/types'
+import { USERS, SAMPLE_PETS, CITIES, BREEDS_BY_SPECIES, ALL_TRAITS, AGE_BUCKETS, type Species, type PetSize } from '../data/types'
 import { Select, Chip, Avatar, EmptyState, Button, Card, Badge } from '../ds'
 
 export function Browse() {
