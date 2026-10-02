@@ -52,6 +52,9 @@ type VariantProps =
 export type ProgressProps = BaseProps & VariantProps
 
 const SKEW = -11.63
+// (◕◕) small non-zero values still need a visible sliver of pigment;
+// aria-valuenow keeps the real number
+const MIN_VISIBLE_PCT = 3
 
 // CHANGE: denser, thinner hatching reads more like crayon texture.
 const STROKES = 34
@@ -300,6 +303,7 @@ export function Progress({
   ...rest
 }: ProgressProps) {
   const pct = Math.min(100, Math.max(0, Math.round(value)))
+  const shownPct = pct > 0 ? Math.max(pct, MIN_VISIBLE_PCT) : 0
   const uid = useId().replace(/:/g, '')
 
   const hatching = useMemo(
@@ -355,7 +359,7 @@ export function Progress({
               <rect
                 x="0"
                 y="0"
-                width={(pct / 100) * 324}
+                width={(shownPct / 100) * 324}
                 height="34"
                 transform={`translate(0,17) skewX(${SKEW}) translate(0,-17)`}
               />

@@ -423,6 +423,13 @@ export function DesignSystem() {
             </div>
           )}
         </Row>
+        <Row label="Crayon — edge values">
+          <div className="w-full max-w-sm space-y-3">
+            <Progress value={0} variant="crayon" label="Crayon, empty" />
+            <Progress value={1} variant="crayon" label="Crayon, 1%" />
+            <Progress value={1} variant="crayon" tone="danger" label="Crayon danger, 1%" />
+          </div>
+        </Row>
       </Section>
 
       <Section title="Badge">
