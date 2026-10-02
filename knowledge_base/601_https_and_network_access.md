@@ -6,9 +6,28 @@ Resolves open decision #3 in note 010. Owner: faikhan.
 
 ## The problem
 
-Note 002 requires every browser-to-backend connection to use HTTPS, with **zero warnings or errors in the browser console at any point**. Note 008 already flagged the core tension: a self-signed certificate triggers a browser warning, which is an automatic violation — and evaluators connect from their own separate machines, so we can't rely on them trusting a custom local CA.
+Note 002 requires every browser-to-backend connection to use HTTPS, with **zero warnings or errors in the browser console at any point**. A plain self-signed certificate triggers a browser warning, which is an automatic violation.
 
-Internal connections (backend↔db, container↔container) do not need HTTPS per note 002 — this only concerns the browser-facing edge.
+Internal connections (backend↔db, container↔container) do not need HTTPS per note 002 — this only concerns the browser-facing edge, which is nginx (note 010, decision #12).
+
+---
+
+## Where the app runs
+
+- The app runs on a **42 campus machine** with Docker Compose, not on a VM.
+- Evaluation happens in a **browser on that same machine**.
+
+This rules out Let's Encrypt (it must reach the machine from the public internet to issue a certificate, and a campus workstation is not reachable that way), and it makes a local certificate authority workable.
+
+---
+
+## Decision
+
+**nginx serves a certificate signed by a local certificate authority (CA) created with `mkcert`.**
+
+- `mkcert` creates a local CA and installs it into the trust store of the browser on the evaluation machine.
+- `mkcert` then issues the certificate nginx serves, signed by that CA.
+- Because the browser trusts the CA, it trusts nginx's certificate: no warning, clean padlock.
 
 ---
 
@@ -16,37 +35,32 @@ Internal connections (backend↔db, container↔container) do not need HTTPS per
 
 | Approach | Verdict |
 |---|---|
-| `mkcert` self-signed | Rejected — requires installing a trusted CA on every evaluator's machine before they connect. Not something we can ask of them, and it's a manual step outside `.env` setup. |
-| Real domain + Let's Encrypt | Works cleanly, no warnings, in any browser. Costs ~$10–15/year and requires DNS pointed at the VM. |
-| `nip.io` / `sslip.io` + Let's Encrypt | Works cleanly, no warnings, **free**, no domain purchase. These services resolve `<ip-with-dashes>.nip.io` to the embedded IP automatically, and because it's a real publicly resolvable domain, Let's Encrypt will issue a genuine trusted certificate for it. |
-| Campus convention | Unconfirmed — worth asking peers who've already passed in case the school has a standard answer that's simpler than any of the above. |
+| Local CA via `mkcert` | **Chosen.** Works because evaluation uses a browser on the same machine where the CA is installed. |
+| Plain self-signed certificate | Rejected — browser warning on every visit, automatic violation of note 002. |
+| `nip.io` / real domain + Let's Encrypt (HTTP challenge), via Traefik | Rejected — needs a public IP with ports 80/443 reachable from the internet; a 42 campus machine has neither. Traefik is also not our proxy (nginx, decision #12). This was the previous recommendation in this note. |
+| Real domain + Let's Encrypt (DNS challenge) | Rejected — works without a public IP, but costs money, needs a DNS provider API key handled as a secret, and adds setup that can fail on evaluation day. |
 
 ---
 
-## Recommendation
+## Rules
 
-**`nip.io` + Let's Encrypt, automated via Traefik as the reverse proxy.**
+- The CA must be installed in the **same browser and user account** used during evaluation. A different account or a different machine brings the warning back.
+- The CA private key (`rootCA-key.pem`) is **never committed**. Anyone holding it can create certificates the machine trusts. It stays out of the repo like `.env`.
+- Installing the CA is **one documented command in the README** — the only manual setup step besides `.env` (note 002).
 
-Reasoning:
-- No cost, no domain registration step, no evaluator-side setup — someone just opens the URL and gets a valid padlock.
-- Traefik handles TLS termination *and* automatic cert issuance/renewal in one container, which fits the "small set of containers, no microservices sprawl" approach from note 009 better than a separate nginx + certbot companion setup.
-- Automatic renewal means we're not relying on a manual step later, which keeps us aligned with the "must run without manual file edits beyond `.env`" rule in note 002.
+---
 
-Fallback: if the VM doesn't have a stable public IP (see verification items below), switch to a real domain — same Traefik + Let's Encrypt setup, just point a DNS A record instead of relying on `nip.io`.
+## Known risk
+
+Decision #12 says nginx listens on port 443. On a 42 machine, binding ports below 1024 may require root. If 443 cannot be bound, a higher port (for example 8443) is the fallback, and decision #12 must be updated to match.
 
 ---
 
 ## Implementation checklist
 
-- [ ] Confirm the VM has a **public, static IP** (nip.io breaks if the IP changes)
-- [ ] Confirm **ports 80 and 443 are reachable from the internet** (needed for the ACME HTTP-01 challenge) — check campus firewall/NAT rules
-- [ ] Add Traefik as a service in `docker-compose.yml`, configured for the ACME/Let's Encrypt provider
-- [ ] Route `/api/*` and `wss://` (the single multiplexed socket, per TRD Flow A) to the **one** backend container, everything else to the frontend — there's exactly one backend replica by design (see the task plan's "single Daphne process" rule), so no load balancing to configure, just a clean proxy pass-through with WS-upgrade headers preserved
-- [ ] Deploy, hit the `nip.io` URL from a machine that has never touched the VM before, confirm Chrome shows a clean padlock with zero console warnings
-- [ ] Ask peers who've already passed about "campus convention" — if there's an established simpler pattern, note it here and reconsider
-
----
-
-## Once resolved
-
-Move item #3 from **Pending** to **Resolved** in note 010, with a one-line outcome and date, per the update convention in note 021.
+- [ ] Confirm whether port 443 can be bound on the evaluation machine
+- [ ] Generate the local CA and nginx certificate with `mkcert`, covering the hostname used in the browser
+- [ ] Add `rootCA-key.pem` and the generated certificate files to `.gitignore`
+- [ ] Configure nginx to serve the certificate for `/`, `/api/`, and `/ws/` (WebSocket upgrade)
+- [ ] Document the CA install command in the README
+- [ ] On the evaluation machine and account: run `docker-compose up --build`, open the site, confirm a clean padlock and zero console warnings
