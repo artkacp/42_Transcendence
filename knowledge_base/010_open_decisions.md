@@ -12,7 +12,6 @@ Reference: full detail on every decision and open question is in the TRD — htt
 |---|-------|---------|-------|
 | 1 | Design system approach | shadcn/ui vs. custom-made components. Frontend team (oostapen, iskaraag) is building components from scratch on custom OKLCH tokens (9 components merged as of 2026-09-13). sarherna has suggested shadcn is valid if themed through Tailwind. Module title is "Custom-made design system with reusable components" — authorship question applies at defence. No explicit team decision made. | All |
 | 2 | PM and PO roles | Not yet formally assigned. sarherna acting as initial PM. | All |
-| 3 | HTTPS approach | Self-signed certs cause browser warnings. Need a clean solution before evaluation. Options: mkcert, real domain, campus convention. Verify with peers who have passed. | faikhan |
 | 4 | Tailwind extra point | Depends on resolution of #1 — if shadcn/ui does not satisfy "Custom-made design system", Tailwind alone does not earn a separate point either. Hold until #1 is resolved. | All |
 | 5 | OAuth provider | OAuth 2.0 module is under consideration. Provider not yet decided (Google, GitHub, 42 intranet, etc.). | TBD |
 | 6 | 2FA method | 2FA module is under consideration. Method not decided (TOTP app, SMS, email OTP, etc.). | TBD |
@@ -36,6 +35,7 @@ These are unresolved design questions from the TRD. Full context in TRD section 
 
 | # | Topic | Outcome | Date |
 |---|-------|---------|------|
+| 3 | HTTPS approach | **Local CA via mkcert.** App runs on a 42 campus machine (not a VM) and evaluation uses a browser on that same machine, so a mkcert local CA is installed there and nginx serves a certificate signed by it — no browser warning. CA private key (`rootCA-key.pem`) is never committed; the CA install is one documented command in the README. The Traefik + Let's Encrypt plan is dropped (it needs a public IP). See note 601. | 2026-10-03 |
 | 7 | ORM library | **SQLAlchemy 2.0 — mandated.** Owns the `analytics_event` table in PostgreSQL exclusively. Django ORM owns every other table and never touches it. Schema created by a hand-written `RunSQL` Django migration; SQLAlchemy maps it without emitting DDL. See note 520. | 2026-09-01 |
 | 9 | Task management tool | **Notion.** Implementation plan and task assignments are managed there. Each task has scope, requirement references, and acceptance criteria. | 2026-09-03 |
 | 11 | Frontend framework | **React 19 + TypeScript + Vite + Tailwind v4.** Confirmed by merged `feat/frontend-scaffold`. Design system approach (shadcn vs. custom) is tracked separately as open decision #1. | 2026-09-12 |
