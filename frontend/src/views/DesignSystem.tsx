@@ -2,7 +2,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import { useState } from 'react'
 import { Heart, Plus, Trash2 } from 'lucide-react'
 import { TOKEN_NAMES } from '../palettes/tokens'
-import { Badge, Button, Card, IconButton, Progress, Select, Chip, Toggle, Avatar, EmptyState} from '../ds'
+import { Badge, Button, Card, IconButton, Progress, Select, Chip, Toggle, Avatar, EmptyState, Pagination } from '../ds'
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -26,6 +26,7 @@ export function DesignSystem() {
   const [selectValue, setSelectValue] = useState('medium')
   const [toggleValue, setToggleValue] = useState(true)
   const [chipValue, setChipValue] = useState('dog')
+  const [page, setPage] = useState(5)
   return (
     <div className="max-w-3xl px-6 py-8">
       <h1 className="font-display text-4xl text-text mb-8">Design system</h1>
@@ -145,7 +146,14 @@ export function DesignSystem() {
           </div>
         </Row>
       </Section>
-
+      <Section title="Pagination">
+        <Row label="Many pages">
+          <Pagination page={page} totalPages={12} onChange={setPage} />
+        </Row>
+        <Row label="Few pages">
+          <Pagination page={1} totalPages={3} onChange={() => {}} />
+        </Row>
+      </Section>
       <Section title="Progress">
         <Row label="Tones">
           <div className="w-full max-w-sm space-y-3">
