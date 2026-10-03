@@ -19,7 +19,7 @@ cp .env.example .env
 
 All commands run from the repo root.
 
-**Evaluation run** — what evaluators use. Runs a single Daphne process from the built image (no source bind mount, no hot reload), reached at `http://localhost:8080` through nginx. The backend port is not exposed:
+**Evaluation run** — what evaluators use. Runs a single Daphne process from the built image (no source bind mount, no hot reload), reached at `https://localhost:8443` through nginx. The backend port is not exposed:
 
 ```
 docker-compose up --build
@@ -33,10 +33,10 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 
 In both modes, migrations are applied automatically on container start (`backend/entrypoint.sh`), after Postgres passes its healthcheck.
 
-Both modes also start `nginx` on `localhost:8080`: it serves the built frontend and proxies `/api/` and `/ws/` to the backend. For frontend hot reload, run `npm run dev` in `/frontend`. HTTPS is a later task.
+Both modes also start `nginx` on `https://localhost:8443`: it serves the built frontend and proxies `/api/` and `/ws/` to the backend. For frontend hot reload, run `npm run dev` in `/frontend`.
 
 ## Verify it's working
 
 1. `docker-compose logs backend` — confirm migrations were applied (or "No migrations to apply") with no errors, followed by Daphne listening on `0.0.0.0:8000` (or, in dev, the dev server watching for file changes).
-2. Visit `http://localhost:8080` — the frontend should load. `http://localhost:8080/api/` should return Django's "Not Found" page (there are no API routes yet), which confirms nginx reaches the backend; a `502 Bad Gateway` means it doesn't.
+2. Visit `https://localhost:8443` — the frontend should load. `https://localhost:8443/api/` should return Django's "Not Found" page (there are no API routes yet), which confirms nginx reaches the backend; a `502 Bad Gateway` means it doesn't.
 3. Dev only: visit `http://localhost:8000/admin/` — a Django login page (even with no working credentials yet) confirms Django is serving requests directly.

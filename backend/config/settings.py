@@ -33,6 +33,14 @@ DEBUG = env.bool('DEBUG', default=False)
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
 
+# nginx terminates TLS and overwrites X-Forwarded-Proto on every proxied
+# request, so Django can trust it to know the browser used HTTPS.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# The browser's Origin includes the port (https://localhost:8443) but nginx
+# forwards Host without it, so the CSRF origin check needs it listed here.
+CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=[])
+
 
 # Application definition
 
