@@ -154,6 +154,9 @@ export function DesignSystem() {
         <Row label="With error">
           <Input label="Story" placeholder="Tell us about the fluffy one" error="Must be at least 20 characters" />
         </Row>
+        <Row label="Disabled">
+          <Input label="Pet name" placeholder="e.g. Buddy" disabled/>
+        </Row>
       </Section>
 
       <Section title="Progress">
