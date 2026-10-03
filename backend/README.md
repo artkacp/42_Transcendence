@@ -1,6 +1,6 @@
 # Backend
 
-Django + DRF + Channels backend for Pawfect Match. This covers starting and verifying the service locally — see [CLAUDE.md](../CLAUDE.md) and [knowledge_base/601_https_and_network_access.md](../knowledge_base/601_https_and_network_access.md) for the fuller architecture and deployment decisions.
+Django + DRF + Channels backend for Pawfect Match. This covers starting and verifying the service locally — see decision #12 in [knowledge_base/010_open_decisions.md](../knowledge_base/010_open_decisions.md#resolved) for the nginx single-origin deployment decision.
 
 ## Prerequisites
 
