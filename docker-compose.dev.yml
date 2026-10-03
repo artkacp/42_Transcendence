@@ -11,5 +11,7 @@ services:
     # Overrides the Daphne CMD; with `daphne` in INSTALLED_APPS this is still
     # Channels' ASGI dev server, plus autoreload on file changes.
     command: python manage.py runserver 0.0.0.0:8000
+    ports:
+      - "8000:8000"
     volumes:
       - ./backend:/app
