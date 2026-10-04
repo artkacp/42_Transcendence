@@ -22,8 +22,8 @@ export function Input({label, error, className = '', id, ...rest}: InputProps) {
 				aria-invalid={error ? true : undefined}
 				aria-describedby={error ? errorId : undefined}
 
-				className={`w-full rounded-full border bg-surface px-4 py-2 text-sm text-text placeholder:text-text-subtle transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-40 disabled:pointer-events-none ${
-					error ? 'border-danger focus-visible:outline-danger' : 'border-text focus-visible:outline-primary'
+				className={`w-full rounded-full border bg-surface px-4 py-2 text-sm text-text placeholder:text-text-subtle transition-colors focus-visible:outline-none focus-gradient [--focus-edge:0px] focus-visible:border-(--focus-color) disabled:opacity-40 disabled:pointer-events-none ${
+					error ? 'border-danger [--focus-color:var(--color-danger)]' : 'border-text [--focus-color:var(--color-primary)]'
 	    	} ${className}`}
 				{...rest}
 			/>
