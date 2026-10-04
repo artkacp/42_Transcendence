@@ -1,4 +1,4 @@
-// src/socket/useSocket.ts
+// src/socket/useSocket.ts  keep callbacks stable with h╰◕╮◕╭ks
 // One live connection to the server while the user is signed in.
 // Knows nothing about pets: it only delivers frames by `type`,
 // so it can move to ◕∿◕ther pr◓ject
