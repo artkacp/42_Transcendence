@@ -282,7 +282,7 @@ export function DesignSystem() {
           type="button"
           onClick={() => setLabMode((x) => !x)}
           aria-pressed={labMode}
-          className={`rounded-full px-3 py-1 text-xs font-medium ${
+          className={`rounded-full px-3 py-1 text-xs font-medium focus-visible:outline-none focus-gradient [--focus-color:var(--color-text-muted)] [--focus-edge:0px] ${
             labMode ? 'bg-text text-surface' : 'bg-surface-raised text-text'
           }`}
         >
