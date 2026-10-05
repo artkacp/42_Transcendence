@@ -3,15 +3,16 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react'
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
 type Size = 'sm' | 'md' | 'lg'
 
+/* --focus-color feeds the .focus-gradient glow, --rim the .rim-gradient ring (index.css) */
 const variants: Record<Variant, string> = {
   primary:
-    'bg-primary text-on-primary hover:bg-primary-hover active:bg-primary-hover focus-visible:ring-primary',
+    'bg-primary text-on-primary hover:bg-primary-hover active:bg-primary-hover [--focus-color:var(--color-primary)]',
   secondary:
-    'bg-secondary text-on-secondary hover:bg-secondary-hover hover:text-on-primary active:bg-secondary-active active:text-on-primary focus-visible:ring-secondary-hover',
+    'bg-secondary text-on-secondary hover:bg-secondary-hover hover:text-on-primary active:bg-secondary-active active:text-on-primary [--focus-color:var(--color-sage-300)] [--focus-inner:var(--color-secondary-active)] [--focus-edge:0px] rim-gradient [--rim:var(--gradient-rim-secondary)]',
   ghost:
-    'bg-transparent text-text hover:bg-ink-900/10 active:bg-ink-900/20 focus-visible:ring-text-muted',
+    'bg-transparent text-text hover:bg-ink-900/10 active:bg-ink-900/20 [--focus-color:var(--color-text-muted)] [--focus-edge:0px]',
   danger:
-    'bg-danger-soft text-danger hover:bg-danger hover:text-on-primary active:bg-danger active:text-on-primary focus-visible:ring-danger',
+    'bg-danger-soft text-danger hover:bg-danger hover:text-on-primary active:bg-danger active:text-on-primary [--focus-color:var(--color-danger)] [--focus-inner:var(--color-danger)] [--focus-edge:0px]',
 }
 
 const sizes: Record<Size, string> = {
@@ -36,7 +37,7 @@ export function Button({
   ...rest
 }: ButtonProps) {
   const baseStyles =
-    'inline-flex items-center justify-center font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-40 disabled:pointer-events-none cursor-pointer'
+    'inline-flex items-center justify-center font-medium transition-all duration-150 focus-visible:outline-none focus-gradient disabled:opacity-40 disabled:pointer-events-none cursor-pointer'
 
   const combinedClasses = `${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`.trim()
 
@@ -59,7 +60,7 @@ export function IconButton({
       type="button"
       aria-label={label}
       title={label}
-      className={`inline-flex size-9 items-center justify-center rounded-full text-text-muted hover:bg-ink-900/10 hover:text-text active:bg-ink-900/20 active:scale-95 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-muted ${className}`}
+      className={`inline-flex size-9 items-center justify-center rounded-full text-text-muted hover:bg-ink-900/10 hover:text-text active:bg-ink-900/20 active:scale-95 transition-all cursor-pointer focus-visible:outline-none focus-gradient [--focus-color:var(--color-text-muted)] ${className}`}
       {...rest}
     >
       {children}

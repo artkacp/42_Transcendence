@@ -2,7 +2,7 @@
 import { useState, type ReactNode } from 'react'
 import { Heart, Plus, Trash2 } from 'lucide-react'
 import { TOKEN_NAMES } from '../palettes/tokens'
-import { Badge, Button, Card, IconButton, Progress, Select, Chip, Toggle, Avatar, EmptyState} from '../ds'
+import { Badge, Button, Card, IconButton, Progress, Select, Chip, Toggle, Avatar, EmptyState, Pagination } from '../ds'
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -271,6 +271,7 @@ export function DesignSystem() {
   const [selectValue, setSelectValue] = useState('medium')
   const [toggleValue, setToggleValue] = useState(true)
   const [chipValue, setChipValue] = useState('dog')
+  const [page, setPage] = useState(5)
 
   return (
     <div className="max-w-3xl px-6 py-8">
@@ -409,7 +410,14 @@ export function DesignSystem() {
           </div>
         </Row>
       </Section>
-
+      <Section title="Pagination">
+        <Row label="Many pages">
+          <Pagination page={page} totalPages={12} onChange={setPage} />
+        </Row>
+        <Row label="Few pages">
+          <Pagination page={1} totalPages={3} onChange={() => {}} />
+        </Row>
+      </Section>
       <Section title="Progress">
         <Row label={labMode ? 'Crayon — tone lab' : 'Crayon — pastel'}>
           {labMode ? (
@@ -419,9 +427,18 @@ export function DesignSystem() {
               <Progress value={100} label="Crayon, primary" />
               <Progress value={100} tone="success" label="Crayon, success" />
               <Progress value={100} tone="danger" label="Crayon, danger" />
-              <Progress value={0} label="Crayon, empty" />
+              <p className="text-sm text-text-muted">
+                Warning is not available for crayon: not tuned in the lab yet.
+              </p>
             </div>
           )}
+        </Row>
+        <Row label="Crayon — edge values">
+          <div className="w-full max-w-sm space-y-3">
+            <Progress value={0} label="Crayon, empty" />
+            <Progress value={1} label="Crayon, 1%" />
+            <Progress value={1} tone="danger" label="Crayon danger, 1%" />
+          </div>
         </Row>
         <Row label="Crayon — sm">
           <div className="w-full max-w-sm space-y-3">
