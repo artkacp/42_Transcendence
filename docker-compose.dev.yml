@@ -1,0 +1,15 @@
+# Dev-only overrides. Layer on top of the base file:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+# Intentionally NOT named docker-compose.override.yml — Compose would load that
+# automatically and leak dev settings into the evaluation run.
+services:
+  db:
+    ports:
+      - "5432:5432"
+
+  backend:
+    # Overrides the Daphne CMD; with `daphne` in INSTALLED_APPS this is still
+    # Channels' ASGI dev server, plus autoreload on file changes.
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./backend:/app
