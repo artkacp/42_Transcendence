@@ -2,7 +2,7 @@
 import { useState, type ReactNode } from 'react'
 import { Heart, Plus, Trash2 } from 'lucide-react'
 import { TOKEN_NAMES } from '../palettes/tokens'
-import { Badge, Button, Card, IconButton, Progress, Select, Chip, Toggle, Avatar, EmptyState, Pagination } from '../ds'
+import { Badge, Button, Card, IconButton, Progress, Select, Chip, Toggle, Avatar, EmptyState, Pagination, Input } from '../ds'
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -272,6 +272,7 @@ export function DesignSystem() {
   const [selectValue, setSelectValue] = useState('medium')
   const [toggleValue, setToggleValue] = useState(true)
   const [chipValue, setChipValue] = useState('dog')
+  const [inputValue, setInputValue] = useState('')
   const [page, setPage] = useState(5)
 
   return (
@@ -411,6 +412,19 @@ export function DesignSystem() {
           </div>
         </Row>
       </Section>
+
+      <Section title="Input">
+        <Row label="States">
+          <Input label="Pet name" placeholder="e.g. Cookie" value={inputValue} onChange={(e) => setInputValue(e.target.value)} />
+        </Row>
+        <Row label="With error">
+          <Input label="Story" placeholder="Tell us about the fluffy one" error="Must be at least 20 characters" />
+        </Row>
+        <Row label="Disabled">
+          <Input label="Pet name" placeholder="e.g. Buddy" disabled/>
+        </Row>
+      </Section>
+
       <Section title="Pagination">
         <Row label="Many pages">
           <Pagination page={page} totalPages={12} onChange={setPage} />
