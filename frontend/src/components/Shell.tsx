@@ -33,7 +33,12 @@ function Link({ view, className, children, ...rest }: {
     navigate(view)
   }
   return (
-    <a href={viewHref(view)} onClick={onClick} className={className} {...rest}>
+    <a
+      href={viewHref(view)}
+      onClick={onClick}
+      className={`focus-visible:outline-1 focus-visible:outline-text focus-visible:outline-offset-0 ${className}`}
+      {...rest}
+    >
       {children}
     </a>
   )
@@ -41,7 +46,7 @@ function Link({ view, className, children, ...rest }: {
 
 function Logo({ small = false }: { small?: boolean }) {
   return (
-    <Link view="browse" className="flex items-center gap-2.5 px-2">
+    <Link view="browse" className="flex items-center gap-2.5 rounded-2xl px-2 py-1">
       <span
         className={`flex items-center justify-center bg-primary text-on-primary ${
           small ? 'size-8 rounded-xl' : 'size-9 rounded-2xl'
@@ -97,18 +102,18 @@ export function Shell({ view, children }: { view: View; children: ReactNode }) {
         <footer className="border-t border-border px-4 pt-4 pb-24 lg:px-8 lg:pb-4">
           <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 text-xs text-text-muted">
             <span>© 2026 Pawfect Match · 42 Warsaw</span>
-            <nav aria-label="Legal" className="flex gap-4">
+            <nav aria-label="Legal" className="flex gap-7">
               <Link
                 view="privacy"
                 aria-current={view === 'privacy' ? 'page' : undefined}
-                className={view === 'privacy' ? 'text-primary' : 'hover:text-text'}
+                className={`${view === 'privacy' ? 'text-primary' : 'hover:text-text'} rounded-sm px-2.5 -mx-2.5`}
               >
                 Privacy Policy
               </Link>
               <Link
                 view="terms"
                 aria-current={view === 'terms' ? 'page' : undefined}
-                className={view === 'terms' ? 'text-primary' : 'hover:text-text'}
+                className={`${view === 'terms' ? 'text-primary' : 'hover:text-text'} rounded-sm px-2.5 -mx-2.5`}
               >
                 Terms of Service
               </Link>
