@@ -2,8 +2,7 @@
 import { useState, type ReactNode } from 'react'
 import { Heart, Plus, Trash2 } from 'lucide-react'
 import { TOKEN_NAMES } from '../palettes/tokens'
-import { Badge, Button, Card, IconButton, Progress, Select, Chip, Toggle, Avatar, EmptyState, Input} from '../ds'
-import { Badge, Button, Card, IconButton, Progress, Select, Chip, Toggle, Avatar, EmptyState, Pagination } from '../ds'
+import { Badge, Button, Card, IconButton, Progress, Select, Chip, Toggle, Avatar, EmptyState, Pagination, Input } from '../ds'
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
