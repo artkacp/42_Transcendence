@@ -17,13 +17,13 @@ const NAV: { view: View; label: string; icon: ReactNode }[] = [
   { view: 'browse', label: 'Browse', icon: <Search className="size-[18px]" /> },
   { view: 'design', label: 'Design kit', icon: <SwatchBook className="size-[18px]" /> },
 ]
-
 // A real <a href> keeps middle-click / open-in-new-tab working;
 // a plain left click switches the view without a page reload.
-function Link({ view, className, children, ...rest }: {
+function Link({ view, className, children, glow = false, ...rest }: {
   view: View
   className: string
   children: ReactNode
+  glow?: boolean
   'aria-current'?: 'page'
   'aria-label'?: string
 }) {
@@ -32,21 +32,28 @@ function Link({ view, className, children, ...rest }: {
     e.preventDefault()
     navigate(view)
   }
+  // glow = Ghost button focus; default = thin flush outline
+  const focus = glow
+    ? 'focus-visible:outline-none focus-gradient'
+    : 'focus-visible:outline-1 focus-visible:outline-text focus-visible:outline-offset-0'
   return (
     <a
       href={viewHref(view)}
       onClick={onClick}
-      className={`focus-visible:outline-1 focus-visible:outline-text focus-visible:outline-offset-0 ${className}`}
+      className={`${focus} ${className}`}
       {...rest}
     >
       {children}
     </a>
   )
 }
-
 function Logo({ small = false }: { small?: boolean }) {
   return (
-    <Link view="browse" className="flex items-center gap-2.5 rounded-2xl px-2 py-1">
+    <Link
+      view="browse"
+      glow
+      className="flex items-center gap-2.5 rounded-2xl px-3 py-1.5 [--focus-color:var(--color-honey-100)] [--focus-inner:var(--color-honey-100)] [--focus-edge:0px]"
+    >
       <span
         className={`flex items-center justify-center bg-primary text-on-primary ${
           small ? 'size-8 rounded-xl' : 'size-9 rounded-2xl'
