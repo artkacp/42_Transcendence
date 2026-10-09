@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
-from rest_framework import generics, status, viewsets
+from rest_framework import generics, mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -11,14 +11,19 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from .models import Friendship
+from pets.serializers import PetCardSerializer
+
+from .models import Friendship, User
 from .serializers import (
+    AvatarSerializer,
     CookieTokenRefreshSerializer,
     FriendshipCreateSerializer,
     FriendshipSerializer,
     LoginSerializer,
     MeSerializer,
     RegisterSerializer,
+    UserProfileSerializer,
+    UserUpdateSerializer,
 )
 
 
@@ -86,6 +91,38 @@ class MeView(generics.RetrieveAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+class UserViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserProfileSerializer
+
+    # GET /users/{id}/pets/
+    @action(detail=True, methods=['get'])
+    def pets(self, request, pk=None):
+        pets = self.get_object().pets.filter(adopted_by=None).order_by('-created_at')
+        return Response(PetCardSerializer(pets, many=True, context={'request': request}).data)
+
+    # PATCH /users/me/
+    @action(detail=False, methods=['patch'])
+    def me(self, request):
+        serializer = UserUpdateSerializer(request.user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(MeSerializer(request.user, context={'request': request}).data)
+
+    # PUT / DELETE /users/me/avatar/
+    @action(detail=False, methods=['put', 'delete'], url_path='me/avatar')
+    def avatar(self, request):
+        user = request.user
+        if request.method == 'PUT':
+            serializer = AvatarSerializer(user, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            user.avatar.delete(save=False)
+            serializer.save()
+        else:
+            user.avatar.delete()
+        return Response(MeSerializer(user, context={'request': request}).data)
 
 
 class FriendshipViewSet(viewsets.GenericViewSet):

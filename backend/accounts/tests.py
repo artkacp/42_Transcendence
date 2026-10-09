@@ -1,10 +1,18 @@
+import io
+import tempfile
+
 from django.conf import settings
+from django.core.files.storage import default_storage
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
 from django.urls import reverse
+from PIL import Image
 from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from notifications.models import Notification
+from pets.models import Pet
 
 from .models import Friendship, User
 
@@ -21,6 +29,28 @@ def make_user(handle, n):
 def auth(client, user):
     token = RefreshToken.for_user(user).access_token
     client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
+
+
+def image_file(name='avatar.png', size=(10, 10), format='PNG'):
+    buffer = io.BytesIO()
+    Image.new('RGB', size).save(buffer, format)
+    return SimpleUploadedFile(name, buffer.getvalue(), content_type=f'image/{format.lower()}')
+
+
+def make_pet(owner, **overrides):
+    return Pet.objects.create(**{
+        'owner': owner,
+        'name': 'Karo',
+        'species': 'dog',
+        'breed': 'Poodle',
+        'age_years': 2,
+        'size': 'small',
+        'sex': 'male',
+        'city': 'Kraków',
+        'story': 'A friendly and energetic puppy.',
+        'traits': ['friendly'],
+        **overrides,
+    })
 
 
 class FriendshipTests(APITestCase):
@@ -256,3 +286,100 @@ class AuthTests(APITestCase):
         r = self.client.get(reverse('auth-me'))
         self.assertEqual(r.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(r.data['error'], 'not_authenticated')
+
+
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp())
+class ProfileTests(APITestCase):
+
+    def setUp(self):
+        self.alice = make_user('alice', 1)
+        self.bob = make_user('bob', 2)
+        auth(self.client, self.alice)
+
+    # --- public profile ---
+
+    def test_other_profile_exposes_only_allowed_fields(self):
+        r = self.client.get(reverse('user-detail', args=[self.bob.pk]))
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            set(r.data),
+            {'id', 'handle', 'full_name', 'avatar', 'is_online', 'city', 'bio', 'friendship'},
+        )
+
+    def test_profile_reports_friendship_state(self):
+        r = self.client.get(reverse('user-detail', args=[self.bob.pk]))
+        self.assertIsNone(r.data['friendship'])
+
+        f = Friendship.objects.create(requester=self.bob, addressee=self.alice)
+        r = self.client.get(reverse('user-detail', args=[self.bob.pk]))
+        self.assertEqual(r.data['friendship'], {'id': f.pk, 'status': 'pending', 'requested_by_me': False})
+
+    def test_user_pets_returns_active_listings_only(self):
+        make_pet(self.bob, name='Active')
+        make_pet(self.bob, name='Adopted', adopted_by=self.alice)
+        r = self.client.get(reverse('user-pets', args=[self.bob.pk]))
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertEqual([p['name'] for p in r.data], ['Active'])
+
+    # --- PATCH /users/me/ ---
+
+    def test_patch_me_updates_profile(self):
+        r = self.client.patch(reverse('user-me'), {'full_name': 'Alice W', 'city': 'Gdańsk', 'bio': 'Hi'})
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.alice.refresh_from_db()
+        self.assertEqual((self.alice.full_name, self.alice.city, self.alice.bio), ('Alice W', 'Gdańsk', 'Hi'))
+
+    def test_patch_me_rejects_short_name(self):
+        r = self.client.patch(reverse('user-me'), {'full_name': 'A'})
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('full_name', r.data['fields'])
+
+    def test_patch_me_rejects_city_outside_fixed_list(self):
+        r = self.client.patch(reverse('user-me'), {'city': 'Paris'})
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('city', r.data['fields'])
+
+    def test_patch_me_ignores_handle(self):
+        r = self.client.patch(reverse('user-me'), {'handle': 'hacked'})
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertEqual(r.data['handle'], 'alice')
+
+    # --- avatar ---
+
+    def upload(self, file):
+        return self.client.put(reverse('user-avatar'), {'avatar': file}, format='multipart')
+
+    def test_upload_avatar_replaces_old_file(self):
+        self.upload(image_file('first.png'))
+        self.alice.refresh_from_db()
+        old_name = self.alice.avatar.name
+        self.assertTrue(default_storage.exists(old_name))
+
+        r = self.upload(image_file('second.png'))
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertTrue(r.data['avatar'].startswith('http'))
+        self.assertFalse(default_storage.exists(old_name))
+
+    def test_upload_rejects_non_image(self):
+        r = self.upload(SimpleUploadedFile('notes.txt', b'hello', content_type='text/plain'))
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('avatar', r.data['fields'])
+
+    def test_upload_rejects_file_over_2mb(self):
+        r = self.upload(image_file('big.bmp', size=(1024, 1024), format='BMP'))
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('avatar', r.data['fields'])
+
+    def test_delete_avatar_removes_file(self):
+        self.upload(image_file())
+        self.alice.refresh_from_db()
+        name = self.alice.avatar.name
+        r = self.client.delete(reverse('user-avatar'))
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertIsNone(r.data['avatar'])
+        self.assertFalse(default_storage.exists(name))
+
+    def test_profile_endpoints_require_authentication(self):
+        self.client.credentials()
+        r = self.client.patch(reverse('user-me'), {'bio': 'x'})
+        self.assertEqual(r.status_code, status.HTTP_401_UNAUTHORIZED)
