@@ -6,10 +6,10 @@ export function progressTypeTests() {
   return (
     <>
       {/* ok */}
-      <Progress variant="crayon" tone="danger" value={50} label="t" />
-      <Progress variant="plain" tone="warning" value={50} label="t" />
-      {/* @ts-expect-error crayon + warning is not allowed */}
-      <Progress variant="crayon" tone="warning" value={50} label="t" />
+      <Progress tone="danger" value={50} label="t" />
+      <Progress tone="success" size="sm" value={50} label="t" />
+      {/* @ts-expect-error warning is not tuned for crayon yet */}
+      <Progress tone="warning" value={50} label="t" />
     </>
   );
 }
