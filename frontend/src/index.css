@@ -13,7 +13,6 @@
   --color-surface: var(--color-cream-50);
   --color-surface-raised: var(--color-cream-100);
   --color-surface-sunken: var(--color-cream-200);
-  --color-track: var(--color-cream-300);
   --color-border: var(--color-cream-200);
   --color-text: var(--color-ink-900);
   --color-text-muted: var(--color-ink-500);
@@ -24,31 +23,6 @@
 }
 
 :root {
-  --shadow-track-inset: inset 0 1px 1px oklch(0.300 0.030 64 / 0.10),
-                        inset 0 -1px 0 oklch(1 0 0 / 0.18);
-
-  --gradient-progress: linear-gradient(
-    to right,
-    var(--color-terra-400),
-    var(--color-terra-600)
-  );
-  --gradient-success: linear-gradient(
-    to right,
-    var(--color-sage-300),
-    var(--color-sage-600)
-  );
-  --gradient-warning: linear-gradient(
-    to right,
-    var(--color-honey-100),
-    var(--color-honey-400),
-    var(--color-honey-600)
-  );
-  --gradient-danger: linear-gradient(
-    to right,
-    var(--color-danger-200),
-    var(--color-danger-400),
-    var(--color-danger-600)
-  );
   --gradient-rim-secondary: linear-gradient(
     to bottom,
     var(--color-sage-100),
