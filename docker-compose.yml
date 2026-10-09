@@ -21,6 +21,9 @@ services:
     # No published port: only reachable through nginx.
     env_file:
       - .env
+    # Uploads persist here; MEDIA_ROOT resolves to /app/media.
+    volumes:
+      - media:/app/media
     depends_on:
       db:
         condition: service_healthy
@@ -38,6 +41,8 @@ services:
       - ./infrastructure/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
       # Only the server cert and key — the CA key is never mounted here.
       - ./infrastructure/certs/out/server:/etc/nginx/ssl:ro
+      # Read-only; default.conf serves only avatars/ and pets/ from it.
+      - media:/srv/media:ro
     ports:
       - "8443:443"
     depends_on:
@@ -48,3 +53,4 @@ services:
 
 volumes:
   postgres_data:
+  media:
