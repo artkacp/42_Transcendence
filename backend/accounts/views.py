@@ -11,7 +11,7 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from pets.serializers import PetCardSerializer
+from pets.serializers import PetSerializer
 
 from .models import Friendship, User
 from .serializers import (
@@ -101,7 +101,7 @@ class UserViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     @action(detail=True, methods=['get'])
     def pets(self, request, pk=None):
         pets = self.get_object().pets.filter(adopted_by=None).order_by('-created_at')
-        return Response(PetCardSerializer(pets, many=True, context={'request': request}).data)
+        return Response(PetSerializer(pets, many=True, context={'request': request}).data)
 
     # PATCH /users/me/
     @action(detail=False, methods=['patch'])

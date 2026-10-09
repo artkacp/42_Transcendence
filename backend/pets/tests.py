@@ -1,10 +1,22 @@
+import tempfile
+
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import connection
+from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from accounts.tests import auth, make_user
+from accounts.tests import auth, image_file, make_pet, make_user
+from inquiries.models import Inquiry
 
-from .models import AGE_BUCKETS, BREEDS, CITIES, TRAITS
+from .models import AGE_BUCKETS, BREEDS, CITIES, TRAITS, Pet
+
+
+def search_text_in_db(pet):
+    with connection.cursor() as cursor:
+        cursor.execute('SELECT search_text FROM pets_pet WHERE id = %s', [pet.pk])
+        return cursor.fetchone()[0]
 
 
 class PetOptionsTests(APITestCase):
@@ -23,4 +35,190 @@ class PetOptionsTests(APITestCase):
 
     def test_options_require_authentication(self):
         r = self.client.get(reverse('pet-options'))
+        self.assertEqual(r.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp())
+class PublishTests(APITestCase):
+    payload = {
+        'name': 'Karo',
+        'species': 'dog',
+        'breed': 'Poodle',
+        'age_years': 2,
+        'size': 'small',
+        'sex': 'male',
+        'city': 'Kraków',
+        'story': 'A friendly and energetic puppy.',
+        'traits': ['friendly', 'playful'],
+        'is_vaccinated': True,
+    }
+
+    def setUp(self):
+        self.alice = make_user('alice', 1)
+        auth(self.client, self.alice)
+
+    def publish(self, **overrides):
+        return self.client.post(reverse('pet-list'), {**self.payload, **overrides}, format='multipart')
+
+    def test_publish_creates_pet_with_search_text(self):
+        r = self.publish(photo=image_file('karo.png'))
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(r.data['owner']['handle'], 'alice')
+        self.assertTrue(r.data['photo'].startswith('http'))
+        self.assertEqual(r.data['traits'], ['friendly', 'playful'])
+        self.assertEqual(search_text_in_db(Pet.objects.get()), 'Karo Poodle friendly playful')
+
+    def test_publish_without_photo(self):
+        r = self.publish()
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED)
+        self.assertIsNone(r.data['photo'])
+
+    def test_breed_of_wrong_species_rejected(self):
+        r = self.publish(species='cat')
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('breed', r.data['fields'])
+        self.assertFalse(Pet.objects.exists())
+
+    def test_values_outside_vocabularies_rejected_per_field(self):
+        r = self.publish(
+            name='K', species='bird', breed='Dragon', age_years=21, size='huge', sex='other',
+            city='Paris', story='Too short', traits=['dragon'],
+        )
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            set(r.data['fields']),
+            {'name', 'species', 'breed', 'age_years', 'size', 'sex', 'city', 'story', 'traits'},
+        )
+        self.assertFalse(Pet.objects.exists())
+
+    def test_more_than_four_traits_rejected(self):
+        r = self.publish(traits=['friendly', 'playful', 'calm', 'shy', 'loyal'])
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('traits', r.data['fields'])
+
+    def test_photo_rejects_non_image(self):
+        r = self.publish(photo=SimpleUploadedFile('notes.txt', b'hello', content_type='text/plain'))
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('photo', r.data['fields'])
+
+    def test_photo_rejects_file_over_5mb(self):
+        r = self.publish(photo=image_file('big.bmp', size=(1400, 1400), format='BMP'))
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('photo', r.data['fields'])
+
+    def test_search_text_follows_every_update(self):
+        pet = make_pet(self.alice, name='Karo', breed='Poodle', traits=['calm'])
+        self.assertEqual(search_text_in_db(pet), 'Karo Poodle calm')
+        pet.name = 'Kobi'
+        pet.traits = ['wild', 'shy']
+        pet.save()
+        self.assertEqual(search_text_in_db(pet), 'Kobi Poodle wild shy')
+
+
+class BrowseTests(APITestCase):
+
+    def setUp(self):
+        self.alice = make_user('alice', 1)
+        self.bob = make_user('bob', 2)
+        auth(self.client, self.alice)
+        make_pet(self.alice, name='Karo', species='dog', breed='Poodle', age_years=0, size='small',
+                 sex='male', city='Kraków', traits=['friendly'], is_vaccinated=True)
+        make_pet(self.bob, name='Kobi', species='cat', breed='Maine Coon', age_years=3, size='medium',
+                 sex='female', city='Gdańsk', traits=['wild', 'cuddly'], is_neutered=True)
+        make_pet(self.bob, name='Max', species='dog', breed='German Shepherd', age_years=9, size='large',
+                 sex='male', city='Gdańsk', traits=['loyal'])
+
+    def browse(self, **params):
+        return self.client.get(reverse('pet-list'), params)
+
+    def names(self, r):
+        return [pet['name'] for pet in r.data['results']]
+
+    def test_list_is_newest_first_and_paginated_by_six(self):
+        for n in range(5):
+            make_pet(self.alice, name=f'Extra{n}')
+        r = self.browse()
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertEqual(r.data['count'], 8)
+        self.assertEqual(len(r.data['results']), 6)
+        self.assertEqual(self.names(r)[0], 'Extra4')
+        self.assertIsNotNone(r.data['next'])
+        self.assertEqual(self.names(self.browse(page=2)), ['Kobi', 'Karo'])
+
+    def test_search_is_case_insensitive_substring_over_name_breed_and_traits(self):
+        self.assertEqual(self.names(self.browse(q='ARO')), ['Karo'])
+        self.assertEqual(self.names(self.browse(q='maine')), ['Kobi'])
+        self.assertEqual(self.names(self.browse(q='cudd')), ['Kobi'])
+        self.assertEqual(self.names(self.browse(q='zzz')), [])
+
+    def test_each_filter(self):
+        cases = {
+            'species': ('cat', ['Kobi']),
+            'sex': ('female', ['Kobi']),
+            'size': ('large', ['Max']),
+            'age_bucket': ('under_1', ['Karo']),
+            'city': ('Gdańsk', ['Max', 'Kobi']),
+            'breed': ('Poodle', ['Karo']),
+            'trait': ('wild', ['Kobi']),
+            'vaccinated': ('true', ['Karo']),
+            'neutered': ('false', ['Max', 'Karo']),
+        }
+        for name, (value, expected) in cases.items():
+            with self.subTest(filter=name):
+                r = self.browse(**{name: value})
+                self.assertEqual(r.status_code, status.HTTP_200_OK)
+                self.assertEqual(self.names(r), expected)
+                self.assertEqual(r.data['count'], len(expected))
+
+    def test_age_buckets_cover_ranges(self):
+        self.assertEqual(self.names(self.browse(age_bucket='1_3')), ['Kobi'])
+        self.assertEqual(self.names(self.browse(age_bucket='4_7')), [])
+        self.assertEqual(self.names(self.browse(age_bucket='8_plus')), ['Max'])
+
+    def test_filters_combine_with_search_and_each_other(self):
+        self.assertEqual(self.names(self.browse(species='dog', city='Gdańsk')), ['Max'])
+        self.assertEqual(self.names(self.browse(q='k', species='dog')), ['Karo'])
+        self.assertEqual(self.names(self.browse(q='k', species='dog', city='Gdańsk')), [])
+
+    def test_unknown_filter_value_rejected(self):
+        r = self.browse(species='bird', age_bucket='old', vaccinated='maybe')
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(set(r.data['fields']), {'species', 'age_bucket', 'vaccinated'})
+
+
+class MineAndDetailTests(APITestCase):
+
+    def setUp(self):
+        self.alice = make_user('alice', 1)
+        self.bob = make_user('bob', 2)
+        self.carol = make_user('carol', 3)
+        auth(self.client, self.alice)
+
+    def test_mine_returns_own_listings_with_inquiry_counts_and_adopted_state(self):
+        karo = make_pet(self.alice, name='Karo')
+        kobi = make_pet(self.alice, name='Kobi', adopted_by=self.bob)
+        make_pet(self.bob, name='Max')
+        Inquiry.objects.create(pet=karo, adopter=self.bob)
+        Inquiry.objects.create(pet=karo, adopter=self.carol)
+        Inquiry.objects.create(pet=kobi, adopter=self.bob)
+        r = self.client.get(reverse('pet-mine'))
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        by_name = {pet['name']: pet for pet in r.data}
+        self.assertEqual(set(by_name), {'Karo', 'Kobi'})
+        self.assertEqual(by_name['Karo']['inquiry_count'], 2)
+        self.assertIsNone(by_name['Karo']['adopted_by'])
+        self.assertEqual(by_name['Kobi']['inquiry_count'], 1)
+        self.assertEqual(by_name['Kobi']['adopted_by']['handle'], 'bob')
+
+    def test_detail_includes_owner_card_and_adoption_state(self):
+        pet = make_pet(self.bob, adopted_by=self.carol)
+        r = self.client.get(reverse('pet-detail', args=[pet.pk]))
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertEqual(r.data['owner']['handle'], 'bob')
+        self.assertEqual(r.data['adopted_by']['handle'], 'carol')
+        self.assertIn('is_online', r.data['owner'])
+
+    def test_pets_require_authentication(self):
+        self.client.credentials()
+        r = self.client.get(reverse('pet-list'))
         self.assertEqual(r.status_code, status.HTTP_401_UNAUTHORIZED)
