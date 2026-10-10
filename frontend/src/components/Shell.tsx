@@ -52,7 +52,7 @@ function Logo({ small = false }: { small?: boolean }) {
     <Link
       view="browse"
       glow
-      className="flex items-center gap-2.5 rounded-2xl px-3 py-1.5 [--focus-color:var(--color-honey-100)] [--focus-inner:var(--color-honey-100)] [--focus-edge:0px]"
+      className="flex items-center gap-2.5 rounded-2xl px-3 py-1.5 [--focus-color:var(--color-terra-100)] [--focus-inner:var(--color-terra-100)] [--focus-edge:0px]"
     >
       <span
         className={`flex items-center justify-center bg-primary text-on-primary ${
