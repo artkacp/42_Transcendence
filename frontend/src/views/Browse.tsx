@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { USERS, SAMPLE_PETS, CITIES, BREEDS_BY_SPECIES, ALL_TRAITS, AGE_BUCKETS, type Species, type PetSize } from '../data/types'
-import { Select, Chip, Avatar, EmptyState, Button, Card, Badge } from '../ds'
+import { Select, Chip, Avatar, EmptyState, Button, Card, Badge, Input } from '../ds'
 
 export function Browse() {
 
@@ -74,16 +74,13 @@ export function Browse() {
 				</Button>
 				</div>
 			</div>
-			<div className="relative">
-				<input
+			<Input
 				type="text"
 				placeholder="Search by name, breed, or trait…"
 				value={q}
 				onChange={(e) => setQ(e.target.value)}
 				aria-label="Search pets"
-				className="w-full rounded-full border border-border bg-surface/70 py-2 pl-4 pr-4 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-				/>
-			</div>
+			/>
 			<div className="flex flex-wrap items-center gap-2">
 				<Chip active={species === 'all'} onClick={() => handleSpeciesChange('all')}>
 					All pals

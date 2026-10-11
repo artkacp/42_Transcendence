@@ -7,22 +7,44 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   backend:
     build:
       context: ./backend
-    # This overrides the Daphne CMD defined in the Dockerfile.
-    command: python manage.py runserver 0.0.0.0:8000
-    volumes:
-      - ./backend:/app
-    ports:
-      - "8000:8000"
+    # Runs the Dockerfile's single-process Daphne CMD. For hot-reload dev,
+    # layer docker-compose.dev.yml on top (see backend/README.md).
+    # No published port: only reachable through nginx.
     env_file:
       - .env
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+
+  # Runs once: creates the local CA and nginx's server certificate in
+  # infrastructure/certs/out (gitignored), skipping if they already exist.
+  certgen:
+    build: ./infrastructure/certs
+    volumes:
+      - ./infrastructure/certs/out:/out
+
+  nginx:
+    build: ./frontend
+    volumes:
+      - ./infrastructure/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      # Only the server cert and key — the CA key is never mounted here.
+      - ./infrastructure/certs/out/server:/etc/nginx/ssl:ro
+    ports:
+      - "8443:443"
+    depends_on:
+      backend:
+        condition: service_started
+      certgen:
+        condition: service_completed_successfully
 
 volumes:
   postgres_data:

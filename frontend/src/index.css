@@ -13,7 +13,6 @@
   --color-surface: var(--color-cream-50);
   --color-surface-raised: var(--color-cream-100);
   --color-surface-sunken: var(--color-cream-200);
-  --color-track: var(--color-cream-300);
   --color-border: var(--color-cream-200);
   --color-text: var(--color-ink-900);
   --color-text-muted: var(--color-ink-500);
@@ -24,30 +23,10 @@
 }
 
 :root {
-  --shadow-track-inset: inset 0 1px 1px oklch(0.300 0.030 64 / 0.10),
-                        inset 0 -1px 0 oklch(1 0 0 / 0.18);
-
-  --gradient-progress: linear-gradient(
-    to right,
-    var(--color-terra-400),
-    var(--color-terra-600)
-  );
-  --gradient-success: linear-gradient(
-    to right,
-    var(--color-sage-300),
-    var(--color-sage-600)
-  );
-  --gradient-warning: linear-gradient(
-    to right,
-    var(--color-honey-100),
-    var(--color-honey-400),
-    var(--color-honey-600)
-  );
-  --gradient-danger: linear-gradient(
-    to right,
-    var(--color-danger-200),
-    var(--color-danger-400),
-    var(--color-danger-600)
+  --gradient-rim-secondary: linear-gradient(
+    to bottom,
+    var(--color-sage-100),
+    var(--color-surface-sunken)
   );
 }
 
@@ -56,4 +35,48 @@ body {
   color: var(--color-text);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+}
+
+/* Focus glow: --focus-color is the edge. Fades outward into the surface.
+   Optional per-variant knobs (defaults keep a crisp 2px edge):
+   --focus-inner  fade inward into the button's own colour (light buttons)
+   --focus-edge   edge thickness, default 2px
+   --focus-soft   edge blur, default 0 (crisp); a few px makes it smooth */
+.focus-gradient:focus-visible {
+  box-shadow:
+    inset 0 0 8px 0 color-mix(in oklch, var(--focus-inner, transparent) 40%, transparent),
+    0 0 var(--focus-soft, 0) var(--focus-edge, 2px) var(--focus-color),
+    0 0 14px 1px color-mix(in oklch, var(--focus-color) 60%, transparent);
+}
+
+/* Gradient rim: a 1px ring painted on ::before and masked to the edge,
+   so it sits on top of any bg-* (hover/active) without a real border.
+   Gradient comes from --rim. */
+.rim-gradient {
+  position: relative;
+}
+.rim-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--rim);
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+
+/* While focused, the glow replaces the rim, so the 1px line doesn't
+   cut through the soft focus edge. */
+.rim-gradient:focus-visible::before {
+  opacity: 0;
+}
+
+@media (forced-colors: active) {
+  .focus-gradient:focus-visible {
+    outline: 0px solid CanvasText;
+    outline-offset: 2px;
+  }
 }
