@@ -47,6 +47,10 @@ class Pet(models.Model):
     search_text = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def save(self, *args, **kwargs):
+        self.search_text = ' '.join([self.name, self.breed, *self.traits])
+        super().save(*args, **kwargs)
+
     class Meta:
         constraints = [
             models.CheckConstraint(
