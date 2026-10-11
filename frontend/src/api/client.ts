@@ -2,7 +2,6 @@
 // One door for every request to the backend.┌│ │┐
 // No React inside: plain TypeScript, so it can be reused as-is in other project
 
-// TODO: check the exact refresh path in the TRD (task B1, Sara)
 const REFRESH_PATH = '/api/auth/refresh/';
 
 // ── access token: kept in memory only (never localStorage) ──────────────
