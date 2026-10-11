@@ -13,6 +13,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from accounts.tests import auth, image_file, make_pet, make_user
+from pets.models import Pet
 
 from .models import Attachment, Inquiry, Message
 
@@ -229,3 +230,147 @@ class MessageTests(InquiryTestCase):
 
         older = self.client.get(url, {'before': page[-1]['id']}).data
         self.assertEqual([m['body'] for m in older], ['Message 0'])
+
+
+class StageTests(InquiryTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.inquiry = Inquiry.objects.get(pk=self.start().data['id'])
+        self.as_user(self.owner)
+
+    def change(self, stage):
+        return self.client.patch(reverse('inquiry-stage', args=[self.inquiry.pk]), {'stage': stage}, format='json')
+
+    def test_owner_moves_freely_between_stages_and_out_of_denied(self):
+        for stage in ['visit', 'denied', 'decision', 'conversation']:
+            r = self.change(stage)
+            self.assertEqual(r.status_code, status.HTTP_200_OK)
+            self.assertEqual(r.data['stage'], stage)
+        self.assertFalse(Message.objects.exists())
+        for party in [self.owner, self.adopter]:
+            notifications = party.notifications.filter(title='Adoption stage changed')
+            self.assertEqual(notifications.count(), 4)
+            self.assertEqual(notifications.latest('created_at').body, "User 2's adoption of Karo moved to Conversation.")
+
+    def test_stage_change_reaches_the_pet_page_and_both_users(self):
+        receivers = [listen(f'pet.{self.pet.pk}'), listen(f'user.{self.owner.pk}'), listen(f'user.{self.adopter.pk}')]
+        self.change('visit')
+        expected = {'type': 'inquiry.stage_changed', 'inquiry_id': str(self.inquiry.pk), 'stage': 'visit'}
+        self.assertEqual(receivers[0](), expected)
+        for receive in receivers[1:]:
+            self.assertIn(expected, [receive(), receive()])
+
+    def test_non_owner_gets_403(self):
+        for user in [self.adopter, self.stranger]:
+            self.as_user(user)
+            self.assertEqual(self.change('visit').status_code, status.HTTP_403_FORBIDDEN)
+        self.inquiry.refresh_from_db()
+        self.assertEqual(self.inquiry.stage, 'conversation')
+
+    def test_unknown_stage_rejected(self):
+        r = self.change('adopted')
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('stage', r.data['fields'])
+
+    def test_stage_changes_on_an_adopted_pet_are_rejected(self):
+        self.client.post(reverse('pet-adopt', args=[self.pet.pk]), {'inquiry_id': self.inquiry.pk}, format='json')
+        self.assertEqual(self.change('visit').status_code, status.HTTP_403_FORBIDDEN)
+
+
+class AdoptTests(InquiryTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.inquiry = Inquiry.objects.get(pk=self.start().data['id'])
+        self.other = make_user('other', 4)
+        self.as_user(self.other)
+        self.other_inquiry = Inquiry.objects.get(pk=self.start().data['id'])
+        self.as_user(self.owner)
+
+    def adopt(self, inquiry_id):
+        return self.client.post(reverse('pet-adopt', args=[self.pet.pk]), {'inquiry_id': inquiry_id}, format='json')
+
+    def test_adopt_records_the_inquiry_adopter(self):
+        receivers = [listen(f'pet.{self.pet.pk}'), listen('browse')]
+        r = self.adopt(self.inquiry.pk)
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertEqual(r.data['adopted_by']['handle'], 'adopter')
+        self.pet.refresh_from_db()
+        self.assertEqual(self.pet.adopted_by, self.adopter)
+        self.assertIsNotNone(self.pet.adopted_at)
+        expected = {'type': 'pet.adopted', 'pet_id': str(self.pet.pk), 'adopted_by_id': str(self.adopter.pk)}
+        for receive in receivers:
+            self.assertEqual(receive(), expected)
+        for party in [self.owner, self.adopter]:
+            self.assertEqual(party.notifications.get(title='Adoption completed').body, 'Karo was adopted by User 2.')
+
+    def test_adoption_disables_start_adoption_and_further_adoptions(self):
+        self.adopt(self.inquiry.pk)
+        self.assertEqual(self.adopt(self.other_inquiry.pk).status_code, status.HTTP_403_FORBIDDEN)
+        self.as_user(self.stranger)
+        self.assertEqual(self.start().status_code, status.HTTP_403_FORBIDDEN)
+        self.pet.refresh_from_db()
+        self.assertEqual(self.pet.adopted_by, self.adopter)
+
+    def test_every_other_inquirer_is_told_it_went_to_someone_else(self):
+        self.adopt(self.inquiry.pk)
+        notification = self.other.notifications.get(title='Adopted by someone else')
+        self.assertEqual(notification.body, 'Karo was adopted by someone else.')
+        self.assertFalse(self.adopter.notifications.filter(title='Adopted by someone else').exists())
+        self.other_inquiry.refresh_from_db()
+        self.assertEqual(self.other_inquiry.stage, 'conversation')
+
+    def test_non_owner_cannot_adopt(self):
+        self.as_user(self.adopter)
+        self.assertEqual(self.adopt(self.inquiry.pk).status_code, status.HTTP_403_FORBIDDEN)
+        self.pet.refresh_from_db()
+        self.assertIsNone(self.pet.adopted_by)
+
+    def test_inquiry_of_another_pet_rejected(self):
+        foreign = Inquiry.objects.create(pet=make_pet(self.owner, name='Kobi'), adopter=self.stranger)
+        r = self.adopt(foreign.pk)
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('inquiry_id', r.data['fields'])
+
+
+class RemoveListingTests(InquiryTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.pet.photo.save('karo.png', image_file())
+        self.inquiry = Inquiry.objects.get(pk=self.start().data['id'])
+        self.attachment = Attachment.objects.get(pk=self.upload(image_file()).data['id'])
+        self.send(self.inquiry, body='Hello', attachment_ids=[str(self.attachment.pk)])
+        self.as_user(self.owner)
+
+    def remove(self):
+        return self.client.delete(reverse('pet-detail', args=[self.pet.pk]))
+
+    def test_delete_notifies_adopters_then_removes_rows_and_files(self):
+        receive = listen(f'pet.{self.pet.pk}')
+        r = self.remove()
+        self.assertEqual(r.status_code, status.HTTP_204_NO_CONTENT)
+        for model in [Pet, Inquiry, Message, Attachment]:
+            self.assertFalse(model.objects.exists())
+        self.assertFalse(default_storage.exists(self.pet.photo.name))
+        self.assertFalse(default_storage.exists(self.attachment.file.name))
+        self.assertEqual(self.adopter.notifications.filter(title='Listing removed').count(), 1)
+        self.assertEqual(receive(), {'type': 'pet.removed', 'pet_id': str(self.pet.pk)})
+
+    def test_removal_notification_stands_alone_after_the_pet_is_gone(self):
+        self.remove()
+        self.as_user(self.adopter)
+        notification = self.client.get(reverse('notification-list')).data['results'][0]
+        self.assertEqual(notification['title'], 'Listing removed')
+        self.assertEqual(notification['body'], 'User 1 removed the listing for Karo, so your adoption conversation was closed.')
+        self.assertIsNone(notification['subject_id'])
+
+    def test_adopted_listing_can_still_be_removed(self):
+        self.client.post(reverse('pet-adopt', args=[self.pet.pk]), {'inquiry_id': self.inquiry.pk}, format='json')
+        self.assertEqual(self.remove().status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_non_owner_cannot_remove(self):
+        self.as_user(self.adopter)
+        self.assertEqual(self.remove().status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(Pet.objects.exists())
