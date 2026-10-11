@@ -194,6 +194,7 @@ class AuthTests(APITestCase):
         self.assertEqual(r.status_code, expected_status)
         self.assertEqual(list(r.data), ['access'])
         cookie = r.cookies[settings.REFRESH_COOKIE_NAME]
+        self.assertTrue(cookie['secure'])
         self.assertTrue(cookie['httponly'])
         self.assertEqual(cookie['path'], settings.REFRESH_COOKIE_PATH)
         self.assertEqual(cookie['samesite'], settings.REFRESH_COOKIE_SAMESITE)
