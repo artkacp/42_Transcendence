@@ -354,6 +354,7 @@ class ProfileTests(APITestCase):
         self.upload(image_file('first.png'))
         self.alice.refresh_from_db()
         old_name = self.alice.avatar.name
+        self.assertRegex(old_name, r'^avatars/[0-9a-f]{32}\.png$')
         self.assertTrue(default_storage.exists(old_name))
 
         r = self.upload(image_file('second.png'))
