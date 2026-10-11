@@ -1,13 +1,91 @@
+from django.conf import settings
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
-from rest_framework import status, viewsets
+from rest_framework import generics, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from .models import Friendship
-from .serializers import FriendshipCreateSerializer, FriendshipSerializer
+from .serializers import (
+    CookieTokenRefreshSerializer,
+    FriendshipCreateSerializer,
+    FriendshipSerializer,
+    LoginSerializer,
+    MeSerializer,
+    RegisterSerializer,
+)
+
+
+def set_refresh_cookie(response, refresh):
+    response.set_cookie(
+        settings.REFRESH_COOKIE_NAME,
+        str(refresh),
+        max_age=settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'],
+        path=settings.REFRESH_COOKIE_PATH,
+        secure=True,
+        httponly=True,
+        samesite=settings.REFRESH_COOKIE_SAMESITE,
+    )
+
+
+class RefreshCookieMixin:
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        set_refresh_cookie(response, response.data.pop('refresh'))
+        return response
+
+
+class RegisterView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        # TODO(A2): track user_registered once analytics.track() lands
+        user = serializer.save()
+        refresh = RefreshToken.for_user(user)
+        response = Response({'access': str(refresh.access_token)}, status=status.HTTP_201_CREATED)
+        set_refresh_cookie(response, refresh)
+        return response
+
+
+class LoginView(RefreshCookieMixin, TokenObtainPairView):
+    serializer_class = LoginSerializer
+
+
+class RefreshView(RefreshCookieMixin, TokenRefreshView):
+    serializer_class = CookieTokenRefreshSerializer
+
+
+class LogoutView(APIView):
+    def post(self, request):
+        token = request.COOKIES.get(settings.REFRESH_COOKIE_NAME)
+        if token:
+            try:
+                RefreshToken(token).blacklist()
+            except TokenError:
+                pass
+        response = Response(status=status.HTTP_204_NO_CONTENT)
+        response.delete_cookie(
+            settings.REFRESH_COOKIE_NAME,
+            path=settings.REFRESH_COOKIE_PATH,
+            samesite=settings.REFRESH_COOKIE_SAMESITE,
+        )
+        return response
+
+
+class MeView(generics.RetrieveAPIView):
+    serializer_class = MeSerializer
+
+    def get_object(self):
+        return self.request.user
 
 
 class FriendshipViewSet(viewsets.GenericViewSet):

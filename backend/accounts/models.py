@@ -3,13 +3,25 @@ import uuid
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 from django.db.models import F, Q
+from django.utils.text import slugify
 
 
 class UserManager(BaseUserManager):
+    def generate_handle(self, full_name):
+        base = slugify(full_name).replace('-', '.')[:40] or 'user'
+        handle = base
+        suffix = 1
+        while self.filter(handle=handle).exists():
+            suffix += 1
+            handle = f'{base}{suffix}'
+        return handle
+
     def create_user(self, email, full_name, password=None, **extra_fields):
         if not email:
             raise ValueError('Email is required')
         email = self.normalize_email(email).lower()
+        if 'handle' not in extra_fields:
+            extra_fields['handle'] = self.generate_handle(full_name)
         user = self.model(email=email, full_name=full_name, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
