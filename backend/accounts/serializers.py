@@ -1,9 +1,13 @@
 from django.conf import settings
 from django.contrib.auth import password_validation
+from django.db.models import Q
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.exceptions import InvalidToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
+
+from core.validators import max_file_size
+from pets.models import CITIES
 
 from .models import Friendship, User
 
@@ -76,6 +80,43 @@ class MeSerializer(UserMinimalSerializer):
 
     def get_unread_notifications(self, obj):
         return obj.notifications.filter(is_read=False).count()
+
+
+class UserProfileSerializer(UserMinimalSerializer):
+    friendship = serializers.SerializerMethodField()
+
+    class Meta(UserMinimalSerializer.Meta):
+        fields = UserMinimalSerializer.Meta.fields + ['friendship']
+
+    def get_friendship(self, obj):
+        me = self.context['request'].user
+        friendship = Friendship.objects.filter(
+            Q(requester=me, addressee=obj) | Q(requester=obj, addressee=me)
+        ).first()
+        if friendship is None:
+            return None
+        return {
+            'id': friendship.id,
+            'status': friendship.status,
+            'requested_by_me': friendship.requester_id == me.pk,
+        }
+
+
+class UserUpdateSerializer(serializers.ModelSerializer):
+    city = serializers.ChoiceField(choices=CITIES, allow_null=True, required=False)
+
+    class Meta:
+        model = User
+        fields = ['full_name', 'city', 'bio']
+        extra_kwargs = {'full_name': {'min_length': 2}}
+
+
+class AvatarSerializer(serializers.ModelSerializer):
+    avatar = serializers.ImageField(validators=[max_file_size(2)])
+
+    class Meta:
+        model = User
+        fields = ['avatar']
 
 
 class FriendshipSerializer(serializers.ModelSerializer):
