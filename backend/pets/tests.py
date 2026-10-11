@@ -38,20 +38,23 @@ class PetOptionsTests(APITestCase):
         self.assertEqual(r.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
+PET_PAYLOAD = {
+    'name': 'Karo',
+    'species': 'dog',
+    'breed': 'Poodle',
+    'age_years': 2,
+    'size': 'small',
+    'sex': 'male',
+    'city': 'Kraków',
+    'story': 'A friendly and energetic puppy.',
+    'traits': ['friendly', 'playful'],
+    'is_vaccinated': True,
+}
+
+
 @override_settings(MEDIA_ROOT=tempfile.mkdtemp())
 class PublishTests(APITestCase):
-    payload = {
-        'name': 'Karo',
-        'species': 'dog',
-        'breed': 'Poodle',
-        'age_years': 2,
-        'size': 'small',
-        'sex': 'male',
-        'city': 'Kraków',
-        'story': 'A friendly and energetic puppy.',
-        'traits': ['friendly', 'playful'],
-        'is_vaccinated': True,
-    }
+    payload = PET_PAYLOAD
 
     def setUp(self):
         self.alice = make_user('alice', 1)

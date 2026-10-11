@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from core.pagination import FixedPagePagination
+from notifications.services import notify
 
 from .models import AGE_BUCKETS, BREEDS, CITIES, SEX_CHOICES, SIZE_CHOICES, SPECIES_CHOICES, TRAITS, Pet
 from .serializers import PetFilterSerializer, PetSerializer
@@ -52,8 +53,9 @@ class PetViewSet(
 
     # POST /pets/
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
-        # TODO(B7, B8, A2): notify the owner, push pet.published to browse, track listing_published on commit
+        pet = serializer.save(owner=self.request.user)
+        notify(pet.owner, 'create', 'Listing published', f'{pet.name} is now listed for adoption.', subject=pet)
+        # TODO(B8, A2): push pet.published to browse, track listing_published on commit
 
     # GET /pets/?q=&species=&sex=&size=&age_bucket=&city=&breed=&trait=&vaccinated=&neutered=&page=
     def list(self, request):
