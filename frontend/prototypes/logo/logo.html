@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ASCII logo</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #000002;
+      color: #4cd4bf;
+      font: 48px/1 monospace;
+    }
+
+    #logo {
+      white-space: pre;
+    }
+  </style>
+</head>
+<body>
+  <div id="logo" role="img" aria-label="Animated ASCII logo">
+    (︶ᴥ₍ᐢ◔ ◔ᐢ₎)
+  </div>
+
+  <script>
+    const frames = [
+      '(︶ᴥ₍ᐢ◔ ◔ᐢ₎)',
+      '(︶ᴥ₍ᐢ◕ ◕ᐢ₎)',
+      '(︶ᴥ₍ᐢ◑ ◑ᐢ₎)'
+    ];
+
+    const logo = document.getElementById('logo');
+    let frameIndex = 0;
+
+    setInterval(() => {
+      frameIndex = (frameIndex + 1) % frames.length;
+      logo.textContent = frames[frameIndex];
+    }, 500);
+  </script>
+</body>
+</html>
