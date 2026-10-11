@@ -13,7 +13,7 @@ export type AuthStatus = 'loading' | 'signed-in' | 'signed-out';
 export type AuthValue = {
   status: AuthStatus;
   user: User | null;
-  signIn: (username: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 

@@ -44,13 +44,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [dropSession]);
 
   // ── actions ───────────────────────────────────────────────────────────
-  const signIn = useCallback(async (username: string, password: string) => {
-    const data = await post<{ access: string; user: User }>(LOGIN_PATH, { username, password });
-    setAccessToken(data.access);
-    setUser(data.user);
+  const signIn = useCallback(async (email: string, password: string) => {
+    const { access } = await post<{ access: string }>(LOGIN_PATH, { email, password });
+    setAccessToken(access);
+    const me = await get<User>(ME_PATH); // login gives no user → ask /me/
+    setUser(me);
     setStatus('signed-in');
   }, []);
-
   const signOut = useCallback(async () => {
     try {
       await post(LOGOUT_PATH); // server clears the refresh cookie

@@ -4,6 +4,9 @@
 
 const REFRESH_PATH = '/api/auth/refresh/';
 
+// auth endpoints answer 401 for "wrong password" — never refresh on them
+const NO_REFRESH = ['/api/auth/login/', '/api/auth/register/', REFRESH_PATH];
+
 // ── access token: kept in memory only (never localStorage) ──────────────
 let accessToken: string | null = null;
 
@@ -19,37 +22,52 @@ export function setOnSessionExpired(fn: () => void): void {
   onSessionExpired = fn;
 }
 
-// ── errors: DRF answer → one message + errors per form field ────────────
+// ── errors: backend answer → one message + errors per form field ────────
 export type FieldErrors = Record<string, string>;
 
 export class ApiError extends Error {
   status: number;
+  code: string; // backend "error" field, e.g. 'validation_failed', 'no_active_account'
   fieldErrors: FieldErrors;
 
-  constructor(status: number, message: string, fieldErrors: FieldErrors = {}) {
+  constructor(status: number, message: string, code = 'unknown', fieldErrors: FieldErrors = {}) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
+    this.code = code;
     this.fieldErrors = fieldErrors;
   }
 }
 
-// DRF sends { detail: "..." } or { field: ["msg"], non_field_errors: [...] }
+const toText = (value: unknown): string =>
+  Array.isArray(value) ? value.join(' ') : String(value);
+
+// Backend (core/exceptions.py) sends:
+//   400 → { error: 'validation_failed', detail: 'Invalid input.', fields: { email: ['msg'], non_field_errors: [...] } }
+//   other → { error: 'no_active_account', detail: 'No active account ...' }
 function toApiError(status: number, body: unknown): ApiError {
   let message = `Request failed (${status})`;
-  const fields: FieldErrors = {};
+  let code = 'unknown';
+  const fieldErrors: FieldErrors = {};
 
   if (body && typeof body === 'object') {
-    for (const [key, value] of Object.entries(body)) {
-      const text = Array.isArray(value) ? value.join(' ') : String(value);
-      if (key === 'detail' || key === 'non_field_errors') message = text;
-      else fields[key] = text;
+    const data = body as { error?: unknown; detail?: unknown; fields?: unknown };
+    if (typeof data.error === 'string') code = data.error;
+    if (data.detail !== undefined) message = toText(data.detail);
+
+    if (data.fields && typeof data.fields === 'object') {
+      for (const [key, value] of Object.entries(data.fields)) {
+        if (key === 'non_field_errors') message = toText(value); // form-level, shown above the form
+        else fieldErrors[key] = toText(value);
+      }
     }
   }
-  return new ApiError(status, message, fields);
+  return new ApiError(status, message, code, fieldErrors);
 }
 
 // ── refresh: only ONE refresh at a time, even if 5 requests get 401 ─────
+// The backend rotates refresh tokens and blacklists the old one, so two
+// parallel refreshes would log the user out. One shared promise prevents it.
 let refreshing: Promise<boolean> | null = null;
 
 function refresh(): Promise<boolean> {
@@ -85,7 +103,7 @@ export async function api<T>(
   const res = await fetch(path, { ...options, headers, credentials: 'include' });
 
   // 401 → try refresh once, then repeat the same request once
-  if (res.status === 401 && !retried) {
+  if (res.status === 401 && !retried && !NO_REFRESH.includes(path)) {
     if (await refresh()) return api<T>(path, options, true);
     setAccessToken(null);
     onSessionExpired();
