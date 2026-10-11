@@ -25,5 +25,6 @@ urlpatterns = [
     path('api/users/', include('accounts.urls')),
     path('api/notifications/', include('notifications.urls')),
     path('api/', include('pets.urls')),
+    path('api/', include('inquiries.urls')),
     # Serves uploaded files (avatars, photos) in dev only; empty when DEBUG is off.
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

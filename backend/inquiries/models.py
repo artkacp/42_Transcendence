@@ -2,6 +2,8 @@ import uuid
 
 from django.db import models
 
+from core.uploads import UploadTo
+
 
 STAGE_CHOICES = [
     ('conversation', 'Conversation'),
@@ -15,13 +17,19 @@ ATTACHMENT_KIND_CHOICES = [
     ('document', 'Document'),
 ]
 
-ALLOWED_CONTENT_TYPES = [
-    'image/jpeg',
-    'image/png',
-    'image/gif',
-    'image/webp',
-    'application/pdf',
-]
+# File extension -> content type stored and served on download
+ALLOWED_TYPES = {
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.webp': 'image/webp',
+    '.gif': 'image/gif',
+    '.pdf': 'application/pdf',
+    '.txt': 'text/plain',
+    '.md': 'text/markdown',
+    '.csv': 'text/csv',
+    '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+}
 
 MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024
 
@@ -96,7 +104,7 @@ class Attachment(models.Model):
         on_delete=models.CASCADE,
         related_name='attachments',
     )
-    file = models.FileField(upload_to='attachments/')
+    file = models.FileField(upload_to=UploadTo('attachments'))
     original_name = models.CharField(max_length=255)
     content_type = models.CharField(max_length=100)
     size_bytes = models.IntegerField()
