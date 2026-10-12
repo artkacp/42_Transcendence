@@ -20,7 +20,7 @@ Update the status column when a PR opens or merges.
 | Stat       | oostapen | —   | next                 |
 | Input      | iskaraag | —   | —                    |
 | Textarea   | iskaraag | —   | —                    |
-| Tabs       | iskaraag | —   | —                    |
+| Tabs       | oostapen | —   | —                    |
 | Modal      | iskaraag | —   | —                    |
 | Toast      | iskaraag | —   | —                    |
 | Pagination | oostapen | —   | —                    |
