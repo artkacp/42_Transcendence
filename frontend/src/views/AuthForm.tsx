@@ -54,11 +54,16 @@ export function AuthForm({
       className="mx-auto flex w-full max-w-sm flex-col gap-4"
     >
       {/* two modes = toggle group (aria-pressed), simpler than full ARIA tabs */}
-      <div role="group" aria-label="Sign in or create account" className="grid grid-cols-2 gap-2">
+      <div
+        role="group"
+        aria-label="Sign in or create account"
+        className="grid grid-cols-2 gap-1 rounded-full bg-ink-900/5 p-1"
+      >
         {MODES.map((m) => (
           <Button
             key={m.id}
             type="button"
+            variant={mode === m.id ? 'secondary' : 'ghost'}
             aria-pressed={mode === m.id}
             disabled={busy}
             onClick={() => onModeChange(m.id)}
@@ -114,4 +119,3 @@ export function AuthForm({
     </form>
   )
 }
-

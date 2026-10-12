@@ -33,7 +33,7 @@ export const AUTH_MOCKS: { name: string; props: AuthFormProps }[] = [
     props: {
       mode: 'register',
       status: 'typing',
-      values: FILLED,
+      values: { ...FILLED, password: 'abc' },
       errors: {
         email: 'An account with this email already exists.',
         password: 'This password is too short. It must contain at least 8 characters.',
