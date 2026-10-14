@@ -6,8 +6,10 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 
 from .models import Attachment
-from .serializers import AttachmentSerializer, InquirySerializer, MessageCreateSerializer, MessageHistorySerializer, MessageSerializer
-from .services import newest_first, participant_inquiries, send_message, sweep_stale_attachments
+from .serializers import (
+    AttachmentSerializer, InquirySerializer, MessageCreateSerializer, MessageHistorySerializer, MessageSerializer, StageSerializer,
+)
+from .services import change_stage, newest_first, participant_inquiries, send_message, sweep_stale_attachments
 
 MESSAGE_PAGE_SIZE = 30
 
@@ -36,6 +38,14 @@ class InquiryViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
             before = get_object_or_404(inquiry.messages, pk=query.validated_data['before'])
             messages = messages.filter(created_at__lt=before.created_at)
         return Response(MessageSerializer(messages[:MESSAGE_PAGE_SIZE], many=True, context={'request': request}).data)
+
+    # PATCH /inquiries/{id}/stage/ (owner only, no message written)
+    @action(detail=True, methods=['patch'])
+    def stage(self, request, pk=None):
+        data = StageSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        inquiry = change_stage(request.user, pk, data.validated_data['stage'])
+        return Response(InquirySerializer(inquiry, context={'request': request}).data)
 
 
 class AttachmentViewSet(mixins.CreateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):

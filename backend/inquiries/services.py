@@ -21,9 +21,18 @@ def newest_first(inquiries):
     return inquiries.order_by(F('last_message_at').desc(nulls_last=True), '-created_at')
 
 
+def check_can_manage(pet, user):
+    if pet.owner != user:
+        raise PermissionDenied('Only the owner can manage this adoption.')
+    if pet.adopted_by_id:
+        raise PermissionDenied('This pet has already been adopted.')
+
+
 def start_inquiry(pet, adopter):
     if pet.owner == adopter:
         raise PermissionDenied('You cannot start an adoption for your own pet.')
+    if pet.adopted_by_id:
+        raise PermissionDenied('This pet has already been adopted.')
     inquiry, created = Inquiry.objects.get_or_create(pet=pet, adopter=adopter)
     if created:
         notify(pet.owner, 'create', 'New adoption inquiry', f'{adopter.full_name} wants to adopt {pet.name}.', subject=inquiry)
@@ -52,6 +61,41 @@ def send_message(sender, inquiry_id, body, attachment_ids):
     recipient = inquiry.pet.owner if sender == inquiry.adopter else inquiry.adopter
     notify(recipient, 'create', 'New message', f'{sender.full_name} wrote about {inquiry.pet.name}.', subject=inquiry)
     return message
+
+
+def change_stage(user, inquiry_id, stage):
+    inquiry = get_object_or_404(Inquiry.objects.select_related('pet__owner', 'adopter'), pk=inquiry_id)
+    pet = inquiry.pet
+    check_can_manage(pet, user)
+    inquiry.stage = stage
+    inquiry.save(update_fields=['stage'])
+
+    body = f"{inquiry.adopter.full_name}'s adoption of {pet.name} moved to {inquiry.get_stage_display()}."
+    for party in (pet.owner, inquiry.adopter):
+        notify(party, 'update', 'Adoption stage changed', body, subject=inquiry)
+    for group in (f'pet.{pet.pk}', f'user.{pet.owner_id}', f'user.{inquiry.adopter_id}'):
+        push(group, 'inquiry.stage_changed', inquiry_id=str(inquiry.pk), stage=stage)
+    return inquiry
+
+
+def complete_adoption(pet, user, inquiry_id):
+    check_can_manage(pet, user)
+    inquiry = pet.inquiries.select_related('adopter').filter(pk=inquiry_id).first()
+    if inquiry is None:
+        raise ValidationError({'inquiry_id': 'This inquiry does not belong to this pet.'})
+    pet.adopted_by = inquiry.adopter
+    pet.adopted_at = timezone.now()
+    pet.save(update_fields=['adopted_by', 'adopted_at'])
+    # TODO(A2): track the adoption event on commit
+
+    body = f'{pet.name} was adopted by {inquiry.adopter.full_name}.'
+    for party in (pet.owner, inquiry.adopter):
+        notify(party, 'update', 'Adoption completed', body, subject=pet)
+    for group in (f'pet.{pet.pk}', 'browse'):
+        push(group, 'pet.adopted', pet_id=str(pet.pk), adopted_by_id=str(inquiry.adopter_id))
+    for other in pet.inquiries.exclude(pk=inquiry.pk).select_related('adopter'):
+        notify(other.adopter, 'update', 'Adopted by someone else', f'{pet.name} was adopted by someone else.', subject=pet)
+    return pet
 
 
 def sweep_stale_attachments(user):

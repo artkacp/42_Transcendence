@@ -6,8 +6,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from core.pagination import FixedPagePagination
-from inquiries.serializers import InquirySerializer
-from inquiries.services import newest_first, start_inquiry
+from core.realtime import push
+from inquiries.models import Attachment
+from inquiries.serializers import AdoptSerializer, InquirySerializer
+from inquiries.services import complete_adoption, newest_first, start_inquiry
 from notifications.services import notify
 
 from .models import AGE_BUCKETS, BREEDS, CITIES, SEX_CHOICES, SIZE_CHOICES, SPECIES_CHOICES, TRAITS, Pet
@@ -42,6 +44,7 @@ class PetOptionsView(APIView):
 class PetViewSet(
     mixins.CreateModelMixin,
     mixins.RetrieveModelMixin,
+    mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
     serializer_class = PetSerializer
@@ -59,6 +62,23 @@ class PetViewSet(
         pet = serializer.save(owner=self.request.user)
         notify(pet.owner, 'create', 'Listing published', f'{pet.name} is now listed for adoption.', subject=pet)
         # TODO(B8, A2): push pet.published to browse, track listing_published on commit
+
+    # DELETE /pets/{id}/ (owner only; adopters are notified first, while their threads still exist)
+    def perform_destroy(self, pet):
+        if pet.owner != self.request.user:
+            raise PermissionDenied('Only the owner can remove this listing.')
+        for inquiry in pet.inquiries.select_related('adopter'):
+            notify(inquiry.adopter, 'delete', 'Listing removed',
+                   f'{pet.owner.full_name} removed the listing for {pet.name}, so your adoption conversation was closed.')
+        files = [attachment.file for attachment in Attachment.objects.filter(message__inquiry__pet=pet)]
+        if pet.photo:
+            files.append(pet.photo)
+        pet_id = str(pet.pk)
+        pet.delete()
+        for file in files:
+            file.delete(save=False)
+        for group in (f'pet.{pet_id}', 'browse'):
+            push(group, 'pet.removed', pet_id=pet_id)
 
     # GET /pets/?q=&species=&sex=&size=&age_bucket=&city=&breed=&trait=&vaccinated=&neutered=&page=
     def list(self, request):
@@ -97,3 +117,11 @@ class PetViewSet(
             raise PermissionDenied('Only the owner can see the inquiries for this pet.')
         inquiries = newest_first(pet.inquiries.select_related('pet__owner', 'adopter'))
         return Response(InquirySerializer(inquiries, many=True, context=context).data)
+
+    # POST /pets/{id}/adopt/ {inquiry_id}
+    @action(detail=True, methods=['post'])
+    def adopt(self, request, pk=None):
+        data = AdoptSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        pet = complete_adoption(self.get_object(), request.user, data.validated_data['inquiry_id'])
+        return Response(self.get_serializer(pet).data)
