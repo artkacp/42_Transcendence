@@ -49,6 +49,15 @@ body {
     0 0 14px 1px color-mix(in oklch, var(--focus-color) 60%, transparent);
 }
 
+/* Hover glow: a softer cousin of the focus glow — halo only, no crisp edge,
+   so keyboard focus always stays the stronger signal.
+   (hover: hover) skips touch screens, where hover would stick after a tap. */
+@media (hover: hover) {
+  .focus-gradient:hover:not(:focus-visible):not(:disabled) {
+    box-shadow: 0 0 10px 0 color-mix(in oklch, var(--focus-color) 35%, transparent);
+  }
+}
+
 /* Gradient rim: a 1px ring painted on ::before and masked to the edge,
    so it sits on top of any bg-* (hover/active) without a real border.
    Gradient comes from --rim. */
@@ -68,15 +77,13 @@ body {
   pointer-events: none;
 }
 
-/* While focused, the glow replaces the rim, so the 1px line doesn't
-   cut through the soft focus edge. */
+/* The rim is light, so on a darker bg (hover / active / focus) it shows as a
+   pale line. Hide it there; the glow takes over the edge. */
+.rim-gradient::before {
+  transition: opacity 150ms;
+}
+.rim-gradient:hover::before,
+.rim-gradient:active::before,
 .rim-gradient:focus-visible::before {
   opacity: 0;
-}
-
-@media (forced-colors: active) {
-  .focus-gradient:focus-visible {
-    outline: 0px solid CanvasText;
-    outline-offset: 2px;
-  }
 }

@@ -9,3 +9,5 @@ export { Toggle } from './Toggle'
 export { Select } from './Select'
 export { Input } from './Input'
 export { Pagination } from './Pagination'
+export { Tabs, type TabItem, type TabsProps } from './Tabs'
+
