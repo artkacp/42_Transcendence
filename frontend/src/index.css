@@ -14,6 +14,7 @@
   --color-surface-raised: var(--color-cream-100);
   --color-surface-sunken: var(--color-cream-200);
   --color-border: var(--color-cream-200);
+  --color-overlay: var(--color-ink-900);
   --color-text: var(--color-ink-900);
   --color-text-muted: var(--color-ink-500);
   --color-text-subtle: var(--color-ink-400);
