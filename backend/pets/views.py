@@ -1,10 +1,13 @@
 from django.db.models import Count
-from rest_framework import mixins, viewsets
+from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from core.pagination import FixedPagePagination
+from inquiries.serializers import InquirySerializer
+from inquiries.services import newest_first, start_inquiry
 from notifications.services import notify
 
 from .models import AGE_BUCKETS, BREEDS, CITIES, SEX_CHOICES, SIZE_CHOICES, SPECIES_CHOICES, TRAITS, Pet
@@ -77,3 +80,20 @@ class PetViewSet(
     def mine(self, request):
         pets = self.get_queryset().filter(owner=request.user)
         return Response(self.get_serializer(pets, many=True).data)
+
+    # GET /pets/{id}/inquiries/ (owner inbox)  ·  POST /pets/{id}/inquiries/ (start adoption)
+    @action(detail=True, methods=['get', 'post'])
+    def inquiries(self, request, pk=None):
+        pet = self.get_object()
+        context = self.get_serializer_context()
+        if request.method == 'POST':
+            inquiry, created = start_inquiry(pet, request.user)
+            return Response(
+                InquirySerializer(inquiry, context=context).data,
+                status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+            )
+
+        if pet.owner != request.user:
+            raise PermissionDenied('Only the owner can see the inquiries for this pet.')
+        inquiries = newest_first(pet.inquiries.select_related('pet__owner', 'adopter'))
+        return Response(InquirySerializer(inquiries, many=True, context=context).data)
