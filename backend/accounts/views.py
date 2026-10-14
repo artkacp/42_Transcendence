@@ -11,6 +11,7 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+from notifications.services import notify
 from pets.serializers import PetSerializer
 
 from .models import Friendship, User
@@ -37,6 +38,14 @@ def set_refresh_cookie(response, refresh):
         httponly=True,
         samesite=settings.REFRESH_COOKIE_SAMESITE,
     )
+
+
+def notify_both_friends(friendship, kind, title, body):
+    for user, friend in [
+        (friendship.requester, friendship.addressee),
+        (friendship.addressee, friendship.requester),
+    ]:
+        notify(user, kind, title, body.format(name=friend.full_name), subject=friend)
 
 
 class RefreshCookieMixin:
@@ -109,6 +118,7 @@ class UserViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         serializer = UserUpdateSerializer(request.user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        notify(request.user, 'update', 'Profile updated', 'Your profile changes were saved.')
         return Response(MeSerializer(request.user, context={'request': request}).data)
 
     # PUT / DELETE /users/me/avatar/
@@ -120,8 +130,10 @@ class UserViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             serializer.is_valid(raise_exception=True)
             user.avatar.delete(save=False)
             serializer.save()
+            notify(user, 'update', 'Profile updated', 'Your avatar was updated.')
         else:
             user.avatar.delete()
+            notify(user, 'update', 'Profile updated', 'Your avatar was removed.')
         return Response(MeSerializer(user, context={'request': request}).data)
 
 
@@ -158,6 +170,7 @@ class FriendshipViewSet(viewsets.GenericViewSet):
         if reverse:
             reverse.status = Friendship.STATUS_ACCEPTED
             reverse.save(update_fields=['status'])
+            notify_both_friends(reverse, 'create', 'Friend added', 'You and {name} are now friends.')
             serializer = FriendshipSerializer(reverse, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -170,6 +183,7 @@ class FriendshipViewSet(viewsets.GenericViewSet):
             raise ValidationError({'detail': 'A friendship or pending request already exists.'})
 
         friendship = Friendship.objects.create(requester=me, addressee_id=addressee_id)
+        notify(friendship.addressee, 'create', 'Friend request', f'{me.full_name} sent you a friend request.', subject=me)
         serializer = FriendshipSerializer(friendship, context={'request': request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -183,6 +197,7 @@ class FriendshipViewSet(viewsets.GenericViewSet):
             raise ValidationError({'detail': 'This request is not pending.'})
         friendship.status = Friendship.STATUS_ACCEPTED
         friendship.save(update_fields=['status'])
+        notify_both_friends(friendship, 'create', 'Friend added', 'You and {name} are now friends.')
         serializer = FriendshipSerializer(friendship, context={'request': request})
         return Response(serializer.data)
 
@@ -190,6 +205,8 @@ class FriendshipViewSet(viewsets.GenericViewSet):
     def destroy(self, request, pk=None):
         friendship = self._get_friendship(pk)
         self._assert_is_party(friendship, request.user)
+        if friendship.status == Friendship.STATUS_ACCEPTED:
+            notify_both_friends(friendship, 'delete', 'Friend removed', 'You and {name} are no longer friends.')
         friendship.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
