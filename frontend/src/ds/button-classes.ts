@@ -6,10 +6,13 @@
 export type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
 export type Size = 'sm' | 'md' | 'lg'
 
-/* --focus-color feeds the .focus-gradient glow, --rim the .rim-gradient ring (index.css) */
+/* --focus-color feeds the .focus-gradient glow, --rim the .rim-gradient ring (index.css).
+   Every variant sets --focus-edge:0px: hover darkens the bg, and a crisp edge in
+   the lighter --focus-color would show as a ring around it. */
 const variants: Record<Variant, string> = {
+  // (◕◕) + [--focus-edge:0px], same as the other three
   primary:
-    'bg-primary text-on-primary hover:bg-primary-hover active:bg-primary-hover [--focus-color:var(--color-primary)]',
+    'bg-primary text-on-primary hover:bg-primary-hover active:bg-primary-hover [--focus-color:var(--color-primary)] [--focus-edge:0px]',
   secondary:
     'bg-secondary text-on-secondary hover:bg-secondary-hover hover:text-on-primary active:bg-secondary-active active:text-on-primary [--focus-color:var(--color-sage-300)] [--focus-inner:var(--color-secondary-active)] [--focus-edge:0px] rim-gradient [--rim:var(--gradient-rim-secondary)]',
   ghost:
