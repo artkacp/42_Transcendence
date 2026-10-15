@@ -4,6 +4,7 @@ import { CITIES, BREEDS_BY_SPECIES, ALL_TRAITS, AGE_BUCKETS } from '../data/cons
 import { SAMPLE_PETS } from '../data/mockData'
 import type { Species, PetSize, PetSex } from '../data/types'
 import { Select, Chip, Avatar, EmptyState, Button, Card, Badge, Input, Pagination } from '../ds'
+import { navigate } from '../routing'
 
 const PAGE_SIZE = 6
 
@@ -80,7 +81,7 @@ export function Browse() {
           <p className="text-sm text-text-subtle">
             <span className="font-semibold text-text">{results.length}</span> pals available
           </p>
-          <Button size="sm" variant="secondary">
+          <Button size="sm" variant="secondary" onClick={() => navigate('rehome')}>
             Rehome a pet
           </Button>
         </div>
@@ -186,7 +187,13 @@ export function Browse() {
               <Card key={p.id} hover className="cursor-pointer overflow-hidden">
                 <div className="relative flex h-40 items-center justify-center bg-secondary">
                   <span className="text-7xl" aria-hidden>
-                    {p.species === 'dog' ? '🐕' : '🐈'}
+                    {p.photo ? (
+                    	<img src={p.photo} alt={p.name} className="absolute inset-0 size-full object-cover" />
+                  		) : (
+                    	<span className="text-7xl" aria-hidden>
+                      	{p.species === 'dog' ? '🐕' : '🐈'}
+                    	</span>
+                  	)}
                   </span>
                   {p.adopted_by && (
                     <Badge tone="success" className="absolute left-3 top-3">
