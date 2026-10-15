@@ -18,7 +18,7 @@ export function Browse() {
   const [ageBucket, setAgeBucket] = useState('all')
   const [trait, setTrait] = useState('all')
   const [page, setPage] = useState(1)
-	const [filtersOpen, setFiltersOpen] = useState(false)
+  const [filtersOpen, setFiltersOpen] = useState(false)
 
   const changeFilter = (apply: () => void) => {
     apply()
@@ -36,7 +36,7 @@ export function Browse() {
   }
 
   const activeAgeBucket = AGE_BUCKETS.find((b) => b.id === ageBucket) ?? AGE_BUCKETS[0]
-	const activeFilterCount = [sex, size, city, breed, ageBucket, trait].filter((v) => v !== 'all').length
+  const activeFilterCount = [sex, size, city, breed, ageBucket, trait].filter((v) => v !== 'all').length
 
   const results = SAMPLE_PETS.filter((p) => {
     if (species !== 'all' && p.species !== species) return false
@@ -186,15 +186,13 @@ export function Browse() {
             {pageResults.map((p) => (
               <Card key={p.id} hover className="cursor-pointer overflow-hidden">
                 <div className="relative flex h-40 items-center justify-center bg-secondary">
-                  <span className="text-7xl" aria-hidden>
-                    {p.photo ? (
-                    	<img src={p.photo} alt={p.name} className="absolute inset-0 size-full object-cover" />
-                  		) : (
-                    	<span className="text-7xl" aria-hidden>
-                      	{p.species === 'dog' ? '🐕' : '🐈'}
-                    	</span>
-                  	)}
-                  </span>
+                  {p.photo ? (
+                    <img src={p.photo} alt={p.name} className="absolute inset-0 size-full object-cover" />
+                  ) : (
+                    <span className="text-7xl" aria-hidden>
+                      {p.species === 'dog' ? '🐕' : '🐈'}
+                    </span>
+                  )}
                   {p.adopted_by && (
                     <Badge tone="success" className="absolute left-3 top-3">
                       adopted 🎉

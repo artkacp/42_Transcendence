@@ -109,7 +109,7 @@ export const SAMPLE_PETS: Pet[] = [
     inquiry_count: 5,
     created_at: '2026-01-19T10:00:00Z',
   },
-    {
+  {
     id: '6',
     owner: USERS[1],
     name: 'Pixel',
