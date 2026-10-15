@@ -1,3 +1,4 @@
+import { SlidersHorizontal } from 'lucide-react'
 import { useState } from 'react'
 import { CITIES, BREEDS_BY_SPECIES, ALL_TRAITS, AGE_BUCKETS } from '../data/constants'
 import { SAMPLE_PETS } from '../data/mockData'
@@ -16,6 +17,7 @@ export function Browse() {
   const [ageBucket, setAgeBucket] = useState('all')
   const [trait, setTrait] = useState('all')
   const [page, setPage] = useState(1)
+	const [filtersOpen, setFiltersOpen] = useState(false)
 
   const changeFilter = (apply: () => void) => {
     apply()
@@ -33,6 +35,7 @@ export function Browse() {
   }
 
   const activeAgeBucket = AGE_BUCKETS.find((b) => b.id === ageBucket) ?? AGE_BUCKETS[0]
+	const activeFilterCount = [sex, size, city, breed, ageBucket, trait].filter((v) => v !== 'all').length
 
   const results = SAMPLE_PETS.filter((p) => {
     if (species !== 'all' && p.species !== species) return false
@@ -91,61 +94,78 @@ export function Browse() {
         aria-label="Search pets"
       />
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Chip active={species === 'all'} onClick={() => handleSpeciesChange('all')}>
-          All pals
-        </Chip>
-        <Chip active={species === 'dog'} onClick={() => handleSpeciesChange('dog')}>
-          🐶 Dogs
-        </Chip>
-        <Chip active={species === 'cat'} onClick={() => handleSpeciesChange('cat')}>
-          🐱 Cats
-        </Chip>
-        <Select
-          aria-label="Sex"
-          options={[
-            { value: 'all', label: 'Any sex' },
-            { value: 'male', label: 'Male' },
-            { value: 'female', label: 'Female' },
-          ]}
-          value={sex}
-          onChange={(e) => changeFilter(() => setSex(e.target.value as PetSex | 'all'))}
-        />
-        <Select
-          aria-label="Size"
-          options={[
-            { value: 'all', label: 'Any size' },
-            { value: 'small', label: 'Small' },
-            { value: 'medium', label: 'Medium' },
-            { value: 'large', label: 'Large' },
-          ]}
-          value={size}
-          onChange={(e) => changeFilter(() => setSize(e.target.value as PetSize | 'all'))}
-        />
-        <Select
-          aria-label="City"
-          options={[{ value: 'all', label: 'Any city' }, ...CITIES.map((c) => ({ value: c, label: c }))]}
-          value={city}
-          onChange={(e) => changeFilter(() => setCity(e.target.value))}
-        />
-        <Select
-          aria-label="Breed"
-          options={[{ value: 'all', label: 'Any breed' }, ...breedOptions.map((b) => ({ value: b, label: b }))]}
-          value={breed}
-          onChange={(e) => changeFilter(() => setBreed(e.target.value))}
-        />
-        <Select
-          aria-label="Age"
-          options={AGE_BUCKETS.map((b) => ({ value: b.id, label: b.label }))}
-          value={ageBucket}
-          onChange={(e) => changeFilter(() => setAgeBucket(e.target.value))}
-        />
-        <Select
-          aria-label="Trait"
-          options={[{ value: 'all', label: 'Any trait' }, ...ALL_TRAITS.map((t) => ({ value: t, label: t }))]}
-          value={trait}
-          onChange={(e) => changeFilter(() => setTrait(e.target.value))}
-        />
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <Chip active={species === 'all'} onClick={() => handleSpeciesChange('all')}>
+            All pals
+          </Chip>
+          <Chip active={species === 'dog'} onClick={() => handleSpeciesChange('dog')}>
+            🐶 Dogs
+          </Chip>
+          <Chip active={species === 'cat'} onClick={() => handleSpeciesChange('cat')}>
+            🐱 Cats
+          </Chip>
+          <Button
+            size="sm"
+            variant="ghost"
+            icon={<SlidersHorizontal className="size-4" />}
+            onClick={() => setFiltersOpen(!filtersOpen)}
+            aria-expanded={filtersOpen}
+            aria-controls="browse-filters"
+          >
+            {activeFilterCount > 0 ? `Filters (${activeFilterCount})` : 'Filters'}
+          </Button>
+        </div>
+
+        {filtersOpen && (
+          <div id="browse-filters" className="flex flex-wrap items-center gap-2">
+            <Select
+              aria-label="Sex"
+              options={[
+                { value: 'all', label: 'Any sex' },
+                { value: 'male', label: 'Male' },
+                { value: 'female', label: 'Female' },
+              ]}
+              value={sex}
+              onChange={(e) => changeFilter(() => setSex(e.target.value as PetSex | 'all'))}
+            />
+            <Select
+              aria-label="Size"
+              options={[
+                { value: 'all', label: 'Any size' },
+                { value: 'small', label: 'Small' },
+                { value: 'medium', label: 'Medium' },
+                { value: 'large', label: 'Large' },
+              ]}
+              value={size}
+              onChange={(e) => changeFilter(() => setSize(e.target.value as PetSize | 'all'))}
+            />
+            <Select
+              aria-label="City"
+              options={[{ value: 'all', label: 'Any city' }, ...CITIES.map((c) => ({ value: c, label: c }))]}
+              value={city}
+              onChange={(e) => changeFilter(() => setCity(e.target.value))}
+            />
+            <Select
+              aria-label="Breed"
+              options={[{ value: 'all', label: 'Any breed' }, ...breedOptions.map((b) => ({ value: b, label: b }))]}
+              value={breed}
+              onChange={(e) => changeFilter(() => setBreed(e.target.value))}
+            />
+            <Select
+              aria-label="Age"
+              options={AGE_BUCKETS.map((b) => ({ value: b.id, label: b.label }))}
+              value={ageBucket}
+              onChange={(e) => changeFilter(() => setAgeBucket(e.target.value))}
+            />
+            <Select
+              aria-label="Trait"
+              options={[{ value: 'all', label: 'Any trait' }, ...ALL_TRAITS.map((t) => ({ value: t, label: t }))]}
+              value={trait}
+              onChange={(e) => changeFilter(() => setTrait(e.target.value))}
+            />
+          </div>
+        )}
       </div>
 
       {results.length === 0 ? (
