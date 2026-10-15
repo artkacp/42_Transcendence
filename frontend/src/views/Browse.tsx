@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { CITIES, BREEDS_BY_SPECIES, ALL_TRAITS, AGE_BUCKETS } from '../data/constants'
 import { SAMPLE_PETS } from '../data/mockData'
 import type { Species, PetSize, PetSex } from '../data/types'
-import { Select, Chip, Avatar, EmptyState, Button, Card, Badge, Input } from '../ds'
+import { Select, Chip, Avatar, EmptyState, Button, Card, Badge, Input, Pagination } from '../ds'
+
+const PAGE_SIZE = 6
 
 export function Browse() {
   const [q, setQ] = useState('')
@@ -13,8 +15,12 @@ export function Browse() {
   const [breed, setBreed] = useState('all')
   const [ageBucket, setAgeBucket] = useState('all')
   const [trait, setTrait] = useState('all')
-  const [vaccinatedOnly, setVaccinatedOnly] = useState(false)
-  const [neuteredOnly, setNeuteredOnly] = useState(false)
+  const [page, setPage] = useState(1)
+
+  const changeFilter = (apply: () => void) => {
+    apply()
+    setPage(1)
+  }
 
   const breedOptions = species === 'all' ? [...BREEDS_BY_SPECIES.dog, ...BREEDS_BY_SPECIES.cat] : BREEDS_BY_SPECIES[species]
 
@@ -23,6 +29,7 @@ export function Browse() {
     if (next !== 'all' && breed !== 'all' && !BREEDS_BY_SPECIES[next].includes(breed)) {
       setBreed('all')
     }
+    setPage(1)
   }
 
   const activeAgeBucket = AGE_BUCKETS.find((b) => b.id === ageBucket) ?? AGE_BUCKETS[0]
@@ -35,14 +42,15 @@ export function Browse() {
     if (breed !== 'all' && p.breed !== breed) return false
     if (!activeAgeBucket.test(p.age_years)) return false
     if (trait !== 'all' && !p.traits.includes(trait)) return false
-    if (vaccinatedOnly && !p.is_vaccinated) return false
-    if (neuteredOnly && !p.is_neutered) return false
     if (q) {
       const haystack = `${p.name} ${p.breed} ${p.traits.join(' ')}`.toLowerCase()
       if (!haystack.includes(q.toLowerCase())) return false
     }
     return true
-  })
+  }).sort((a, b) => b.created_at.localeCompare(a.created_at))
+
+  const totalPages = Math.ceil(results.length / PAGE_SIZE)
+  const pageResults = results.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   const clearFilters = () => {
     setQ('')
@@ -53,8 +61,7 @@ export function Browse() {
     setBreed('all')
     setAgeBucket('all')
     setTrait('all')
-    setVaccinatedOnly(false)
-    setNeuteredOnly(false)
+    setPage(1)
   }
 
   return (
@@ -80,7 +87,7 @@ export function Browse() {
         type="text"
         placeholder="Search by name, breed, or trait…"
         value={q}
-        onChange={(e) => setQ(e.target.value)}
+        onChange={(e) => changeFilter(() => setQ(e.target.value))}
         aria-label="Search pets"
       />
 
@@ -102,7 +109,7 @@ export function Browse() {
             { value: 'female', label: 'Female' },
           ]}
           value={sex}
-          onChange={(e) => setSex(e.target.value as PetSex | 'all')}
+          onChange={(e) => changeFilter(() => setSex(e.target.value as PetSex | 'all'))}
         />
         <Select
           aria-label="Size"
@@ -113,31 +120,31 @@ export function Browse() {
             { value: 'large', label: 'Large' },
           ]}
           value={size}
-          onChange={(e) => setSize(e.target.value as PetSize | 'all')}
+          onChange={(e) => changeFilter(() => setSize(e.target.value as PetSize | 'all'))}
         />
         <Select
           aria-label="City"
           options={[{ value: 'all', label: 'Any city' }, ...CITIES.map((c) => ({ value: c, label: c }))]}
           value={city}
-          onChange={(e) => setCity(e.target.value)}
+          onChange={(e) => changeFilter(() => setCity(e.target.value))}
         />
         <Select
           aria-label="Breed"
           options={[{ value: 'all', label: 'Any breed' }, ...breedOptions.map((b) => ({ value: b, label: b }))]}
           value={breed}
-          onChange={(e) => setBreed(e.target.value)}
+          onChange={(e) => changeFilter(() => setBreed(e.target.value))}
         />
         <Select
           aria-label="Age"
           options={AGE_BUCKETS.map((b) => ({ value: b.id, label: b.label }))}
           value={ageBucket}
-          onChange={(e) => setAgeBucket(e.target.value)}
+          onChange={(e) => changeFilter(() => setAgeBucket(e.target.value))}
         />
         <Select
           aria-label="Trait"
           options={[{ value: 'all', label: 'Any trait' }, ...ALL_TRAITS.map((t) => ({ value: t, label: t }))]}
           value={trait}
-          onChange={(e) => setTrait(e.target.value)}
+          onChange={(e) => changeFilter(() => setTrait(e.target.value))}
         />
       </div>
 
@@ -153,42 +160,45 @@ export function Browse() {
           }
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {results.map((p) => (
-            <Card key={p.id} hover className="cursor-pointer overflow-hidden">
-              <div className="relative flex h-40 items-center justify-center bg-secondary">
-                <span className="text-7xl" aria-hidden>
-                  {p.species === 'dog' ? '🐕' : '🐈'}
-                </span>
-                {p.adopted_by && (
-                  <Badge tone="success" className="absolute left-3 top-3">
-                    adopted 🎉
-                  </Badge>
-                )}
-              </div>
-              <div className="p-4">
-                <div className="flex items-baseline justify-between gap-2">
-                  <h3 className="font-display text-xl font-bold">{p.name}</h3>
-                  <span className="text-xs text-text-subtle">{p.city}</span>
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {pageResults.map((p) => (
+              <Card key={p.id} hover className="cursor-pointer overflow-hidden">
+                <div className="relative flex h-40 items-center justify-center bg-secondary">
+                  <span className="text-7xl" aria-hidden>
+                    {p.species === 'dog' ? '🐕' : '🐈'}
+                  </span>
+                  {p.adopted_by && (
+                    <Badge tone="success" className="absolute left-3 top-3">
+                      adopted 🎉
+                    </Badge>
+                  )}
                 </div>
-                <p className="text-sm text-text-muted">
-                  {p.breed} · {p.age_years === 0 ? 'under 1 yr' : `${p.age_years} ${p.age_years === 1 ? 'yr' : 'yrs'}`} · {p.sex}
-                </p>
-                <div className="mt-3 flex items-center justify-between">
-                  <div className="flex gap-1.5">
-                    {p.traits.slice(0, 2).map((t) => (
-                      <Badge key={t}>{t}</Badge>
-                    ))}
+                <div className="p-4">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <h3 className="font-display text-xl font-bold">{p.name}</h3>
+                    <span className="text-xs text-text-subtle">{p.city}</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <Avatar name={p.owner.full_name} src={p.owner.avatar} size="sm" />
-                    <span className="text-xs text-text-subtle">{p.owner.full_name}</span>
+                  <p className="text-sm text-text-muted">
+                    {p.breed} · {p.age_years === 0 ? 'under 1 yr' : `${p.age_years} ${p.age_years === 1 ? 'yr' : 'yrs'}`} · {p.sex}
+                  </p>
+                  <div className="mt-3 flex items-center justify-between">
+                    <div className="flex gap-1.5">
+                      {p.traits.slice(0, 2).map((t) => (
+                        <Badge key={t}>{t}</Badge>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Avatar name={p.owner.full_name} src={p.owner.avatar} size="sm" />
+                      <span className="text-xs text-text-subtle">{p.owner.full_name}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+              </Card>
+            ))}
+          </div>
+          <Pagination page={page} totalPages={totalPages} onChange={setPage} />
+        </>
       )}
     </div>
   )
