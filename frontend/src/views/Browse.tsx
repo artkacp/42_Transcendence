@@ -17,6 +17,8 @@ export function Browse() {
   const [breed, setBreed] = useState('all')
   const [ageBucket, setAgeBucket] = useState('all')
   const [trait, setTrait] = useState('all')
+  const [vaccinatedOnly, setVaccinatedOnly] = useState(false)
+  const [neuteredOnly, setNeuteredOnly] = useState(false)
   const [page, setPage] = useState(1)
   const [filtersOpen, setFiltersOpen] = useState(false)
 
@@ -36,7 +38,7 @@ export function Browse() {
   }
 
   const activeAgeBucket = AGE_BUCKETS.find((b) => b.id === ageBucket) ?? AGE_BUCKETS[0]
-  const activeFilterCount = [sex, size, city, breed, ageBucket, trait].filter((v) => v !== 'all').length
+  const activeFilterCount = [sex, size, city, breed, ageBucket, trait].filter((v) => v !== 'all').length + (vaccinatedOnly ? 1 : 0) + (neuteredOnly ? 1 : 0)
 
   const results = SAMPLE_PETS.filter((p) => {
     if (species !== 'all' && p.species !== species) return false
@@ -46,6 +48,8 @@ export function Browse() {
     if (breed !== 'all' && p.breed !== breed) return false
     if (!activeAgeBucket.test(p.age_years)) return false
     if (trait !== 'all' && !p.traits.includes(trait)) return false
+    if (vaccinatedOnly && !p.is_vaccinated) return false
+    if (neuteredOnly && !p.is_neutered) return false
     if (q) {
       const haystack = `${p.name} ${p.breed} ${p.traits.join(' ')}`.toLowerCase()
       if (!haystack.includes(q.toLowerCase())) return false
@@ -65,6 +69,8 @@ export function Browse() {
     setBreed('all')
     setAgeBucket('all')
     setTrait('all')
+    setVaccinatedOnly(false)
+    setNeuteredOnly(false)
     setPage(1)
   }
 
@@ -165,6 +171,12 @@ export function Browse() {
               value={trait}
               onChange={(e) => changeFilter(() => setTrait(e.target.value))}
             />
+            <Chip active={vaccinatedOnly} onClick={() => changeFilter(() => setVaccinatedOnly(!vaccinatedOnly))}>
+              💉 Vaccinated
+            </Chip>
+            <Chip active={neuteredOnly} onClick={() => changeFilter(() => setNeuteredOnly(!neuteredOnly))}>
+              ✂️ Neutered
+            </Chip>
           </div>
         )}
       </div>
