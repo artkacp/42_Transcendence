@@ -41,12 +41,30 @@ body {
    Optional per-variant knobs (defaults keep a crisp 2px edge):
    --focus-inner  fade inward into the button's own colour (light buttons)
    --focus-edge   edge thickness, default 2px
-   --focus-soft   edge blur, default 0 (crisp); a few px makes it smooth */
-.focus-gradient:focus-visible {
-  box-shadow:
+   --focus-soft   edge blur, default 0 (crisp); a few px makes it smooth
+   Two strengths, written once:
+   --glow-full    focus, and hover on buttons
+   --glow-soft    hover on quieter controls (add class .hover-soft, e.g. Tabs) */
+.focus-gradient {
+  --glow-full:
     inset 0 0 8px 0 color-mix(in oklch, var(--focus-inner, transparent) 40%, transparent),
     0 0 var(--focus-soft, 0) var(--focus-edge, 2px) var(--focus-color),
     0 0 14px 1px color-mix(in oklch, var(--focus-color) 60%, transparent);
+  --glow-soft: 0 0 10px 0 color-mix(in oklch, var(--focus-color) 35%, transparent);
+}
+
+.focus-gradient:focus-visible {
+  box-shadow: var(--glow-full);
+}
+
+/* (hover: hover) skips touch screens, where hover would stick after a tap */
+@media (hover: hover) {
+  .focus-gradient:hover:not(:focus-visible):not(:disabled) {
+    box-shadow: var(--glow-full);
+  }
+  .focus-gradient.hover-soft:hover:not(:focus-visible):not(:disabled) {
+    box-shadow: var(--glow-soft);
+  }
 }
 
 /* Gradient rim: a 1px ring painted on ::before and masked to the edge,
@@ -66,10 +84,13 @@ body {
     linear-gradient(#000 0 0) content-box exclude,
     linear-gradient(#000 0 0);
   pointer-events: none;
+  transition: opacity 150ms;
 }
 
-/* While focused, the glow replaces the rim, so the 1px line doesn't
-   cut through the soft focus edge. */
+/* The rim is light, so on a darker bg (hover / active / focus) it shows as a
+   pale line. Hide it there; the glow takes over the edge. */
+.rim-gradient:hover::before,
+.rim-gradient:active::before,
 .rim-gradient:focus-visible::before {
   opacity: 0;
 }
