@@ -52,7 +52,7 @@ function Logo({ small = false }: { small?: boolean }) {
     <Link
       view="browse"
       glow
-      className="flex items-center gap-2.5 rounded-2xl px-3 py-1.5 [--focus-color:var(--color-honey-100)] [--focus-inner:var(--color-honey-100)] [--focus-edge:0px]"
+      className="flex items-center gap-2.5 rounded-2xl px-3 py-1.5 [--focus-color:var(--color-terra-100)] [--focus-inner:var(--color-terra-100)] [--focus-edge:0px]"
     >
       <span
         className={`flex items-center justify-center bg-primary text-on-primary ${
@@ -96,12 +96,10 @@ export function Shell({ view, children }: { view: View; children: ReactNode }) {
       </aside>
 
       <div className="flex min-w-0 flex-col">
-        {/* Top bar (mobile shows the logo; desktop keeps the bar for later: bell, avatar) */}
-        <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-border bg-surface/90 px-4 py-3 backdrop-blur lg:px-8">
-          <div className="lg:hidden">
-            <Logo small />
-          </div>
-          <span className="hidden lg:block" />
+        {/* Top bar (mobile only: logo). Hidden on lg+ — it was an empty strip there.
+            Bring it back for desktop when bell / avatar arrive. */}
+        <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-border bg-surface/90 px-4 py-3 backdrop-blur lg:hidden">
+          <Logo small />
         </header>
 
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-6 pb-10 lg:px-8">{children}</main>
