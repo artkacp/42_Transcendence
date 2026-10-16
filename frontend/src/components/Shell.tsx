@@ -92,7 +92,7 @@ function Logo({ small = false }: { small?: boolean }) {
 export function Shell({ view, children }: { view: View; children: ReactNode }) {
   useFaviconAnimation()
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[240px_1fr]">
+        <div className="min-h-dvh lg:grid lg:grid-cols-[288px_1fr]">
       {/* Sidebar (desktop) */}
       <aside className="sticky top-0 hidden h-dvh flex-col gap-1 border-r border-border bg-surface-raised/60 px-4 py-6 lg:flex">
         <div className="mb-6">

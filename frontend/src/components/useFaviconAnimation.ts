@@ -4,8 +4,8 @@ const LIGHT = 'oklch(0.480 0.135 218)'
 const DARK = 'oklch(0.945 0.092 90)'
 const NOSE_FRAMES = ['ᴥ', 'ﻌ', 'ᴥ']
 const NOSE_FRAME_MS = 400
-const MIN_WAIT_MS = 15_000
-const MAX_WAIT_MS = 40_000
+const MIN_WAIT_MS = 3_000
+const MAX_WAIT_MS = 7_000
 
 function noseUrl(text: string) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><style>text{fill:${LIGHT}}@media (prefers-color-scheme:dark){text{fill:${DARK}}}</style><text x="16" y="29" text-anchor="middle" font-size="48" font-weight="bold" font-family="DejaVu Sans Mono, DejaVu Sans, monospace">${text}</text></svg>`
