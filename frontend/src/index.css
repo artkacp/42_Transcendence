@@ -102,3 +102,30 @@ body {
     outline-offset: 2px;
   }
 }
+/* ʕᐢ•ᴥ₍ᐢ◑ ◑ᐢ₎) modal: panel and backdrop fade in and out together */
+.modal-fade,
+.modal-fade::backdrop {
+  transition:
+    opacity 300ms ease,
+    overlay 300ms allow-discrete,
+    display 300ms allow-discrete;
+}
+.modal-fade:not([open]),
+.modal-fade:not([open])::backdrop {
+  opacity: 0;
+}
+@starting-style {
+  .modal-fade[open],
+  .modal-fade[open]::backdrop {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .modal-fade,
+  .modal-fade::backdrop {
+    transition:
+      opacity 700ms cubic-bezier(0.33, 1, 0.68, 1),
+      overlay 700ms allow-discrete,
+      display 700ms allow-discrete;
+  }
+}
