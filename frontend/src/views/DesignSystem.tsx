@@ -479,8 +479,8 @@ export function DesignSystem() {
                 <Button variant="ghost" onClick={() => setModalOpen(false)}>Cancel</Button>
                 <Button variant="danger" onClick={() => setModalOpen(false)}>Remove</Button>
               </>
-              }
-            >
+            }
+          >
             <p className="text-sm text-text-muted">Inquiries already sent stay in your inbox.</p>
           </Modal>
         </Row>

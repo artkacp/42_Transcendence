@@ -20,10 +20,6 @@ export interface ModalProps
   size?: Size
 }
 
-
-//Native <dialog> opened with showModal(): the browser handles Esc, keeps focus inside, makes the page behind inert and draws ::backdrop.
-//Every way of closing (Esc, backdrop, X button, open={false}) ends in the dialog's native close event, which is the only place onClose is called.
-
 export function Modal({
   open,
   onClose,
