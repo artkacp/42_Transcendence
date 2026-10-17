@@ -10,4 +10,4 @@ export { Select } from './Select'
 export { Input } from './Input'
 export { Pagination } from './Pagination'
 export { Tabs, type TabItem, type TabsProps } from './Tabs'
-
+export { Modal } from './Modal'
