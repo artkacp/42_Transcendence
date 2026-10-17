@@ -8,10 +8,10 @@ SQLAlchemy is the team's chosen external ORM to satisfy the ORM Minor module req
 
 | Layer | Owns |
 |-------|------|
-| Django ORM | Every domain table — users, pets, inquiries, messages, notifications, friendships |
-| SQLAlchemy | `analytics_event` table only — event ingest and `/analytics/me/` rollups |
+| Django ORM | Every domain table — users, pets, inquiries, messages, notifications, friendships. Also reads `analytics_event` for dashboard aggregations (read-only). |
+| SQLAlchemy | `analytics_event` table only — owns the schema mapping and all writes; event ingest and `/api/analytics/me/` rollups. |
 
-The two layers never read or write each other's tables. Django's delete collector does not traverse the analytics table — the FK from `analytics_event.pet_id` to `pets` is nullable and set to `NULL` by the database on pet deletion (not CASCADE), so hard deletes work without SQLAlchemy being involved.
+Django reads `analytics_event` for the Advanced analytics dashboard (direct aggregation queries). SQLAlchemy owns the mapping and all writes — Django never writes to it. Django's delete collector does not traverse the analytics table — the FK from `analytics_event.pet_id` to `pets` is nullable and set to `NULL` by the database on pet deletion (not CASCADE), so hard deletes work without SQLAlchemy being involved.
 
 ---
 
@@ -81,4 +81,4 @@ Running two ORMs against one database means two connection pools and two transac
 - TRD decisions A-6, A-7 — event metadata and instrumentation point
 - Note 510 — Django ORM (the other access layer)
 - Note 530 — Data modeling (analytics_event schema details)
-- Open question Q-22 — whether Alembic is required
+- Note Q-22 — resolved 2026-09-27: mapping-only confirmed, no Alembic required

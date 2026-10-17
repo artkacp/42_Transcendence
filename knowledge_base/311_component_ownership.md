@@ -16,14 +16,14 @@ Update the status column when a PR opens or merges.
 | Chip       | iskaraag | #8  | merged               |
 | Avatar     | iskaraag | #9  | merged               |
 | EmptyState | iskaraag | #10 | merged               |
-| Progress   | oostapen | #13 | in review            |
+| Progress   | oostapen | #13 | merged               |
 | Stat       | oostapen | —   | next                 |
-| Input      | iskaraag | —   | —                    |
+| Input      | iskaraag | #28 | merged               |
 | Textarea   | iskaraag | —   | —                    |
-| Tabs       | iskaraag | —   | —                    |
+| Tabs       | oostapen | #52 | in review            |
 | Modal      | iskaraag | —   | —                    |
 | Toast      | iskaraag | —   | —                    |
-| Pagination | oostapen | —   | —                    |
+| Pagination | oostapen | #31 | merged               |
 
 "merged, not wired up" — the file is in `ds/` but has no export line in
 `ds/index.ts` and no block in the design-kit view, so it cannot be used or
