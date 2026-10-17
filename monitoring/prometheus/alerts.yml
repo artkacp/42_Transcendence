@@ -1,0 +1,11 @@
+# No Alertmanager: alerts only show as pending/firing in Prometheus itself.
+groups:
+  - name: backend
+    rules:
+      - alert: BackendDown
+        expr: up{job="backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: Backend /metrics unreachable for more than 1 minute

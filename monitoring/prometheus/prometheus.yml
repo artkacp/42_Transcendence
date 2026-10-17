@@ -1,0 +1,25 @@
+# Scrapes over the internal Compose network only — neither Prometheus nor its
+# targets publish a host port, and nginx does not route /metrics.
+global:
+  scrape_interval: 15s
+  # Default is 1m; 15s lets BackendDown fire about a minute after the outage
+  # instead of up to two.
+  evaluation_interval: 15s
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+scrape_configs:
+  # django-prometheus on the single Daphne process (config/urls.py).
+  - job_name: backend
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['backend:8000']
+
+  - job_name: node
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']

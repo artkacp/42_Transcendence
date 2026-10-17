@@ -51,6 +51,37 @@ services:
       certgen:
         condition: service_completed_successfully
 
+  # Scrapes backend /metrics and node-exporter (config in monitoring/prometheus).
+  # No published port: internal network only.
+  prometheus:
+    image: prom/prometheus:v3.15.0
+    # Overriding command drops the image's default flags, so the storage path
+    # is repeated here to keep data in the volume.
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus:ro
+      - prometheus_data:/prometheus
+    restart: unless-stopped
+
+  # Host metrics without root: host /proc, /sys and / mounted read-only, no
+  # privileged mode and no host network. Network counters are therefore the
+  # container's own, not the host's.
+  node-exporter:
+    image: prom/node-exporter:v1.12.1
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/rootfs
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro,rslave
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   media:
+  prometheus_data:

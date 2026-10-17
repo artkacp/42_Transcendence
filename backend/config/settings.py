@@ -37,7 +37,10 @@ if not SECRET_KEY:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool('DEBUG', default=False)
 
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
+# Prometheus scrapes backend:8000/metrics over the Compose network, so the
+# service name must pass host validation. The backend port is never published,
+# so only containers on that network can use this host.
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[]) + ['backend']
 
 # nginx terminates TLS and overwrites X-Forwarded-Proto on every proxied
 # request, so Django can trust it to know the browser used HTTPS.
