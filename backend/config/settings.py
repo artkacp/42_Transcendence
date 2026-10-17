@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     # is replaced by Channels' ASGI dev server — keeps dev on the same
     # single Daphne ASGI process as production.
     'daphne',
+    'django_prometheus',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -97,6 +98,7 @@ REFRESH_COOKIE_PATH = '/api/auth/'
 REFRESH_COOKIE_SAMESITE = 'Strict'
 
 MIDDLEWARE = [
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'django.middleware.security.SecurityMiddleware',
     # Serves STATIC_ROOT from the Daphne process when DEBUG=False.
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -106,6 +108,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django_prometheus.middleware.PrometheusAfterMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -141,6 +144,8 @@ CHANNEL_LAYERS = {
 DATABASES = {
     'default': env.db('DATABASE_URL'),
 }
+
+ANALYTICS_DB_URL = env('ANALYTICS_DB_URL', default=env('DATABASE_URL'))
 
 
 # Password validation
