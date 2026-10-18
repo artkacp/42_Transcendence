@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 def _pet_metadata(pet):
     return {
+        'owner_id': str(pet.owner_id),
         'species': pet.species,
         'breed': pet.breed,
         'age_years': pet.age_years,
