@@ -3,13 +3,27 @@ import uuid
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 from django.db.models import F, Q
+from django.utils.text import slugify
+
+from core.uploads import UploadTo
 
 
 class UserManager(BaseUserManager):
+    def generate_handle(self, full_name):
+        base = slugify(full_name).replace('-', '.')[:40] or 'user'
+        handle = base
+        suffix = 1
+        while self.filter(handle=handle).exists():
+            suffix += 1
+            handle = f'{base}{suffix}'
+        return handle
+
     def create_user(self, email, full_name, password=None, **extra_fields):
         if not email:
             raise ValueError('Email is required')
         email = self.normalize_email(email).lower()
+        if 'handle' not in extra_fields:
+            extra_fields['handle'] = self.generate_handle(full_name)
         user = self.model(email=email, full_name=full_name, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
@@ -28,7 +42,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     handle = models.CharField(max_length=50, unique=True)
     city = models.CharField(max_length=100, null=True, blank=True)
     bio = models.TextField(blank=True)
-    avatar = models.FileField(upload_to='avatars/', null=True, blank=True)
+    avatar = models.FileField(upload_to=UploadTo('avatars'), null=True, blank=True)
     is_online = models.BooleanField(default=False)
     last_seen_at = models.DateTimeField(null=True, blank=True)
     date_joined = models.DateTimeField(auto_now_add=True)

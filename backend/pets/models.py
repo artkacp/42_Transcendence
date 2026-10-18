@@ -8,6 +8,13 @@ from django.db import models
 SPECIES_CHOICES = [('dog', 'Dog'), ('cat', 'Cat')]
 SIZE_CHOICES = [('small', 'Small'), ('medium', 'Medium'), ('large', 'Large')]
 SEX_CHOICES = [('male', 'Male'), ('female', 'Female')]
+CITIES = ['Warszawa', 'Kraków', 'Łódź', 'Wrocław', 'Poznań', 'Gdańsk', 'Szczecin', 'Katowice', 'Lublin']
+BREEDS = {
+    'dog': ['Golden Retriever', 'German Shepherd', 'French Bulldog', 'Border Collie', 'Poodle'],
+    'cat': ['British Shorthair', 'Maine Coon', 'Siamese', 'Persian', 'Scottish Fold'],
+}
+TRAITS = ['friendly', 'playful', 'calm', 'shy', 'energetic', 'wild', 'cuddly', 'loyal', 'protective']
+AGE_BUCKETS = {'under_1': (0, 0), '1_3': (1, 3), '4_7': (4, 7), '8_plus': (8, 20)}
 
 
 class Pet(models.Model):
@@ -39,6 +46,10 @@ class Pet(models.Model):
     adopted_at = models.DateTimeField(null=True, blank=True)
     search_text = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        self.search_text = ' '.join([self.name, self.breed, *self.traits])
+        super().save(*args, **kwargs)
 
     class Meta:
         constraints = [

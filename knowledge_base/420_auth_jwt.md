@@ -15,7 +15,7 @@ We use two tokens with different lifespans and storage:
 
 **Why not `localStorage` for the access token?** It's readable by any JS on the page, which makes XSS attacks trivial to exploit. Memory is gone on tab close, which is acceptable given the short lifespan.
 
-**Why `httpOnly` cookie for refresh?** JS cannot read it at all, so XSS cannot steal it. The browser sends it automatically on requests to the right path (`/api/auth/refresh/`). CSRF is mitigated by requiring the access token header on all state-changing calls.
+**Why `httpOnly` cookie for refresh?** JS cannot read it at all, so XSS cannot steal it. The browser sends it automatically on requests to the right path (`/api/auth/`, so refresh and logout both receive it). CSRF is mitigated by requiring the access token header on all state-changing calls.
 
 ---
 

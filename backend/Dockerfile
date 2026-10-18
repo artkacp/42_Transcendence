@@ -12,7 +12,7 @@ COPY . .
 
 EXPOSE 8000
 
-# Apply migrations before handing off to CMD. Invoked via sh so it still runs
+# Apply migrations and collect static files before handing off to CMD. Invoked via sh so it still runs
 # when the dev bind mount replaces /app with host files (and host permissions).
 ENTRYPOINT ["/bin/sh", "/app/entrypoint.sh"]
 

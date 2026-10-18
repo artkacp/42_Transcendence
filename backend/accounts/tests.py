@@ -1,7 +1,18 @@
+import io
+import tempfile
+
+from django.conf import settings
+from django.core.files.storage import default_storage
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
 from django.urls import reverse
+from PIL import Image
 from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
+
+from notifications.models import Notification
+from pets.models import Pet
 
 from .models import Friendship, User
 
@@ -18,6 +29,28 @@ def make_user(handle, n):
 def auth(client, user):
     token = RefreshToken.for_user(user).access_token
     client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
+
+
+def image_file(name='avatar.png', size=(10, 10), format='PNG'):
+    buffer = io.BytesIO()
+    Image.new('RGB', size).save(buffer, format)
+    return SimpleUploadedFile(name, buffer.getvalue(), content_type=f'image/{format.lower()}')
+
+
+def make_pet(owner, **overrides):
+    return Pet.objects.create(**{
+        'owner': owner,
+        'name': 'Karo',
+        'species': 'dog',
+        'breed': 'Poodle',
+        'age_years': 2,
+        'size': 'small',
+        'sex': 'male',
+        'city': 'Kraków',
+        'story': 'A friendly and energetic puppy.',
+        'traits': ['friendly'],
+        **overrides,
+    })
 
 
 class FriendshipTests(APITestCase):
@@ -148,4 +181,207 @@ class FriendshipTests(APITestCase):
 
     def test_unauthenticated_request_rejected(self):
         r = self.client.get(reverse('friendship-list'))
+        self.assertEqual(r.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class AuthTests(APITestCase):
+    credentials = {'email': 'dana@test.com', 'password': 'pawfect-pass-42', 'full_name': 'Dana Scully'}
+
+    def register(self, **overrides):
+        return self.client.post(reverse('auth-register'), {**self.credentials, **overrides})
+
+    def assert_session(self, r, expected_status):
+        self.assertEqual(r.status_code, expected_status)
+        self.assertEqual(list(r.data), ['access'])
+        cookie = r.cookies[settings.REFRESH_COOKIE_NAME]
+        self.assertTrue(cookie['secure'])
+        self.assertTrue(cookie['httponly'])
+        self.assertEqual(cookie['path'], settings.REFRESH_COOKIE_PATH)
+        self.assertEqual(cookie['samesite'], settings.REFRESH_COOKIE_SAMESITE)
+
+    # --- register ---
+
+    def test_register_sets_cookie_and_returns_access_only(self):
+        self.assert_session(self.register(), status.HTTP_201_CREATED)
+
+    def test_register_generates_unique_handle(self):
+        self.register(handle='hacked')
+        self.register(email='other@test.com')
+        handles = User.objects.order_by('date_joined').values_list('handle', flat=True)
+        self.assertEqual(list(handles), ['dana.scully', 'dana.scully2'])
+
+    def test_register_duplicate_email_returns_field_error(self):
+        self.register()
+        r = self.register(email='DANA@test.com')
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(r.data['error'], 'validation_failed')
+        self.assertIn('email', r.data['fields'])
+
+    def test_register_weak_password_returns_field_error(self):
+        r = self.register(password='12345')
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('password', r.data['fields'])
+
+    # --- login ---
+
+    def test_login_sets_cookie_and_returns_access_only(self):
+        self.register()
+        self.client.cookies.clear()
+        r = self.client.post(reverse('auth-login'), {'email': 'Dana@test.com', 'password': 'pawfect-pass-42'})
+        self.assert_session(r, status.HTTP_200_OK)
+
+    def test_login_wrong_password_rejected(self):
+        self.register()
+        r = self.client.post(reverse('auth-login'), {'email': 'dana@test.com', 'password': 'wrong'})
+        self.assertEqual(r.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertNotIn(settings.REFRESH_COOKIE_NAME, r.cookies)
+
+    # --- refresh ---
+
+    def test_refresh_rotates_cookie_and_blacklists_old_one(self):
+        old = self.register().cookies[settings.REFRESH_COOKIE_NAME].value
+        r = self.client.post(reverse('auth-refresh'))
+        self.assert_session(r, status.HTTP_200_OK)
+        self.assertNotEqual(r.cookies[settings.REFRESH_COOKIE_NAME].value, old)
+
+        self.client.cookies[settings.REFRESH_COOKIE_NAME] = old
+        r = self.client.post(reverse('auth-refresh'))
+        self.assertEqual(r.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_refresh_without_cookie_rejected(self):
+        r = self.client.post(reverse('auth-refresh'))
+        self.assertEqual(r.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    # --- logout ---
+
+    def test_logout_invalidates_refresh_token(self):
+        r = self.register()
+        refresh = r.cookies[settings.REFRESH_COOKIE_NAME].value
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {r.data["access"]}')
+        r = self.client.post(reverse('auth-logout'))
+        self.assertEqual(r.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(r.cookies[settings.REFRESH_COOKIE_NAME].value, '')
+
+        self.client.cookies[settings.REFRESH_COOKIE_NAME] = refresh
+        r = self.client.post(reverse('auth-refresh'))
+        self.assertEqual(r.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_logout_requires_authentication(self):
+        r = self.client.post(reverse('auth-logout'))
+        self.assertEqual(r.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    # --- me ---
+
+    def test_me_returns_profile_and_unread_count(self):
+        user = make_user('dana', 1)
+        Notification.objects.create(recipient=user, kind='info', title='Welcome', body='Hi')
+        Notification.objects.create(recipient=user, kind='info', title='Old', body='Hi', is_read=True)
+        auth(self.client, user)
+        r = self.client.get(reverse('auth-me'))
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertEqual(r.data['handle'], 'dana')
+        self.assertEqual(r.data['email'], 'dana@test.com')
+        self.assertEqual(r.data['unread_notifications'], 1)
+
+    def test_me_requires_authentication(self):
+        r = self.client.get(reverse('auth-me'))
+        self.assertEqual(r.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(r.data['error'], 'not_authenticated')
+
+
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp())
+class ProfileTests(APITestCase):
+
+    def setUp(self):
+        self.alice = make_user('alice', 1)
+        self.bob = make_user('bob', 2)
+        auth(self.client, self.alice)
+
+    # --- public profile ---
+
+    def test_other_profile_exposes_only_allowed_fields(self):
+        r = self.client.get(reverse('user-detail', args=[self.bob.pk]))
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            set(r.data),
+            {'id', 'handle', 'full_name', 'avatar', 'is_online', 'city', 'bio', 'friendship'},
+        )
+
+    def test_profile_reports_friendship_state(self):
+        r = self.client.get(reverse('user-detail', args=[self.bob.pk]))
+        self.assertIsNone(r.data['friendship'])
+
+        f = Friendship.objects.create(requester=self.bob, addressee=self.alice)
+        r = self.client.get(reverse('user-detail', args=[self.bob.pk]))
+        self.assertEqual(r.data['friendship'], {'id': f.pk, 'status': 'pending', 'requested_by_me': False})
+
+    def test_user_pets_returns_active_listings_only(self):
+        make_pet(self.bob, name='Active')
+        make_pet(self.bob, name='Adopted', adopted_by=self.alice)
+        r = self.client.get(reverse('user-pets', args=[self.bob.pk]))
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertEqual([p['name'] for p in r.data], ['Active'])
+
+    # --- PATCH /users/me/ ---
+
+    def test_patch_me_updates_profile(self):
+        r = self.client.patch(reverse('user-me'), {'full_name': 'Alice W', 'city': 'Gdańsk', 'bio': 'Hi'})
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.alice.refresh_from_db()
+        self.assertEqual((self.alice.full_name, self.alice.city, self.alice.bio), ('Alice W', 'Gdańsk', 'Hi'))
+
+    def test_patch_me_rejects_short_name(self):
+        r = self.client.patch(reverse('user-me'), {'full_name': 'A'})
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('full_name', r.data['fields'])
+
+    def test_patch_me_rejects_city_outside_fixed_list(self):
+        r = self.client.patch(reverse('user-me'), {'city': 'Paris'})
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('city', r.data['fields'])
+
+    def test_patch_me_ignores_handle(self):
+        r = self.client.patch(reverse('user-me'), {'handle': 'hacked'})
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertEqual(r.data['handle'], 'alice')
+
+    # --- avatar ---
+
+    def upload(self, file):
+        return self.client.put(reverse('user-avatar'), {'avatar': file}, format='multipart')
+
+    def test_upload_avatar_replaces_old_file(self):
+        self.upload(image_file('first.png'))
+        self.alice.refresh_from_db()
+        old_name = self.alice.avatar.name
+        self.assertRegex(old_name, r'^avatars/[0-9a-f]{32}\.png$')
+        self.assertTrue(default_storage.exists(old_name))
+
+        r = self.upload(image_file('second.png'))
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertTrue(r.data['avatar'].startswith('http'))
+        self.assertFalse(default_storage.exists(old_name))
+
+    def test_upload_rejects_non_image(self):
+        r = self.upload(SimpleUploadedFile('notes.txt', b'hello', content_type='text/plain'))
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('avatar', r.data['fields'])
+
+    def test_upload_rejects_file_over_2mb(self):
+        r = self.upload(image_file('big.bmp', size=(1024, 1024), format='BMP'))
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('avatar', r.data['fields'])
+
+    def test_delete_avatar_removes_file(self):
+        self.upload(image_file())
+        self.alice.refresh_from_db()
+        name = self.alice.avatar.name
+        r = self.client.delete(reverse('user-avatar'))
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertIsNone(r.data['avatar'])
+        self.assertFalse(default_storage.exists(name))
+
+    def test_profile_endpoints_require_authentication(self):
+        self.client.credentials()
+        r = self.client.patch(reverse('user-me'), {'bio': 'x'})
         self.assertEqual(r.status_code, status.HTTP_401_UNAUTHORIZED)

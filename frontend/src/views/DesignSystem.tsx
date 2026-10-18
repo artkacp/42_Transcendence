@@ -1,8 +1,7 @@
-
 import { useState, type ReactNode } from 'react'
 import { Heart, Plus, Trash2 } from 'lucide-react'
 import { TOKEN_NAMES } from '../palettes/tokens'
-import { Badge, Button, Card, IconButton, Progress, Select, Chip, Toggle, Avatar, EmptyState, Pagination, Input } from '../ds'
+import { Badge, Button, Card, IconButton, Progress, Select, Chip, Toggle, Avatar, EmptyState, Pagination, Input, Tabs, Modal } from '../ds'
 import { AuthForm } from './AuthForm'
 import { AUTH_MOCKS } from './AuthForm.mocks'
 
@@ -268,6 +267,26 @@ function CrayonLab() {
   )
 }
 
+/* (◕◕) Tabs demo — each demo keeps its own state, so the three rows
+   below can be tried with the keyboard independently. */
+const DEMO_TABS = [
+  { id: 'one', label: 'Sign in' },
+  { id: 'two', label: 'Create account' },
+  { id: 'three', label: 'Third' },
+] as const
+
+function TabsDemo({ count, disabled }: { count: 2 | 3; disabled?: boolean }) {
+  const items = DEMO_TABS.slice(0, count)
+  const [value, setValue] = useState<(typeof items)[number]['id']>(items[0].id)
+  return (
+    <div className="w-full max-w-sm">
+      <Tabs items={items} value={value} onChange={setValue} label="Demo tabs" disabled={disabled}>
+        <p className="text-sm text-text-muted">Panel: {value}</p>
+      </Tabs>
+    </div>
+  )
+}
+
 export function DesignSystem() {
   const [labMode, setLabMode] = useState(false)
   const [selectValue, setSelectValue] = useState('medium')
@@ -275,6 +294,7 @@ export function DesignSystem() {
   const [chipValue, setChipValue] = useState('dog')
   const [inputValue, setInputValue] = useState('')
   const [page, setPage] = useState(5)
+  const [modalOpen, setModalOpen] = useState(false)
 
   return (
     <div className="max-w-3xl px-6 py-8">
@@ -434,6 +454,40 @@ export function DesignSystem() {
           <Pagination page={1} totalPages={3} onChange={() => {}} />
         </Row>
       </Section>
+
+      {/* (◕◕) new section */}
+      <Section title="Tabs">
+        <Row label="Two tabs — Tab enters once, ← → move">
+          <TabsDemo count={2} />
+        </Row>
+        <Row label="Three tabs — Home / End jump to first / last">
+          <TabsDemo count={3} />
+        </Row>
+        <Row label="Disabled">
+          <TabsDemo count={2} disabled />
+        </Row>
+      </Section>
+
+      <Section title="Modal">
+        <Row label="With footer">
+          <Button onClick={() => setModalOpen(true)}>Open modal</Button>
+          <Modal
+            open={modalOpen}
+            onClose={() => setModalOpen(false)}
+            title="Remove listing"
+            description="Karo will no longer show up in Browse."
+            footer={
+              <>
+                <Button variant="ghost" onClick={() => setModalOpen(false)}>Cancel</Button>
+                <Button variant="danger" onClick={() => setModalOpen(false)}>Remove</Button>
+              </>
+            }
+          >
+            <p className="text-sm text-text-muted">Inquiries already sent stay in your inbox.</p>
+          </Modal>
+        </Row>
+      </Section>
+      
       <Section title="Progress">
         <Row label={labMode ? 'Crayon — tone lab' : 'Crayon — pastel'}>
           {labMode ? (
@@ -486,7 +540,8 @@ export function DesignSystem() {
           </Card>
         </div>
       </Section>
-            <Section title="AuthForm · F1">
+
+      <Section title="AuthForm · F1">
         <div className="grid gap-6 md:grid-cols-2">
           {AUTH_MOCKS.map((m) => (
             <div key={m.name} className="flex flex-col gap-2">

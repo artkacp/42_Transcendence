@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import { get, post, setAccessToken, setOnSessionExpired } from '../api/client';
 import { AuthContext, type AuthStatus, type User } from './auth-context';
 
-// TODO: check the exact paths and the login answer shape in the TRD (task B1)
+// Paths checked against feature/b1-auth-session (B1)
 const ME_PATH = '/api/auth/me/';
 const LOGIN_PATH = '/api/auth/login/';
 const LOGOUT_PATH = '/api/auth/logout/';
@@ -26,18 +26,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setOnSessionExpired(dropSession);
 
-    let cancelled = false; // the page may close before the answer comes
-    get<User | null>(ME_PATH)
-      .then((me) => {
+    // Boot: ask /me/ once on mount.
+    // useEffect can't be async (React wants a cleanup, not a Promise), so two
+    // equal ways exist — same behaviour, both keep the `cancelled` guard:
+    //   a) get(ME).then(...).catch(...)              — promise chain
+    //   b) async function boot() { try { await } }   — used here, matches client.ts
+    // `cancelled` stops a late answer from setting state after unmount.
+    let cancelled = false;
+
+    async function boot() {
+      try {
+        const me = await get<User | null>(ME_PATH);
         if (cancelled) return;
         if (!me) return dropSession(); // e.g. dev server answered with HTML
         setUser(me);
         setStatus('signed-in');
-      })
-      .catch(() => {
+      } catch {
         if (!cancelled) dropSession();
-      });
+      }
+    }
 
+    void boot(); // void = not awaiting on purpose
     return () => {
       cancelled = true;
     };
@@ -51,6 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(me);
     setStatus('signed-in');
   }, []);
+  
   const signOut = useCallback(async () => {
     try {
       await post(LOGOUT_PATH); // server clears the refresh cookie
