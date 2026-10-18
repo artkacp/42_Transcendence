@@ -10,6 +10,8 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import AccessToken
 
+from . import presence
+
 UNAUTHORIZED = 4401
 
 
@@ -42,6 +44,9 @@ class SocketConsumer(AsyncJsonWebsocketConsumer):
     async def disconnect(self, code):
         if self.deadline:
             self.deadline.cancel()
+        # self.user is only set once auth succeeded, so a socket closed with 4401 was never counted
+        if self.user is not None and presence.leave(self.user.pk):
+            await presence.announce(self.user.pk)
 
     # Binary or malformed frames count as "anything else" instead of crashing the consumer
     async def receive(self, text_data=None, bytes_data=None, **kwargs):
@@ -74,6 +79,10 @@ class SocketConsumer(AsyncJsonWebsocketConsumer):
             await self.send_json({'type': 'auth.error'})
             await self.close(code=UNAUTHORIZED)
             return
+        # Counted before joining browse, so the user's own socket never hears about itself;
+        # auth.ok then only goes out once is_online is already written
+        if presence.join(self.user.pk):
+            await presence.announce(self.user.pk)
         # Channels leaves self.groups on disconnect
         self.groups = [f'user.{self.user.pk}', 'browse']
         for group in self.groups:
