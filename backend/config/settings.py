@@ -137,6 +137,9 @@ CHANNEL_LAYERS = {
     },
 }
 
+# Seconds a new /ws/ socket has to send its auth frame before it is closed with 4401.
+WS_AUTH_TIMEOUT = 10
+
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
