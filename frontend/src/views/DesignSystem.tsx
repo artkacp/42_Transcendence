@@ -1,7 +1,9 @@
 import { useState, type ReactNode } from 'react'
 import { Heart, Plus, Trash2 } from 'lucide-react'
 import { TOKEN_NAMES } from '../palettes/tokens'
-import { Badge, Button, Card, IconButton, Progress, Select, Chip, Toggle, Avatar, EmptyState, Pagination, Input , Tabs, Modal } from '../ds'
+import { Badge, Button, Card, IconButton, Progress, Select, Chip, Toggle, Avatar, EmptyState, Pagination, Input, Tabs, Modal } from '../ds'
+import { AuthForm } from './AuthForm'
+import { AUTH_MOCKS } from './AuthForm.mocks'
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -536,6 +538,17 @@ export function DesignSystem() {
             <p className="text-text mb-3">This one lifts on hover.</p>
             <Button size="sm" variant="secondary">Action</Button>
           </Card>
+        </div>
+      </Section>
+
+      <Section title="AuthForm · F1">
+        <div className="grid gap-6 md:grid-cols-2">
+          {AUTH_MOCKS.map((m) => (
+            <div key={m.name} className="flex flex-col gap-2">
+              <h4 className="text-sm font-medium text-text">{m.name}</h4>
+              <AuthForm {...m.props} />
+            </div>
+          ))}
         </div>
       </Section>
     </div>
