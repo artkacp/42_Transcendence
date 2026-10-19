@@ -6,6 +6,7 @@ import { useAuth } from '../auth/auth-context'
 import type { Pet } from '../data/types'
 import { Badge, Button, Card, EmptyState, useToast } from '../ds'
 import { navigate } from '../routing'
+import { PublishPetModal } from './PublishPetModal'
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -95,6 +96,7 @@ function YourListings() {
   const [pets, setPets] = useState<Pet[] | null>(null)
   const [error, setError] = useState('')
   const [removing, setRemoving] = useState(false)
+  const [publishOpen, setPublishOpen] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -130,7 +132,7 @@ function YourListings() {
     }
   }
 
-  const openPublish = () => {}
+  const openPublish = () => setPublishOpen(true)
 
   return (
     <div className="space-y-6 p-8">
@@ -158,6 +160,7 @@ function YourListings() {
       ) : (
         <ListingsTable pets={pets} busy={removing} onRemove={removePet} />
       )}
+      <PublishPetModal open={publishOpen} onClose={() => setPublishOpen(false)} />
     </div>
   )
 }
