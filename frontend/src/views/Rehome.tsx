@@ -134,6 +134,12 @@ function YourListings() {
 
   const openPublish = () => setPublishOpen(true)
 
+  const handlePublished = (pet: Pet) => {
+    setPublishOpen(false)
+    setPets((prev) => [pet, ...(prev ?? [])])
+    toast({ kind: 'create', title: 'Listing published', message: `${pet.name} is now listed for adoption.` })
+  }
+
   return (
     <div className="space-y-6 p-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -160,7 +166,7 @@ function YourListings() {
       ) : (
         <ListingsTable pets={pets} busy={removing} onRemove={removePet} />
       )}
-      <PublishPetModal open={publishOpen} onClose={() => setPublishOpen(false)} />
+      <PublishPetModal open={publishOpen} onClose={() => setPublishOpen(false)} onPublished={handlePublished} />
     </div>
   )
 }

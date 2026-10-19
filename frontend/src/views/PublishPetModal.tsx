@@ -1,11 +1,15 @@
 import { useEffect, useId, useRef, useState, type ComponentProps } from 'react'
 import { ImagePlus, X } from 'lucide-react'
+import { ApiError } from '../api/client'
+import { createPet } from '../api/pets'
 import { ALL_TRAITS, BREEDS_BY_SPECIES, CITIES } from '../data/constants'
-import type { PetSex, PetSize, Species } from '../data/types'
+import type { NewPet, Pet, PetSex, PetSize, Species } from '../data/types'
 import { Button, Chip, Input, Modal, Select, Textarea, Toggle } from '../ds'
 
 const FORM_ID = 'publish-pet-form'
 const MAX_TRAITS = 4
+const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+const MAX_PHOTO_MB = 5
 
 const SPECIES_OPTIONS = [
   { value: 'dog', label: '🐶 Dog' },
@@ -30,23 +34,10 @@ const AGE_OPTIONS = Array.from({ length: 21 }, (_, age) => ({
 
 const CITY_OPTIONS = CITIES.map((city) => ({ value: city, label: city }))
 
-export interface PetDraft {
-  name: string
-  species: Species
-  breed: string
-  age_years: number
-  size: PetSize
-  sex: PetSex
-  city: string
-  story: string
-  traits: string[]
-  is_vaccinated: boolean
-  is_neutered: boolean
-}
+type FieldName = keyof NewPet | 'photo'
+type FieldErrors = Partial<Record<FieldName, string>>
 
-type DraftErrors = Partial<Record<keyof PetDraft, string>>
-
-const EMPTY_DRAFT: PetDraft = {
+const EMPTY_DRAFT: NewPet = {
   name: '',
   species: 'dog',
   breed: '',
@@ -60,8 +51,13 @@ const EMPTY_DRAFT: PetDraft = {
   is_neutered: false,
 }
 
-const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
-const MAX_PHOTO_MB = 5
+function validate(draft: NewPet): FieldErrors {
+  const errors: FieldErrors = {}
+  if (draft.name.trim().length < 2) errors.name = 'Name needs at least 2 characters.'
+  if (!draft.breed) errors.breed = 'Choose a breed.'
+  if (draft.story.trim().length < 20) errors.story = 'Story needs at least 20 characters.'
+  return errors
+}
 
 function photoProblem(file: File) {
   if (!PHOTO_TYPES.includes(file.type)) return `${file.name} is not a JPG, PNG, WebP or GIF image.`
@@ -69,13 +65,39 @@ function photoProblem(file: File) {
   return ''
 }
 
+function SelectField({ label, error, ...rest }: ComponentProps<typeof Select> & { label: string; error?: string }) {
+  const id = useId()
+  const errorId = `${id}-error`
+
+  return (
+    <div className="space-y-1.5">
+      <label htmlFor={id} className="block text-sm font-medium text-text">
+        {label}
+      </label>
+      <Select
+        id={id}
+        className="w-full"
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? errorId : undefined}
+        {...rest}
+      />
+      {error && (
+        <p id={errorId} className="text-sm text-danger">
+          {error}
+        </p>
+      )}
+    </div>
+  )
+}
+
 interface PhotoPickerProps {
   file: File | null
   species: Species
+  error?: string
   onChange: (file: File | null) => void
 }
 
-function PhotoPicker({ file, species, onChange }: PhotoPickerProps) {
+function PhotoPicker({ file, species, error, onChange }: PhotoPickerProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [rejected, setRejected] = useState('')
@@ -92,6 +114,8 @@ function PhotoPicker({ file, species, onChange }: PhotoPickerProps) {
     onChange(null)
     setRejected('')
   }
+
+  const message = rejected || error
 
   return (
     <div className="space-y-2">
@@ -141,54 +165,27 @@ function PhotoPicker({ file, species, onChange }: PhotoPickerProps) {
           if (!problem) onChange(next)
         }}
       />
-      {rejected && (
+      {message && (
         <p role="alert" className="rounded-2xl bg-danger-soft px-4 py-2 text-sm text-danger">
-          {rejected}
+          {message}
         </p>
       )}
     </div>
   )
 }
 
-function validate(draft: PetDraft): DraftErrors {
-  const errors: DraftErrors = {}
-  if (draft.name.trim().length < 2) errors.name = 'Name needs at least 2 characters.'
-  if (!draft.breed) errors.breed = 'Choose a breed.'
-  if (draft.story.trim().length < 20) errors.story = 'Story needs at least 20 characters.'
-  return errors
+interface PublishFormProps {
+  onPublished: (pet: Pet) => void
+  onSubmittingChange: (submitting: boolean) => void
 }
 
-function SelectField({ label, error, ...rest }: ComponentProps<typeof Select> & { label: string; error?: string }) {
-  const id = useId()
-  const errorId = `${id}-error`
-
-  return (
-    <div className="space-y-1.5">
-      <label htmlFor={id} className="block text-sm font-medium text-text">
-        {label}
-      </label>
-      <Select
-        id={id}
-        className="w-full"
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error ? errorId : undefined}
-        {...rest}
-      />
-      {error && (
-        <p id={errorId} className="text-sm text-danger">
-          {error}
-        </p>
-      )}
-    </div>
-  )
-}
-
-function PublishForm() {
-  const [draft, setDraft] = useState<PetDraft>(EMPTY_DRAFT)
-  const [errors, setErrors] = useState<DraftErrors>({})
+function PublishForm({ onPublished, onSubmittingChange }: PublishFormProps) {
+  const [draft, setDraft] = useState<NewPet>(EMPTY_DRAFT)
   const [photo, setPhoto] = useState<File | null>(null)
+  const [errors, setErrors] = useState<FieldErrors>({})
+  const [formError, setFormError] = useState('')
 
-  const update = <K extends keyof PetDraft>(key: K, value: PetDraft[K]) => {
+  const update = <K extends keyof NewPet>(key: K, value: NewPet[K]) => {
     setDraft((prev) => ({ ...prev, [key]: value }))
     setErrors((prev) => ({ ...prev, [key]: undefined }))
   }
@@ -198,8 +195,30 @@ function PublishForm() {
     setErrors((prev) => ({ ...prev, breed: undefined }))
   }
 
+  const changePhoto = (file: File | null) => {
+    setPhoto(file)
+    setErrors((prev) => ({ ...prev, photo: undefined }))
+  }
+
   const toggleTrait = (trait: string) =>
     update('traits', draft.traits.includes(trait) ? draft.traits.filter((t) => t !== trait) : [...draft.traits, trait])
+
+  const submit = async () => {
+    const found = validate(draft)
+    setErrors(found)
+    setFormError('')
+    if (Object.keys(found).length > 0) return
+
+    onSubmittingChange(true)
+    try {
+      onPublished(await createPet(draft, photo))
+    } catch (err) {
+      if (err instanceof ApiError && Object.keys(err.fieldErrors).length > 0) setErrors(err.fieldErrors as FieldErrors)
+      else setFormError(err instanceof ApiError ? err.message : 'Could not publish. Please try again.')
+    } finally {
+      onSubmittingChange(false)
+    }
+  }
 
   const breedOptions = [
     { value: '', label: 'Choose a breed' },
@@ -213,10 +232,17 @@ function PublishForm() {
       className="space-y-5"
       onSubmit={(e) => {
         e.preventDefault()
-        setErrors(validate(draft))
+        void submit()
       }}
     >
-      <PhotoPicker file={photo} species={draft.species} onChange={setPhoto} />
+      {formError && (
+        <p role="alert" className="rounded-2xl bg-danger-soft px-4 py-2 text-sm text-danger">
+          {formError}
+        </p>
+      )}
+
+      <PhotoPicker file={photo} species={draft.species} error={errors.photo} onChange={changePhoto} />
+
       <Input
         label="Name"
         placeholder="e.g. Cookie"
@@ -232,6 +258,7 @@ function PublishForm() {
           options={SPECIES_OPTIONS}
           value={draft.species}
           onChange={(e) => changeSpecies(e.target.value as Species)}
+          error={errors.species}
         />
         <SelectField
           label="Breed"
@@ -245,24 +272,28 @@ function PublishForm() {
           options={AGE_OPTIONS}
           value={String(draft.age_years)}
           onChange={(e) => update('age_years', Number(e.target.value))}
+          error={errors.age_years}
         />
         <SelectField
           label="Size"
           options={SIZE_OPTIONS}
           value={draft.size}
           onChange={(e) => update('size', e.target.value as PetSize)}
+          error={errors.size}
         />
         <SelectField
           label="Sex"
           options={SEX_OPTIONS}
           value={draft.sex}
           onChange={(e) => update('sex', e.target.value as PetSex)}
+          error={errors.sex}
         />
         <SelectField
           label="City"
           options={CITY_OPTIONS}
           value={draft.city}
           onChange={(e) => update('city', e.target.value)}
+          error={errors.city}
         />
       </div>
 
@@ -293,6 +324,7 @@ function PublishForm() {
             )
           })}
         </div>
+        {errors.traits && <p className="text-sm text-danger">{errors.traits}</p>}
       </fieldset>
 
       <div className="flex flex-wrap gap-6">
@@ -303,7 +335,15 @@ function PublishForm() {
   )
 }
 
-export function PublishPetModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+interface PublishPetModalProps {
+  open: boolean
+  onClose: () => void
+  onPublished: (pet: Pet) => void
+}
+
+export function PublishPetModal({ open, onClose, onPublished }: PublishPetModalProps) {
+  const [submitting, setSubmitting] = useState(false)
+
   return (
     <Modal
       open={open}
@@ -316,13 +356,13 @@ export function PublishPetModal({ open, onClose }: { open: boolean; onClose: () 
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" form={FORM_ID}>
-            Publish
+          <Button type="submit" form={FORM_ID} disabled={submitting}>
+            {submitting ? 'Publishing…' : 'Publish'}
           </Button>
         </>
       }
     >
-      {open && <PublishForm />}
+      {open && <PublishForm onPublished={onPublished} onSubmittingChange={setSubmitting} />}
     </Modal>
   )
 }
