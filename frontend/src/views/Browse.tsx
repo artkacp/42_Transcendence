@@ -27,7 +27,7 @@ export function Browse() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [retry, setRetry] = useState(0)
-  const { status } = useAuth()
+  const { status, user } = useAuth()
   const [debouncedQ, setDebouncedQ] = useState('')
 
   useEffect(() => {
@@ -280,6 +280,9 @@ export function Browse() {
                       adopted 🎉
                     </Badge>
                   )}
+                  {user && p.owner.id === user.id && (
+                    <Badge className="absolute right-3 top-3">your listing</Badge>
+                  )}
                 </div>
                 <div className="p-4">
                   <div className="flex items-baseline justify-between gap-2">
@@ -297,7 +300,7 @@ export function Browse() {
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Avatar name={p.owner.full_name} src={p.owner.avatar} size="sm" />
-                      <span className="text-xs text-text-subtle">{p.owner.full_name}</span>
+                      <span className="text-xs text-text-subtle">{p.owner.full_name.split(' ')[0]}</span>
                     </div>
                   </div>
                 </div>
