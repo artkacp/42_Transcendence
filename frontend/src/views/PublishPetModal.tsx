@@ -1,4 +1,5 @@
-import { useId, useState, type ComponentProps } from 'react'
+import { useEffect, useId, useRef, useState, type ComponentProps } from 'react'
+import { ImagePlus, X } from 'lucide-react'
 import { ALL_TRAITS, BREEDS_BY_SPECIES, CITIES } from '../data/constants'
 import type { PetSex, PetSize, Species } from '../data/types'
 import { Button, Chip, Input, Modal, Select, Textarea, Toggle } from '../ds'
@@ -59,6 +60,96 @@ const EMPTY_DRAFT: PetDraft = {
   is_neutered: false,
 }
 
+const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+const MAX_PHOTO_MB = 5
+
+function photoProblem(file: File) {
+  if (!PHOTO_TYPES.includes(file.type)) return `${file.name} is not a JPG, PNG, WebP or GIF image.`
+  if (file.size > MAX_PHOTO_MB * 1024 * 1024) return `${file.name} is larger than ${MAX_PHOTO_MB} MB.`
+  return ''
+}
+
+interface PhotoPickerProps {
+  file: File | null
+  species: Species
+  onChange: (file: File | null) => void
+}
+
+function PhotoPicker({ file, species, onChange }: PhotoPickerProps) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [preview, setPreview] = useState<string | null>(null)
+  const [rejected, setRejected] = useState('')
+
+  useEffect(() => {
+    const url = file ? URL.createObjectURL(file) : null
+    setPreview(url)
+    return () => {
+      if (url) URL.revokeObjectURL(url)
+    }
+  }, [file])
+
+  const remove = () => {
+    onChange(null)
+    setRejected('')
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-medium text-text">
+        Photo <span className="font-normal text-text-muted">(optional)</span>
+      </p>
+      <div className="flex items-center gap-4">
+        <div className="relative flex size-28 shrink-0 items-center justify-center overflow-hidden rounded-3xl bg-secondary">
+          {preview ? (
+            <img src={preview} alt="Selected photo" className="absolute inset-0 size-full object-cover" />
+          ) : (
+            <span className="text-5xl" aria-hidden>
+              {species === 'dog' ? '🐕' : '🐈'}
+            </span>
+          )}
+        </div>
+        <div className="min-w-0 space-y-2">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              icon={<ImagePlus className="size-4" />}
+              onClick={() => inputRef.current?.click()}
+            >
+              {file ? 'Change photo' : 'Choose photo'}
+            </Button>
+            {file && (
+              <Button size="sm" variant="ghost" icon={<X className="size-4" />} onClick={remove}>
+                Remove
+              </Button>
+            )}
+          </div>
+          <p className="truncate text-xs text-text-muted">{file ? file.name : 'JPG, PNG, WebP or GIF, up to 5 MB.'}</p>
+        </div>
+      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept={PHOTO_TYPES.join(',')}
+        hidden
+        onChange={(e) => {
+          const next = e.target.files?.[0]
+          e.target.value = ''
+          if (!next) return
+          const problem = photoProblem(next)
+          setRejected(problem)
+          if (!problem) onChange(next)
+        }}
+      />
+      {rejected && (
+        <p role="alert" className="rounded-2xl bg-danger-soft px-4 py-2 text-sm text-danger">
+          {rejected}
+        </p>
+      )}
+    </div>
+  )
+}
+
 function validate(draft: PetDraft): DraftErrors {
   const errors: DraftErrors = {}
   if (draft.name.trim().length < 2) errors.name = 'Name needs at least 2 characters.'
@@ -95,6 +186,7 @@ function SelectField({ label, error, ...rest }: ComponentProps<typeof Select> & 
 function PublishForm() {
   const [draft, setDraft] = useState<PetDraft>(EMPTY_DRAFT)
   const [errors, setErrors] = useState<DraftErrors>({})
+  const [photo, setPhoto] = useState<File | null>(null)
 
   const update = <K extends keyof PetDraft>(key: K, value: PetDraft[K]) => {
     setDraft((prev) => ({ ...prev, [key]: value }))
@@ -124,6 +216,7 @@ function PublishForm() {
         setErrors(validate(draft))
       }}
     >
+      <PhotoPicker file={photo} species={draft.species} onChange={setPhoto} />
       <Input
         label="Name"
         placeholder="e.g. Cookie"
