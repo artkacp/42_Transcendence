@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 import { ApiError } from '../api/client'
-import { getMyPets } from '../api/pets'
+import { deletePet, getMyPets } from '../api/pets'
 import { useAuth } from '../auth/auth-context'
 import type { Pet } from '../data/types'
-import { Badge, Button, Card, EmptyState } from '../ds'
+import { Badge, Button, Card, EmptyState, useToast } from '../ds'
 import { navigate } from '../routing'
 
 const formatDate = (iso: string) =>
@@ -26,7 +26,13 @@ function PetThumb({ pet }: { pet: Pet }) {
   )
 }
 
-function ListingsTable({ pets }: { pets: Pet[] }) {
+interface ListingsTableProps {
+  pets: Pet[]
+  busy: boolean
+  onRemove: (pet: Pet) => void
+}
+
+function ListingsTable({ pets, busy, onRemove }: ListingsTableProps) {
   return (
     <Card className="overflow-x-auto">
       <table className="w-full min-w-[640px] text-left text-sm">
@@ -64,6 +70,16 @@ function ListingsTable({ pets }: { pets: Pet[] }) {
                   <Button size="sm" variant="secondary" disabled title="Opens with the pet page">
                     View & reply
                   </Button>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    icon={<Trash2 className="size-3.5" />}
+                    disabled={busy}
+                    onClick={() => onRemove(pet)}
+                    aria-label={`Remove ${pet.name}`}
+                  >
+                    Remove
+                  </Button>
                 </div>
               </td>
             </tr>
@@ -75,8 +91,10 @@ function ListingsTable({ pets }: { pets: Pet[] }) {
 }
 
 function YourListings() {
+  const toast = useToast()
   const [pets, setPets] = useState<Pet[] | null>(null)
   const [error, setError] = useState('')
+  const [removing, setRemoving] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -91,6 +109,26 @@ function YourListings() {
       cancelled = true
     }
   }, [])
+
+  const dropRow = (id: string) => setPets((prev) => prev && prev.filter((p) => p.id !== id))
+
+  const removePet = async (pet: Pet) => {
+    setRemoving(true)
+    try {
+      await deletePet(pet.id)
+      dropRow(pet.id)
+      toast({ kind: 'delete', title: 'Listing removed', message: `${pet.name} is no longer listed.` })
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) {
+        dropRow(pet.id)
+        toast({ title: 'Already removed', message: `${pet.name} was not listed anymore.` })
+      } else {
+        toast({ title: 'Could not remove listing', message: err instanceof ApiError ? err.message : 'Please try again.' })
+      }
+    } finally {
+      setRemoving(false)
+    }
+  }
 
   const openPublish = () => {}
 
@@ -118,7 +156,7 @@ function YourListings() {
           action={<Button onClick={openPublish}>Rehome a pet</Button>}
         />
       ) : (
-        <ListingsTable pets={pets} />
+        <ListingsTable pets={pets} busy={removing} onRemove={removePet} />
       )}
     </div>
   )
