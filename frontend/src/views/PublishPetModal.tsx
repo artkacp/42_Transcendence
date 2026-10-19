@@ -1,8 +1,7 @@
 import { useEffect, useId, useRef, useState, type ComponentProps } from 'react'
 import { ImagePlus, X } from 'lucide-react'
 import { ApiError } from '../api/client'
-import { createPet } from '../api/pets'
-import { ALL_TRAITS, BREEDS_BY_SPECIES, CITIES } from '../data/constants'
+import { createPet, getPetOptions, type PetOptions } from '../api/pets'
 import type { NewPet, Pet, PetSex, PetSize, Species } from '../data/types'
 import { Button, Chip, Input, Modal, Select, Textarea, Toggle } from '../ds'
 
@@ -11,45 +10,33 @@ const MAX_TRAITS = 4
 const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const MAX_PHOTO_MB = 5
 
-const SPECIES_OPTIONS = [
-  { value: 'dog', label: '🐶 Dog' },
-  { value: 'cat', label: '🐱 Cat' },
-]
+const SPECIES_LABELS: Record<Species, string> = { dog: '🐶 Dog', cat: '🐱 Cat' }
 
-const SIZE_OPTIONS = [
-  { value: 'small', label: 'Small' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'large', label: 'Large' },
-]
+const capitalize = (value: string) => value.charAt(0).toUpperCase() + value.slice(1)
 
-const SEX_OPTIONS = [
-  { value: 'female', label: 'Female' },
-  { value: 'male', label: 'Male' },
-]
+const toOptions = (values: string[]) => values.map((value) => ({ value, label: capitalize(value) }))
 
 const AGE_OPTIONS = Array.from({ length: 21 }, (_, age) => ({
   value: String(age),
   label: age === 0 ? 'Under 1 year' : age === 1 ? '1 year' : `${age} years`,
 }))
 
-const CITY_OPTIONS = CITIES.map((city) => ({ value: city, label: city }))
-
 type FieldName = keyof NewPet | 'photo'
 type FieldErrors = Partial<Record<FieldName, string>>
 
-const EMPTY_DRAFT: NewPet = {
+const emptyDraft = (petOptions: PetOptions): NewPet => ({
   name: '',
   species: 'dog',
   breed: '',
   age_years: 1,
   size: 'medium',
   sex: 'female',
-  city: CITIES[0],
+  city: petOptions.cities[0],
   story: '',
   traits: [],
   is_vaccinated: false,
   is_neutered: false,
-}
+})
 
 function validate(draft: NewPet): FieldErrors {
   const errors: FieldErrors = {}
@@ -175,12 +162,13 @@ function PhotoPicker({ file, species, error, onChange }: PhotoPickerProps) {
 }
 
 interface PublishFormProps {
+  petOptions: PetOptions
   onPublished: (pet: Pet) => void
   onSubmittingChange: (submitting: boolean) => void
 }
 
-function PublishForm({ onPublished, onSubmittingChange }: PublishFormProps) {
-  const [draft, setDraft] = useState<NewPet>(EMPTY_DRAFT)
+function PublishForm({ petOptions, onPublished, onSubmittingChange }: PublishFormProps) {
+  const [draft, setDraft] = useState<NewPet>(() => emptyDraft(petOptions))
   const [photo, setPhoto] = useState<File | null>(null)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [formError, setFormError] = useState('')
@@ -222,7 +210,7 @@ function PublishForm({ onPublished, onSubmittingChange }: PublishFormProps) {
 
   const breedOptions = [
     { value: '', label: 'Choose a breed' },
-    ...BREEDS_BY_SPECIES[draft.species].map((breed) => ({ value: breed, label: breed })),
+    ...petOptions.breeds[draft.species].map((breed) => ({ value: breed, label: breed })),
   ]
 
   return (
@@ -255,7 +243,7 @@ function PublishForm({ onPublished, onSubmittingChange }: PublishFormProps) {
       <div className="grid gap-4 sm:grid-cols-2">
         <SelectField
           label="Species"
-          options={SPECIES_OPTIONS}
+          options={petOptions.species.map((value) => ({ value, label: SPECIES_LABELS[value] }))}
           value={draft.species}
           onChange={(e) => changeSpecies(e.target.value as Species)}
           error={errors.species}
@@ -276,21 +264,21 @@ function PublishForm({ onPublished, onSubmittingChange }: PublishFormProps) {
         />
         <SelectField
           label="Size"
-          options={SIZE_OPTIONS}
+          options={toOptions(petOptions.sizes)}
           value={draft.size}
           onChange={(e) => update('size', e.target.value as PetSize)}
           error={errors.size}
         />
         <SelectField
           label="Sex"
-          options={SEX_OPTIONS}
+          options={toOptions(petOptions.sexes)}
           value={draft.sex}
           onChange={(e) => update('sex', e.target.value as PetSex)}
           error={errors.sex}
         />
         <SelectField
           label="City"
-          options={CITY_OPTIONS}
+          options={petOptions.cities.map((city) => ({ value: city, label: city }))}
           value={draft.city}
           onChange={(e) => update('city', e.target.value)}
           error={errors.city}
@@ -310,7 +298,7 @@ function PublishForm({ onPublished, onSubmittingChange }: PublishFormProps) {
           Traits <span className="font-normal text-text-muted">({draft.traits.length}/{MAX_TRAITS})</span>
         </legend>
         <div className="flex flex-wrap gap-2">
-          {ALL_TRAITS.map((trait) => {
+          {petOptions.traits.map((trait) => {
             const active = draft.traits.includes(trait)
             return (
               <Chip
@@ -333,6 +321,42 @@ function PublishForm({ onPublished, onSubmittingChange }: PublishFormProps) {
       </div>
     </form>
   )
+}
+
+function PublishFormLoader(props: Omit<PublishFormProps, 'petOptions'>) {
+  const [petOptions, setPetOptions] = useState<PetOptions | null>(null)
+  const [failed, setFailed] = useState(false)
+  const [retry, setRetry] = useState(0)
+
+  useEffect(() => {
+    let ignore = false
+    setFailed(false)
+    getPetOptions()
+      .then((data) => {
+        if (!ignore) setPetOptions(data)
+      })
+      .catch(() => {
+        if (!ignore) setFailed(true)
+      })
+    return () => {
+      ignore = true
+    }
+  }, [retry])
+
+  if (failed) {
+    return (
+      <div role="alert" className="flex items-center justify-between gap-3 rounded-2xl bg-danger-soft px-4 py-3 text-sm text-danger">
+        Could not load the form options.
+        <Button size="sm" variant="secondary" onClick={() => setRetry((n) => n + 1)}>
+          Try again
+        </Button>
+      </div>
+    )
+  }
+
+  if (!petOptions) return <p role="status" className="text-sm text-text-muted">Loading the form…</p>
+
+  return <PublishForm petOptions={petOptions} {...props} />
 }
 
 interface PublishPetModalProps {
@@ -362,7 +386,7 @@ export function PublishPetModal({ open, onClose, onPublished }: PublishPetModalP
         </>
       }
     >
-      {open && <PublishForm onPublished={onPublished} onSubmittingChange={setSubmitting} />}
+      {open && <PublishFormLoader onPublished={onPublished} onSubmittingChange={setSubmitting} />}
     </Modal>
   )
 }

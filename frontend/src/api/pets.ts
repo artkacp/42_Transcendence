@@ -1,5 +1,5 @@
 import { api, del, get } from './client'
-import type { NewPet, Pet } from '../data/types'
+import type { NewPet, Pet, PetSex, PetSize, Species } from '../data/types'
 
 export const getMyPets = () => get<Pet[]>('/api/pets/mine/')
 
@@ -14,3 +14,15 @@ export function createPet(pet: NewPet, photo: File | null) {
   if (photo) form.append('photo', photo)
   return api<Pet>('/api/pets/', { method: 'POST', body: form })
 }
+
+export interface PetOptions {
+  species: Species[]
+  breeds: Record<Species, string[]>
+  sizes: PetSize[]
+  sexes: PetSex[]
+  cities: string[]
+  traits: string[]
+  age_buckets: Record<string, [number, number]>
+}
+
+export const getPetOptions = () => get<PetOptions>('/api/pet-options/')
