@@ -1,8 +1,8 @@
 import { SlidersHorizontal } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { getPets, type Paginated } from '../api/browse'
 import { CITIES, BREEDS_BY_SPECIES, ALL_TRAITS, AGE_BUCKETS } from '../data/constants'
-import { SAMPLE_PETS } from '../data/mockData'
-import type { Species, PetSize, PetSex } from '../data/types'
+import type { Pet, Species, PetSize, PetSex } from '../data/types'
 import { Select, Chip, Avatar, EmptyState, Button, Card, Badge, Input, Pagination } from '../ds'
 import { navigate } from '../routing'
 
@@ -21,6 +21,21 @@ export function Browse() {
   const [neuteredOnly, setNeuteredOnly] = useState(false)
   const [page, setPage] = useState(1)
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [data, setData] = useState<Paginated<Pet> | null>(null)
+
+  useEffect(() => {
+    let ignore = false
+    getPets({ q, species, sex, size, city, breed, ageBucket, trait, vaccinated: vaccinatedOnly, neutered: neuteredOnly, page })
+      .then((res) => {
+        if (!ignore) setData(res)
+      })
+      .catch(() => {
+        if (!ignore) setData(null)
+      })
+    return () => {
+      ignore = true
+    }
+  }, [q, species, sex, size, city, breed, ageBucket, trait, vaccinatedOnly, neuteredOnly, page])
 
   const changeFilter = (apply: () => void) => {
     apply()
@@ -37,28 +52,11 @@ export function Browse() {
     setPage(1)
   }
 
-  const activeAgeBucket = AGE_BUCKETS.find((b) => b.id === ageBucket) ?? AGE_BUCKETS[0]
   const activeFilterCount = [sex, size, city, breed, ageBucket, trait].filter((v) => v !== 'all').length + (vaccinatedOnly ? 1 : 0) + (neuteredOnly ? 1 : 0)
 
-  const results = SAMPLE_PETS.filter((p) => {
-    if (species !== 'all' && p.species !== species) return false
-    if (sex !== 'all' && p.sex !== sex) return false
-    if (size !== 'all' && p.size !== size) return false
-    if (city !== 'all' && p.city !== city) return false
-    if (breed !== 'all' && p.breed !== breed) return false
-    if (!activeAgeBucket.test(p.age_years)) return false
-    if (trait !== 'all' && !p.traits.includes(trait)) return false
-    if (vaccinatedOnly && !p.is_vaccinated) return false
-    if (neuteredOnly && !p.is_neutered) return false
-    if (q) {
-      const haystack = `${p.name} ${p.breed} ${p.traits.join(' ')}`.toLowerCase()
-      if (!haystack.includes(q.toLowerCase())) return false
-    }
-    return true
-  }).sort((a, b) => b.created_at.localeCompare(a.created_at))
-
-  const totalPages = Math.ceil(results.length / PAGE_SIZE)
-  const pageResults = results.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const results = data?.results ?? []
+  const count = data?.count ?? 0
+  const totalPages = Math.ceil(count / PAGE_SIZE)
 
   const clearFilters = () => {
     setQ('')
@@ -85,7 +83,7 @@ export function Browse() {
         </div>
         <div className="flex items-center gap-3">
           <p className="text-sm text-text-subtle">
-            <span className="font-semibold text-text">{results.length}</span> pals available
+            <span className="font-semibold text-text">{count}</span> pals available
           </p>
           <Button size="sm" variant="secondary" onClick={() => navigate('rehome')}>
             Rehome a pet
@@ -181,7 +179,7 @@ export function Browse() {
         )}
       </div>
 
-      {results.length === 0 ? (
+      {count === 0 ? (
         <EmptyState
           emoji="🔍"
           title="No pals match those filters"
@@ -195,7 +193,7 @@ export function Browse() {
       ) : (
         <>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {pageResults.map((p) => (
+            {results.map((p) => (
               <Card key={p.id} hover className="cursor-pointer overflow-hidden">
                 <div className="relative flex h-40 items-center justify-center bg-secondary">
                   {p.photo ? (
