@@ -1,4 +1,4 @@
-*This project has been created as part of the 42 curriculum by faikhan, oostapen, sarherna, <isshak-login>, <artur-login>.*
+*This project has been created as part of the 42 curriculum by faikhan, oostapen, sarherna, iskaraag, akacprzy.*
 
 # Pawfect Match
 
