@@ -17,6 +17,7 @@ def _pet_metadata(pet):
         'age_years': pet.age_years,
         'size': pet.size,
         'sex': pet.sex,
+        'city': pet.city,
         'is_vaccinated': pet.is_vaccinated,
         'is_neutered': pet.is_neutered,
         'traits': list(pet.traits),
