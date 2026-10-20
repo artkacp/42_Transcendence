@@ -64,14 +64,14 @@
       "id": 2,
       "type": "table",
       "title": "Firing alerts",
-      "description": "Prometheus alerts currently firing (rules in monitoring/prometheus/alerts.yml). Empty when nothing is firing.",
+      "description": "Prometheus alerts currently firing (rules in monitoring/prometheus/alerts.yml). Empty when nothing is firing. Active since = when the condition first failed; the alert fires 1 minute later (for: 1m).",
       "gridPos": { "x": 6, "y": 0, "w": 18, "h": 5 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
           "refId": "A",
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "ALERTS{alertstate=\"firing\"}",
+          "expr": "ALERTS_FOR_STATE * 1000 and on(alertname, instance) ALERTS{alertstate=\"firing\"}",
           "format": "table",
           "instant": true,
           "range": false
@@ -79,21 +79,37 @@
       ],
       "transformations": [
         {
+          "id": "calculateField",
+          "options": {
+            "mode": "binary",
+            "binary": {
+              "left": { "matcher": { "id": "byName", "options": "Value" } },
+              "operator": "*",
+              "right": { "fixed": "1" }
+            },
+            "alias": "For",
+            "replaceFields": false
+          }
+        },
+        {
           "id": "organize",
           "options": {
             "excludeByName": {
               "Time": true,
-              "Value": true,
-              "Value #A": true,
-              "__name__": true,
-              "alertstate": true
+              "job": true
             },
-            "indexByName": { "alertname": 0, "severity": 1, "job": 2, "instance": 3 },
-            "renameByName": {}
+            "indexByName": { "alertname": 0, "severity": 1, "instance": 2, "Value": 3, "For": 4 },
+            "renameByName": { "Value": "Active since" }
           }
         }
       ],
-      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Active since" }, "properties": [{ "id": "unit", "value": "dateTimeAsIso" }] },
+          { "matcher": { "id": "byName", "options": "For" }, "properties": [{ "id": "unit", "value": "dateTimeFromNow" }] }
+        ]
+      },
       "options": { "showHeader": true, "cellHeight": "sm" }
     },
     {
