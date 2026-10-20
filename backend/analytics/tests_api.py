@@ -284,3 +284,23 @@ class PlatformAnalyticsAPITestCase(TransactionTestCase):
         self.client.force_authenticate(user=self.user)
         response = self.client.get(PLATFORM_URL, {'age_bucket': 'old'})
         self.assertEqual(response.status_code, 400)
+
+    def test_start_after_end_returns_400(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get(PLATFORM_URL, {'start': '2026-10-15', 'end': '2026-10-01'})
+        self.assertEqual(response.status_code, 400)
+
+    def test_new_signups_unaffected_by_pet_filter(self):
+        # registered event has no pet metadata — should still count in new_signups
+        # even when a pet filter is active
+        self._insert('registered', occurred_at=self._dt(2026, 10, 5))
+        self._insert('visit', occurred_at=self._dt(2026, 10, 5), metadata={'species': 'dog'})
+
+        self.client.force_authenticate(user=self.user)
+        data = self.client.get(
+            PLATFORM_URL,
+            {'start': '2026-10-01', 'end': '2026-10-31', 'species': 'dog'},
+        ).json()
+        users_over_time = data['charts']['users_over_time']
+        total_signups = sum(day['new_signups'] for day in users_over_time)
+        self.assertEqual(total_signups, 1)
