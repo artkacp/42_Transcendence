@@ -23,7 +23,6 @@ These are unresolved design questions from the TRD. Full context in TRD section 
 | Q | Question | Blocks |
 |---|----------|--------|
 | Q-19 | Where friend requests surface in the UI | F6 (Friends view UI). Backend task B3 can proceed without this. |
-| Q-23 | Definitions of active / seeker / rehomer and sign-ups under a feature slice | A4 (dashboard endpoint) |
 
 ---
 
@@ -41,3 +40,4 @@ These are unresolved design questions from the TRD. Full context in TRD section 
 | Q-25 | Distinct-count adaptations | **Dissolved.** The Advanced analytics dashboard reads PostgreSQL directly via Django aggregation — SQL handles `COUNT DISTINCT` natively. The Prometheus-based distinct-count workaround (in-process per-day sets) is no longer needed. | 2026-10-11 |
 | Q-26 | Analytics event table read ownership | **Django reads, SQLAlchemy writes.** The Advanced analytics dashboard queries `analytics_event` directly via Django ORM (read-only). SQLAlchemy still owns the table's schema mapping and all writes. The strict "two layers never cross" rule from decision #7 is relaxed to this boundary. See note 520. | 2026-10-11 |
 | 1 | Design system approach | **shadcn/ui — approved.** TRD v4.0 confirms shadcn/ui as the platform design system; all UI is built on standard shadcn components with the platform palette (terracotta/cream/sage/honey) mapped onto shadcn semantic tokens. Decision #4 (Tailwind extra point) is void — shadcn satisfies the design system module requirement. | 2026-10-11 |
+| Q-23 | Dashboard metric definitions | **Active = any event; seeker = visit event; rehomer = listing_published event — all within the selected period.** A user can be counted as both seeker and rehomer on the same day (not mutually exclusive). See note 422. | 2026-10-17 |

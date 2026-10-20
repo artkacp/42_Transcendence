@@ -1,0 +1,166 @@
+import asyncio
+import json
+import logging
+
+from channels.db import database_sync_to_async
+from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from django.conf import settings
+from django.core.serializers.json import DjangoJSONEncoder
+from django.http import Http404
+from rest_framework import serializers
+from rest_framework.exceptions import APIException, AuthenticationFailed
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import AccessToken
+
+from inquiries.serializers import MessageCreateSerializer
+from inquiries.services import send_message
+
+from . import presence
+
+logger = logging.getLogger(__name__)
+
+UNAUTHORIZED = 4401
+
+
+class PetFrameSerializer(serializers.Serializer):
+    pet_id = serializers.UUIDField()
+
+
+# Http404 says nothing about whether the thread exists, as in REST; DRF details nest as {field: [message]}
+def error_detail(error):
+    if isinstance(error, Http404):
+        return 'Not found.'
+    detail = error.detail
+    while isinstance(detail, (dict, list)):
+        detail = next(iter(detail.values() if isinstance(detail, dict) else detail), 'Invalid input.')
+    return str(detail)
+
+
+@database_sync_to_async
+def user_for(token):
+    # AccessToken(None) mints a brand-new token instead of failing
+    if not isinstance(token, str) or not token:
+        return None
+    try:
+        # Same user lookup and is_active rule as REST requests
+        return JWTAuthentication().get_user(AccessToken(token))
+    except (TokenError, AuthenticationFailed):
+        return None
+
+
+# The one socket per signed-in session (TRD §6.7). The first frame must be
+# {"type": "auth", "token": ...}; the token is checked once, not again when it expires.
+class SocketConsumer(AsyncJsonWebsocketConsumer):
+    user = None
+    deadline = None
+    # Frames a signed-in socket may send, by type
+    frames = {
+        'pet.subscribe': 'subscribe',
+        'pet.unsubscribe': 'unsubscribe',
+        'chat.send': 'send_chat',
+    }
+
+    async def connect(self):
+        await self.accept()
+        self.deadline = asyncio.create_task(self.close_if_silent())
+
+    async def close_if_silent(self):
+        await asyncio.sleep(settings.WS_AUTH_TIMEOUT)
+        await self.close(code=UNAUTHORIZED)
+
+    async def disconnect(self, code):
+        if self.deadline:
+            self.deadline.cancel()
+        # self.user is only set once auth succeeded, so a socket closed with 4401 was never counted
+        if self.user is not None and presence.leave(self.user.pk):
+            await presence.announce(self.user.pk)
+
+    # Binary or malformed frames count as "anything else" instead of crashing the consumer
+    async def receive(self, text_data=None, bytes_data=None, **kwargs):
+        try:
+            content = json.loads(text_data) if text_data else None
+        except ValueError:
+            content = None
+        await self.receive_json(content if isinstance(content, dict) else {})
+
+    async def receive_json(self, content, **kwargs):
+        if self.user is None:
+            await self.authenticate(content)
+            return
+        kind = content.get('type')
+        # Anything else after auth (a second auth included) is ignored: no reply, no close.
+        if not isinstance(kind, str) or kind not in self.frames:
+            return
+        # Nothing may escape: a crashed consumer never runs disconnect(), so the user would stay online
+        try:
+            await getattr(self, self.frames[kind])(content)
+        except (APIException, Http404) as error:
+            await self.send_json({'type': 'error', 'for': kind, 'detail': error_detail(error)})
+        except Exception:
+            logger.exception('WebSocket %s frame failed', kind)
+            await self.send_json({'type': 'error', 'for': kind, 'detail': 'Something went wrong.'})
+
+    # The canonical UUID spelling, so the name matches push()'s f'pet.{pet.pk}'
+    def pet_group(self, content):
+        frame = PetFrameSerializer(data=content)
+        frame.is_valid(raise_exception=True)
+        return f"pet.{frame.validated_data['pet_id']}"
+
+    # Any signed-in user may follow any pet page: listings are public
+    async def subscribe(self, content):
+        group = self.pet_group(content)
+        if group not in self.groups:
+            self.groups.append(group)
+            await self.channel_layer.group_add(group, self.channel_name)
+
+    async def unsubscribe(self, content):
+        group = self.pet_group(content)
+        if group in self.groups:
+            self.groups.remove(group)
+            await self.channel_layer.group_discard(group, self.channel_name)
+
+    # Same input check and service as the REST fallback, POST /api/inquiries/{id}/messages/.
+    # send_message also checks the sender is a party to the thread, binds the attachments and
+    # pushes chat.message to both parties' user groups, so success needs no reply here.
+    async def send_chat(self, content):
+        frame = MessageCreateSerializer(data=content)
+        frame.is_valid(raise_exception=True)
+        await database_sync_to_async(send_message)(self.user, content.get('inquiry_id'), **frame.validated_data)
+
+    async def authenticate(self, content):
+        # Only the first frame counts; anything later arrives while the socket is closing
+        if self.deadline is None or self.deadline.done():
+            return
+        self.deadline.cancel()
+        self.deadline = None
+        if content.get('type') != 'auth':
+            await self.close(code=UNAUTHORIZED)
+            return
+        self.user = await user_for(content.get('token'))
+        if self.user is None:
+            await self.send_json({'type': 'auth.error'})
+            await self.close(code=UNAUTHORIZED)
+            return
+        # Counted before joining browse, so the user's own socket never hears about itself;
+        # auth.ok then only goes out once is_online is already written
+        if presence.join(self.user.pk):
+            await presence.announce(self.user.pk)
+        # Channels leaves self.groups on disconnect, pet.<id> groups added later included
+        self.groups = [f'user.{self.user.pk}', 'browse']
+        for group in self.groups:
+            await self.channel_layer.group_add(group, self.channel_name)
+        await self.send_json({'type': 'auth.ok'})
+
+    # push() uses each frame's own type (inquiry.created, pet.adopted, …) as the channel-layer
+    # type, so anything that isn't a websocket.* event goes to the client unchanged.
+    async def dispatch(self, message):
+        if message['type'].startswith('websocket.'):
+            await super().dispatch(message)
+        else:
+            await self.send_json(message)
+
+    # Serializer data can hold UUID objects (e.g. MessageSerializer.inquiry)
+    @classmethod
+    async def encode_json(cls, content):
+        return json.dumps(content, cls=DjangoJSONEncoder)
