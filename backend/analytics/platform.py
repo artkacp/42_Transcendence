@@ -41,9 +41,13 @@ def parse_filter_params(query_params) -> FilterParams:
     if end_str:
         try:
             d = date.fromisoformat(end_str)
-            params.end = datetime(d.year, d.month, d.day, 23, 59, 59, tzinfo=timezone.utc)
+            next_day = d + timedelta(days=1)
+            params.end = datetime(next_day.year, next_day.month, next_day.day, 0, 0, 0, tzinfo=timezone.utc)
         except ValueError:
             raise ValidationError({'end': 'Use YYYY-MM-DD format.'})
+
+    if params.start and params.end and params.start >= params.end:
+        raise ValidationError({'end': 'end must be after start.'})
 
     age_bucket = query_params.get('age_bucket')
     if age_bucket:
@@ -69,13 +73,24 @@ def parse_filter_params(query_params) -> FilterParams:
     return params
 
 
+def build_date_qs(params: FilterParams):
+    """Date-range-only queryset — no pet filters. Used for metrics that are
+    platform-level and should not be suppressed by pet feature filters."""
+    qs = AnalyticsEvent.objects.all()
+    if params.start:
+        qs = qs.filter(occurred_at__gte=params.start)
+    if params.end:
+        qs = qs.filter(occurred_at__lt=params.end)
+    return qs
+
+
 def build_base_qs(params: FilterParams):
     qs = AnalyticsEvent.objects.all()
 
     if params.start:
         qs = qs.filter(occurred_at__gte=params.start)
     if params.end:
-        qs = qs.filter(occurred_at__lte=params.end)
+        qs = qs.filter(occurred_at__lt=params.end)
     if params.species:
         qs = qs.filter(metadata__species=params.species)
     if params.sex:
@@ -103,7 +118,7 @@ def _previous_window(params: FilterParams):
     if params.start is None or params.end is None:
         return None, None
     delta = params.end - params.start
-    prev_end = params.start - timedelta(seconds=1)
+    prev_end = params.start
     prev_start = prev_end - delta
     return prev_start, prev_end
 
@@ -197,10 +212,10 @@ def chart_offers_over_time(base_qs) -> list:
     return result
 
 
-def chart_users_over_time(base_qs) -> list:
+def chart_users_over_time(base_qs, date_qs) -> list:
     return _merge_days([
         ('active_users', _by_day(base_qs, count_distinct='user_id')),
-        ('new_signups', _by_day(base_qs, event_type='registered')),
+        ('new_signups', _by_day(date_qs, event_type='registered')),
     ])
 
 
@@ -236,7 +251,7 @@ def chart_applications_per_adopted_pet(base_qs) -> dict:
 
     return {
         'distribution': [{'bucket': k, 'count': v} for k, v in buckets.items()],
-        'average': round(total_apps / len(adopted_pet_ids), 2),
+        'average': round(total_apps / len(per_pet), 2) if per_pet else None,
     }
 
 
@@ -254,13 +269,14 @@ def chart_community_messages(base_qs) -> list:
 
 def get_platform_analytics(params: FilterParams) -> dict:
     base_qs = build_base_qs(params)
+    date_qs = build_date_qs(params)
     return {
         'kpis': compute_kpis(base_qs, params),
         'charts': {
             'listing_visits_over_time': chart_listing_visits_over_time(base_qs),
             'adoptions_by_species': chart_adoptions_by_species(base_qs),
             'offers_over_time': chart_offers_over_time(base_qs),
-            'users_over_time': chart_users_over_time(base_qs),
+            'users_over_time': chart_users_over_time(base_qs, date_qs),
             'seekers_vs_rehomers': chart_seekers_vs_rehomers(base_qs),
             'applications_per_adopted_pet': chart_applications_per_adopted_pet(base_qs),
             'applications_vs_adoptions': chart_applications_vs_adoptions(base_qs),
