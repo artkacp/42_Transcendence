@@ -28,5 +28,6 @@ urlpatterns = [
     path('api/', include('pets.urls')),
     path('api/', include('inquiries.urls')),
     path('api/', include('analytics.urls')),
+    path('api/', include('api.urls')),
     # Serves uploaded files (avatars, photos) in dev only; empty when DEBUG is off.
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
