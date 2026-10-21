@@ -1,6 +1,5 @@
 import { createContext, useContext } from 'react'
-
-export type ToastKind = 'create' | 'update' | 'delete' | 'info'
+import type { ToastKind } from '../../ds'
 
 export interface ToastInput {
   kind?: ToastKind

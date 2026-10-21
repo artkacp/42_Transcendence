@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from 'react'
 import { Heart, Plus, Trash2 } from 'lucide-react'
 import { TOKEN_NAMES } from '../palettes/tokens'
-import { Badge, Button, Card, IconButton, Progress, Select, Chip, Toggle, Avatar, EmptyState, Pagination, Input, Tabs, Modal, Toast, useToast  } from '../ds'
+import { Badge, Button, Card, IconButton, Progress, Select, Chip, Toggle, Avatar, EmptyState, Pagination, Input, Tabs, Modal, Toast } from '../ds'
+import { useToast } from '../contexts/toast/ToastContext'
 import { AuthForm } from './AuthForm'
 import { AUTH_MOCKS } from './AuthForm.mocks'
 
