@@ -4,13 +4,13 @@ API contract for the per-user analytics endpoint. This covers the User activity 
 
 ---
 
-## GET /analytics/me/
+## GET /api/analytics/me/
 
 Returns the authenticated user's own activity stats. Private — no other user's data is returned and no other user can access this endpoint's data.
 
 ### Scope
 
-All-time totals. No date filtering at this endpoint — rolling windows and breakdowns are handled by the platform analytics dashboard (Prometheus).
+All-time totals. No date filtering at this endpoint — rolling windows and breakdowns are handled by the platform analytics dashboard.
 
 ### Response shape
 

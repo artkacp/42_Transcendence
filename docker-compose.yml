@@ -21,6 +21,9 @@ services:
     # No published port: only reachable through nginx.
     env_file:
       - .env
+    # Uploads persist here; MEDIA_ROOT resolves to /app/media.
+    volumes:
+      - media:/app/media
     depends_on:
       db:
         condition: service_healthy
@@ -38,13 +41,82 @@ services:
       - ./infrastructure/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
       # Only the server cert and key — the CA key is never mounted here.
       - ./infrastructure/certs/out/server:/etc/nginx/ssl:ro
+      # Read-only; default.conf serves only avatars/ and pets/ from it.
+      - media:/srv/media:ro
     ports:
       - "8443:443"
     depends_on:
       backend:
         condition: service_started
+      # nginx resolves proxy_pass hosts at startup and exits if one is missing.
+      grafana:
+        condition: service_started
       certgen:
         condition: service_completed_successfully
 
+  # Scrapes backend /metrics and node-exporter (config in monitoring/prometheus).
+  # No published port: internal network only.
+  prometheus:
+    image: prom/prometheus:v3.15.0
+    # Overriding command drops the image's default flags, so the storage path
+    # is repeated here to keep data in the volume.
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus:ro
+      - prometheus_data:/prometheus
+    restart: unless-stopped
+
+  # Host metrics without root: host /proc, /sys and / mounted read-only, no
+  # privileged mode and no host network. Network counters are therefore the
+  # container's own, not the host's.
+  node-exporter:
+    image: prom/node-exporter:v1.12.1
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/rootfs
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro,rslave
+    restart: unless-stopped
+
+  # Dashboards at https://localhost:8443/grafana/ through nginx; no published
+  # port. Data source and dashboards are provisioned from monitoring/grafana.
+  grafana:
+    image: grafana/grafana:13.2.4
+    environment:
+      GF_SERVER_ROOT_URL: https://localhost:8443/grafana/
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+      # Required: the stack refuses to start without them, so Grafana never
+      # falls back to admin/admin. Applied only when grafana_data is created.
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:?set GRAFANA_ADMIN_USER in .env (see .env.example)}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env (see .env.example)}
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SECURITY_COOKIE_SECURE: "true"
+      # No calls to grafana.com: usage reporting, update checks and the
+      # suggested-plugin downloads Grafana otherwise makes on every start.
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
+      GF_PLUGINS_PREINSTALL_DISABLED: "true"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      # Mounted per directory so the image's alerting/ and plugins/ stay.
+      - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/dashboards:/etc/grafana/dashboards:ro
+    depends_on:
+      prometheus:
+        condition: service_started
+    restart: unless-stopped
+
 volumes:
   postgres_data:
+  media:
+  prometheus_data:
+  grafana_data:

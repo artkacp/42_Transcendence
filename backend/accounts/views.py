@@ -11,6 +11,7 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+from analytics import signals as analytics_signals
 from notifications.services import notify
 from pets.serializers import PetSerializer
 
@@ -62,8 +63,8 @@ class RegisterView(APIView):
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        # TODO(A2): track user_registered once analytics.track() lands
         user = serializer.save()
+        analytics_signals.user_registered.send(sender=self.__class__, user=user)
         refresh = RefreshToken.for_user(user)
         response = Response({'access': str(refresh.access_token)}, status=status.HTTP_201_CREATED)
         set_refresh_cookie(response, refresh)

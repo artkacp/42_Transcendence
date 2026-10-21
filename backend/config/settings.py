@@ -14,6 +14,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import environ
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -28,11 +29,18 @@ if _env_file.exists():
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('SECRET_KEY')
+# Django only rejects an empty key on first use (after Daphne is already up),
+# so fail here instead — `SECRET_KEY=` as copied from .env.example is not a key.
+if not SECRET_KEY:
+    raise ImproperlyConfigured('SECRET_KEY is empty; set it in .env (see .env.example).')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool('DEBUG', default=False)
 
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
+# Prometheus scrapes backend:8000/metrics over the Compose network, so the
+# service name must pass host validation. The backend port is never published,
+# so only containers on that network can use this host.
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[]) + ['backend']
 
 # nginx terminates TLS and overwrites X-Forwarded-Proto on every proxied
 # request, so Django can trust it to know the browser used HTTPS.
@@ -50,6 +58,7 @@ INSTALLED_APPS = [
     # is replaced by Channels' ASGI dev server — keeps dev on the same
     # single Daphne ASGI process as production.
     'daphne',
+    'django_prometheus',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -92,13 +101,17 @@ REFRESH_COOKIE_PATH = '/api/auth/'
 REFRESH_COOKIE_SAMESITE = 'Strict'
 
 MIDDLEWARE = [
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    # Serves STATIC_ROOT from the Daphne process when DEBUG=False.
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django_prometheus.middleware.PrometheusAfterMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -127,6 +140,9 @@ CHANNEL_LAYERS = {
     },
 }
 
+# Seconds a new /ws/ socket has to send its auth frame before it is closed with 4401.
+WS_AUTH_TIMEOUT = 10
+
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -134,6 +150,8 @@ CHANNEL_LAYERS = {
 DATABASES = {
     'default': env.db('DATABASE_URL'),
 }
+
+ANALYTICS_DB_URL = env('ANALYTICS_DB_URL', default=env('DATABASE_URL'))
 
 
 # Password validation
@@ -171,6 +189,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+# Filled by `collectstatic` in entrypoint.sh on container start.
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 AUTH_USER_MODEL = 'accounts.User'
 

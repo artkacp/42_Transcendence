@@ -172,11 +172,12 @@ class MessageTests(InquiryTestCase):
         self.inquiry = Inquiry.objects.get(pk=self.start().data['id'])
 
     def test_text_only_message(self):
-        receive = listen(f'pet.{self.pet.pk}')
+        receivers = [listen(f'user.{self.owner.pk}'), listen(f'user.{self.adopter.pk}')]
         r = self.send(self.inquiry, body='Hello!')
         self.assertEqual(r.status_code, status.HTTP_201_CREATED)
         self.assertEqual(r.data['attachments'], [])
-        self.assertEqual(receive(), {'type': 'chat.message', 'message': r.data})
+        for receive in receivers:
+            self.assertEqual(receive(), {'type': 'chat.message', 'message': r.data})
         self.inquiry.refresh_from_db()
         self.assertEqual(self.inquiry.last_message_at, Message.objects.get().created_at)
         self.assertEqual(self.owner.notifications.filter(title='New message').count(), 1)
@@ -253,12 +254,11 @@ class StageTests(InquiryTestCase):
             self.assertEqual(notifications.count(), 4)
             self.assertEqual(notifications.latest('created_at').body, "User 2's adoption of Karo moved to Conversation.")
 
-    def test_stage_change_reaches_the_pet_page_and_both_users(self):
-        receivers = [listen(f'pet.{self.pet.pk}'), listen(f'user.{self.owner.pk}'), listen(f'user.{self.adopter.pk}')]
+    def test_stage_change_reaches_both_users(self):
+        receivers = [listen(f'user.{self.owner.pk}'), listen(f'user.{self.adopter.pk}')]
         self.change('visit')
         expected = {'type': 'inquiry.stage_changed', 'inquiry_id': str(self.inquiry.pk), 'stage': 'visit'}
-        self.assertEqual(receivers[0](), expected)
-        for receive in receivers[1:]:
+        for receive in receivers:
             self.assertIn(expected, [receive(), receive()])
 
     def test_non_owner_gets_403(self):

@@ -1,8 +1,9 @@
 import { useState, type ReactNode } from 'react'
 import { Heart, Plus, Trash2 } from 'lucide-react'
 import { TOKEN_NAMES } from '../palettes/tokens'
-// (◕◕) Tabs joined the main ds import
-import { Badge, Button, Card, IconButton, Progress, Select, Chip, Toggle, Avatar, EmptyState, Pagination, Input, Tabs } from '../ds'
+import { Badge, Button, Card, IconButton, Progress, Select, Chip, Toggle, Avatar, EmptyState, Pagination, Input, Tabs, Modal, Textarea } from '../ds'
+import { AuthForm } from './AuthForm'
+import { AUTH_MOCKS } from './AuthForm.mocks'
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -293,6 +294,7 @@ export function DesignSystem() {
   const [chipValue, setChipValue] = useState('dog')
   const [inputValue, setInputValue] = useState('')
   const [page, setPage] = useState(5)
+  const [modalOpen, setModalOpen] = useState(false)
 
   return (
     <div className="max-w-3xl px-6 py-8">
@@ -444,6 +446,24 @@ export function DesignSystem() {
         </Row>
       </Section>
 
+      <Section title="Textarea">
+        <Row label="States">
+          <div className="w-full max-w-md">
+            <Textarea label="Story" placeholder="Tell us about the fluffy one" />
+          </div>
+        </Row>
+        <Row label="With error">
+          <div className="w-full max-w-md">
+            <Textarea label="Story" placeholder="Tell us about the fluffy one" error="Must be at least 20 characters" />
+          </div>
+        </Row>
+        <Row label="Disabled">
+          <div className="w-full max-w-md">
+            <Textarea label="Story" placeholder="Tell us about the fluffy one" disabled />
+          </div>
+        </Row>
+      </Section>
+
       <Section title="Pagination">
         <Row label="Many pages">
           <Pagination page={page} totalPages={12} onChange={setPage} />
@@ -466,6 +486,26 @@ export function DesignSystem() {
         </Row>
       </Section>
 
+      <Section title="Modal">
+        <Row label="With footer">
+          <Button onClick={() => setModalOpen(true)}>Open modal</Button>
+          <Modal
+            open={modalOpen}
+            onClose={() => setModalOpen(false)}
+            title="Remove listing"
+            description="Karo will no longer show up in Browse."
+            footer={
+              <>
+                <Button variant="ghost" onClick={() => setModalOpen(false)}>Cancel</Button>
+                <Button variant="danger" onClick={() => setModalOpen(false)}>Remove</Button>
+              </>
+            }
+          >
+            <p className="text-sm text-text-muted">Inquiries already sent stay in your inbox.</p>
+          </Modal>
+        </Row>
+      </Section>
+      
       <Section title="Progress">
         <Row label={labMode ? 'Crayon — tone lab' : 'Crayon — pastel'}>
           {labMode ? (
@@ -516,6 +556,17 @@ export function DesignSystem() {
             <p className="text-text mb-3">This one lifts on hover.</p>
             <Button size="sm" variant="secondary">Action</Button>
           </Card>
+        </div>
+      </Section>
+
+      <Section title="AuthForm · F1">
+        <div className="grid gap-6 md:grid-cols-2">
+          {AUTH_MOCKS.map((m) => (
+            <div key={m.name} className="flex flex-col gap-2">
+              <h4 className="text-sm font-medium text-text">{m.name}</h4>
+              <AuthForm {...m.props} />
+            </div>
+          ))}
         </div>
       </Section>
     </div>

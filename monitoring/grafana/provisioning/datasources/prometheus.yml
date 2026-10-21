@@ -1,0 +1,15 @@
+# Provisioned at startup; read-only in the UI. Dashboards reference it by uid.
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      # Matches scrape_interval in monitoring/prometheus/prometheus.yml, so
+      # $__rate_interval always spans enough samples.
+      timeInterval: 15s

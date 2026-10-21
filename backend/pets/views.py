@@ -5,6 +5,8 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from analytics import signals as analytics_signals
+
 from core.pagination import FixedPagePagination
 from core.realtime import push
 from inquiries.models import Attachment
@@ -57,11 +59,18 @@ class PetViewSet(
             .order_by('-created_at')
         )
 
+    # GET /pets/{id}/
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        analytics_signals.pet_viewed.send(sender=self.__class__, user=request.user, pet=instance)
+        return Response(self.get_serializer(instance).data)
+
     # POST /pets/
     def perform_create(self, serializer):
         pet = serializer.save(owner=self.request.user)
+        analytics_signals.listing_published.send(sender=self.__class__, user=self.request.user, pet=pet)
         notify(pet.owner, 'create', 'Listing published', f'{pet.name} is now listed for adoption.', subject=pet)
-        # TODO(B8, A2): push pet.published to browse, track listing_published on commit
+        push('browse', 'pet.published', pet=serializer.data)
 
     # DELETE /pets/{id}/ (owner only; adopters are notified first, while their threads still exist)
     def perform_destroy(self, pet):

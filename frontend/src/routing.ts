@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react'
-
 /*
  * (◕◕) Routing: one index.html, the page is picked by ?view=
  * nginx only needs `try_files $uri /index.html`, every page lives at `/`.
  * Other query params (e.g. ?lab) are kept when switching views.
  */
 
-export const VIEWS = ['browse', 'design', 'privacy', 'terms'] as const
+export const VIEWS = ['auth', 'browse', 'rehome', 'design', 'privacy', 'terms'] as const
 export type View = (typeof VIEWS)[number]
 
 const DEFAULT_VIEW: View = 'browse'

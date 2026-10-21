@@ -6,6 +6,7 @@ from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.generics import get_object_or_404
 
+from analytics import signals as analytics_signals
 from core.realtime import push
 from notifications.services import notify
 
@@ -37,7 +38,7 @@ def start_inquiry(pet, adopter):
     if created:
         notify(pet.owner, 'create', 'New adoption inquiry', f'{adopter.full_name} wants to adopt {pet.name}.', subject=inquiry)
         push(f'user.{pet.owner_id}', 'inquiry.created', inquiry=InquirySerializer(inquiry).data)
-        # TODO(A2): track the application event on commit
+        analytics_signals.inquiry_opened.send(sender=None, user=adopter, pet=pet)
     return inquiry, created
 
 
@@ -55,9 +56,10 @@ def send_message(sender, inquiry_id, body, attachment_ids):
         attachments.update(message=message)
         inquiry.last_message_at = message.created_at
         inquiry.save(update_fields=['last_message_at'])
-    # TODO(A2): track the message event on commit
 
-    push(f'pet.{inquiry.pet_id}', 'chat.message', message=MessageSerializer(message).data)
+    analytics_signals.message_sent.send(sender=None, user=sender, pet=inquiry.pet)
+    for group in (f'user.{inquiry.pet.owner_id}', f'user.{inquiry.adopter_id}'):
+        push(group, 'chat.message', message=MessageSerializer(message).data)
     recipient = inquiry.pet.owner if sender == inquiry.adopter else inquiry.adopter
     notify(recipient, 'create', 'New message', f'{sender.full_name} wrote about {inquiry.pet.name}.', subject=inquiry)
     return message
@@ -73,7 +75,7 @@ def change_stage(user, inquiry_id, stage):
     body = f"{inquiry.adopter.full_name}'s adoption of {pet.name} moved to {inquiry.get_stage_display()}."
     for party in (pet.owner, inquiry.adopter):
         notify(party, 'update', 'Adoption stage changed', body, subject=inquiry)
-    for group in (f'pet.{pet.pk}', f'user.{pet.owner_id}', f'user.{inquiry.adopter_id}'):
+    for group in (f'user.{pet.owner_id}', f'user.{inquiry.adopter_id}'):
         push(group, 'inquiry.stage_changed', inquiry_id=str(inquiry.pk), stage=stage)
     return inquiry
 
@@ -86,7 +88,7 @@ def complete_adoption(pet, user, inquiry_id):
     pet.adopted_by = inquiry.adopter
     pet.adopted_at = timezone.now()
     pet.save(update_fields=['adopted_by', 'adopted_at'])
-    # TODO(A2): track the adoption event on commit
+    analytics_signals.adoption_completed.send(sender=None, user=inquiry.adopter, pet=pet)
 
     body = f'{pet.name} was adopted by {inquiry.adopter.full_name}.'
     for party in (pet.owner, inquiry.adopter):

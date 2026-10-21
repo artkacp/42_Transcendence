@@ -1,7 +1,9 @@
 import { lazy, Suspense, type ComponentType } from 'react'
 import { useView, type View } from './routing'
 import { Shell } from './components/Shell'
+import { Auth } from './views/Auth' 
 import { Browse } from './views/Browse'
+import { Rehome } from './views/Rehome'
 import { DesignSystem } from './views/DesignSystem'
 import { PrivacyPolicy, TermsOfService } from './views/Legal'
 
@@ -10,7 +12,9 @@ const PaletteLab = import.meta.env.DEV
   : null
 
 const PAGES: Record<View, ComponentType> = {
+  auth: Auth,
   browse: Browse,
+  rehome: Rehome,
   design: DesignSystem,
   privacy: PrivacyPolicy,
   terms: TermsOfService,
