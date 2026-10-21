@@ -70,7 +70,7 @@ class PetViewSet(
         pet = serializer.save(owner=self.request.user)
         analytics_signals.listing_published.send(sender=self.__class__, user=self.request.user, pet=pet)
         notify(pet.owner, 'create', 'Listing published', f'{pet.name} is now listed for adoption.', subject=pet)
-        # TODO(B8): push pet.published to browse
+        push('browse', 'pet.published', pet=serializer.data)
 
     # DELETE /pets/{id}/ (owner only; adopters are notified first, while their threads still exist)
     def perform_destroy(self, pet):

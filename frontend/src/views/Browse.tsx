@@ -1,8 +1,10 @@
 import { SlidersHorizontal } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { getPets, type Paginated } from '../api/browse'
+import { ApiError } from '../api/client'
+import { useAuth } from '../auth/auth-context'
 import { CITIES, BREEDS_BY_SPECIES, ALL_TRAITS, AGE_BUCKETS } from '../data/constants'
-import { SAMPLE_PETS } from '../data/mockData'
-import type { Species, PetSize, PetSex } from '../data/types'
+import type { Pet, Species, PetSize, PetSex } from '../data/types'
 import { Select, Chip, Avatar, EmptyState, Button, Card, Badge, Input, Pagination } from '../ds'
 import { navigate } from '../routing'
 
@@ -21,6 +23,45 @@ export function Browse() {
   const [neuteredOnly, setNeuteredOnly] = useState(false)
   const [page, setPage] = useState(1)
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [data, setData] = useState<Paginated<Pet> | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
+  const [retry, setRetry] = useState(0)
+  const { status, user } = useAuth()
+  const [debouncedQ, setDebouncedQ] = useState('')
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const next = q.trim()
+      if (next !== debouncedQ) {
+        setDebouncedQ(next)
+        setPage(1)
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [q, debouncedQ])  
+
+  useEffect(() => {
+    if (status !== 'signed-in') return
+    let ignore = false
+    setLoading(true)
+    setError(false)
+    getPets({ q: debouncedQ, species, sex, size, city, breed, ageBucket, trait, vaccinated: vaccinatedOnly, neutered: neuteredOnly, page })
+      .then((res) => {
+        if (!ignore) setData(res)
+      })
+      .catch((err) => {
+        if (ignore) return
+        if (err instanceof ApiError && err.status === 404 && page > 1) setPage(1)
+        else setError(true)
+      })
+      .finally(() => {
+        if (!ignore) setLoading(false)
+      })
+    return () => {
+      ignore = true
+    }
+  }, [status, debouncedQ, species, sex, size, city, breed, ageBucket, trait, vaccinatedOnly, neuteredOnly, page, retry])
 
   const changeFilter = (apply: () => void) => {
     apply()
@@ -37,31 +78,15 @@ export function Browse() {
     setPage(1)
   }
 
-  const activeAgeBucket = AGE_BUCKETS.find((b) => b.id === ageBucket) ?? AGE_BUCKETS[0]
   const activeFilterCount = [sex, size, city, breed, ageBucket, trait].filter((v) => v !== 'all').length + (vaccinatedOnly ? 1 : 0) + (neuteredOnly ? 1 : 0)
 
-  const results = SAMPLE_PETS.filter((p) => {
-    if (species !== 'all' && p.species !== species) return false
-    if (sex !== 'all' && p.sex !== sex) return false
-    if (size !== 'all' && p.size !== size) return false
-    if (city !== 'all' && p.city !== city) return false
-    if (breed !== 'all' && p.breed !== breed) return false
-    if (!activeAgeBucket.test(p.age_years)) return false
-    if (trait !== 'all' && !p.traits.includes(trait)) return false
-    if (vaccinatedOnly && !p.is_vaccinated) return false
-    if (neuteredOnly && !p.is_neutered) return false
-    if (q) {
-      const haystack = `${p.name} ${p.breed} ${p.traits.join(' ')}`.toLowerCase()
-      if (!haystack.includes(q.toLowerCase())) return false
-    }
-    return true
-  }).sort((a, b) => b.created_at.localeCompare(a.created_at))
-
-  const totalPages = Math.ceil(results.length / PAGE_SIZE)
-  const pageResults = results.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const results = data?.results ?? []
+  const count = data?.count ?? 0
+  const totalPages = Math.ceil(count / PAGE_SIZE)
 
   const clearFilters = () => {
     setQ('')
+    setDebouncedQ('')
     setSpecies('all')
     setSex('all')
     setSize('all')
@@ -74,6 +99,25 @@ export function Browse() {
     setPage(1)
   }
 
+  const hasFilters = debouncedQ !== '' || species !== 'all' || activeFilterCount > 0
+
+  if (status !== 'signed-in') {
+    return (
+      <div className="p-8">
+        {status === 'loading' ? (
+          <p className="py-16 text-center text-sm text-text-muted">Loading…</p>
+        ) : (
+          <EmptyState
+            emoji="🔒"
+            title="Sign in to meet the pals"
+            hint="Browsing is for members — it only takes a minute."
+            action={<Button onClick={() => navigate('auth')}>Sign in</Button>}
+          />
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6 p-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -84,9 +128,11 @@ export function Browse() {
           <p className="mt-1 text-sm text-text-muted">They just happen to have four legs. Or wings.</p>
         </div>
         <div className="flex items-center gap-3">
-          <p className="text-sm text-text-subtle">
-            <span className="font-semibold text-text">{results.length}</span> pals available
-          </p>
+          {data && (
+            <p className="text-sm text-text-subtle">
+              <span className="font-semibold text-text">{count}</span> {count === 1 ? 'pal' : 'pals'} available
+            </p>
+          )}
           <Button size="sm" variant="secondary" onClick={() => navigate('rehome')}>
             Rehome a pet
           </Button>
@@ -97,7 +143,7 @@ export function Browse() {
         type="text"
         placeholder="Search by name, breed, or trait…"
         value={q}
-        onChange={(e) => changeFilter(() => setQ(e.target.value))}
+        onChange={(e) => setQ(e.target.value)}
         aria-label="Search pets"
       />
 
@@ -181,7 +227,20 @@ export function Browse() {
         )}
       </div>
 
-      {results.length === 0 ? (
+      {error ? (
+        <EmptyState
+          emoji="😿"
+          title="Couldn't load the pals"
+          hint="Something went wrong on our side. Try again in a moment."
+          action={
+            <Button variant="secondary" onClick={() => setRetry((n) => n + 1)}>
+              Try again
+            </Button>
+          }
+        />
+      ) : !data ? (
+        <p className="py-16 text-center text-sm text-text-muted">Loading pals…</p>
+      ) : count === 0 && hasFilters ? (
         <EmptyState
           emoji="🔍"
           title="No pals match those filters"
@@ -192,10 +251,21 @@ export function Browse() {
             </Button>
           }
         />
+      ) : count === 0 ? (
+        <EmptyState
+          emoji="🐾"
+          title="No pals listed yet"
+          hint="Be the first to find a pet a new home."
+          action={
+            <Button variant="secondary" onClick={() => navigate('rehome')}>
+              Rehome a pet
+            </Button>
+          }
+        />
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {pageResults.map((p) => (
+          <div aria-busy={loading} className={`grid gap-4 sm:grid-cols-2 xl:grid-cols-3 ${loading ? 'opacity-60' : ''}`}>
+            {results.map((p) => (
               <Card key={p.id} hover className="cursor-pointer overflow-hidden">
                 <div className="relative flex h-40 items-center justify-center bg-secondary">
                   {p.photo ? (
@@ -209,6 +279,9 @@ export function Browse() {
                     <Badge tone="success" className="absolute left-3 top-3">
                       adopted 🎉
                     </Badge>
+                  )}
+                  {user && p.owner.id === user.id && (
+                    <Badge className="absolute right-3 top-3">your listing</Badge>
                   )}
                 </div>
                 <div className="p-4">
@@ -227,7 +300,7 @@ export function Browse() {
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Avatar name={p.owner.full_name} src={p.owner.avatar} size="sm" />
-                      <span className="text-xs text-text-subtle">{p.owner.full_name}</span>
+                      <span className="text-xs text-text-subtle">{p.owner.full_name.split(' ')[0]}</span>
                     </div>
                   </div>
                 </div>

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
-import { Toast } from './Toast'
-import { ToastContext, type ToastInput } from './toast-context'
+import { Toast } from '../../ds'
+import { ToastContext, type ToastInput } from './ToastContext'
 
 const DURATION = 4000
 const MAX_VISIBLE = 3

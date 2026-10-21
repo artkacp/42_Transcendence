@@ -20,6 +20,27 @@ export interface ModalProps
   size?: Size
 }
 
+const CLOSE_MS = 700
+const CLOSE_DELAY_MS = 80
+const OVERSHOOT = 0.7 // 0 = no bounce, 1.7 = strong bounce
+
+function easeScrollTo(top: number, ms: number, delay: number) {
+  const start = window.scrollY
+  const distance = top - start
+  if (distance === 0) return
+  const t0 = performance.now() + delay
+
+  const step = (now: number) => {
+    const t = Math.min(Math.max((now - t0) / ms, 0), 1)
+    const p = t - 1
+    const eased = 1 + (OVERSHOOT + 1) * p ** 3 + OVERSHOOT * p ** 2 // ease-out-back
+    window.scrollTo(0, start + distance * eased)
+    if (t < 1) requestAnimationFrame(step)
+  }
+  requestAnimationFrame(step)
+}
+
+
 export function Modal({
   open,
   onClose,
@@ -34,11 +55,15 @@ export function Modal({
   const dialogRef = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   const descriptionId = useId()
+  const scrollY = useRef(0)
 
   useEffect(() => {
     const dialog = dialogRef.current
     if (!dialog) return
-    if (open && !dialog.open) dialog.showModal()
+    if (open && !dialog.open) {
+      scrollY.current = window.scrollY
+      dialog.showModal()
+    }
     if (!open && dialog.open) dialog.close()
   }, [open])
 
@@ -50,12 +75,17 @@ export function Modal({
       ref={dialogRef}
       aria-labelledby={titleId}
       aria-describedby={description ? descriptionId : undefined}
-      onClose={onClose}
+      onClose={() => {
+        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        if (reduce) window.scrollTo(0, scrollY.current)
+        else easeScrollTo(scrollY.current, CLOSE_MS, CLOSE_DELAY_MS)
+        onClose()
+      }}
       onClick={(event) => {
         //the panel fills the dialog, so a click that lands on the dialog itself is on the backdrop
         if (event.target === event.currentTarget) close()
       }}
-      className={`m-auto w-[calc(100%-2rem)] ${sizes[size]} overflow-hidden rounded-3xl border border-border bg-surface p-0 text-text shadow-[0_8px_24px_rgba(70,50,40,0.1)] backdrop:bg-overlay/40 backdrop:backdrop-blur-[2px] ${className}`}
+      className={`modal-fade m-auto w-[calc(100%-2rem)] ${sizes[size]} overflow-hidden rounded-3xl border border-border bg-surface p-0 text-text shadow-[0_0_28px_6px_color-mix(in_oklch,var(--color-cream-300)_70%,transparent)] backdrop:bg-overlay/40 backdrop:backdrop-blur-[2px] ${className}`}
     >
       <div className="flex max-h-[calc(100dvh-2rem)] flex-col">
         <header className="flex items-start justify-between gap-4 px-6 pt-6 pb-4">

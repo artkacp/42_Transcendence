@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Info, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { IconButton } from './Button'
-import type { ToastKind } from './toast-context'
+export type ToastKind = 'create' | 'update' | 'delete' | 'info'
 
 const kinds: Record<ToastKind, { icon: ReactNode; tint: string; label: string }> = {
   create: { icon: <Plus className="size-4" />, tint: 'bg-secondary text-on-secondary', label: 'Created' },
