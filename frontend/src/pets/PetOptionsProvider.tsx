@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { get } from '../api/client';
 import { useAuth } from '../auth/auth-context';
-import { PetOptionsContext, type PetOptions } from './pet-options-context';
+import { PetOptionsContext, type PetOptions } from './PetOptionsContext';
 
 const PET_OPTIONS_PATH = '/api/pet-options/';
 
