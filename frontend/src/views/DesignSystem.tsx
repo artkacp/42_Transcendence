@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from 'react'
 import { Heart, Plus, Trash2 } from 'lucide-react'
 import { TOKEN_NAMES } from '../palettes/tokens'
-import { Badge, Button, Card, IconButton, Progress, Select, Chip, Toggle, Avatar, EmptyState, Pagination, Input, Tabs, Modal, Textarea } from '../ds'
+import { Badge, Button, Card, IconButton, Progress, Select, Chip, Toggle, Avatar, EmptyState, Pagination, Input, Tabs, Modal, Toast, Textarea } from '../ds'
+import { useToast } from '../contexts/toast/ToastContext'
 import { AuthForm } from './AuthForm'
 import { AUTH_MOCKS } from './AuthForm.mocks'
 
@@ -295,6 +296,7 @@ export function DesignSystem() {
   const [inputValue, setInputValue] = useState('')
   const [page, setPage] = useState(5)
   const [modalOpen, setModalOpen] = useState(false)
+  const toast = useToast()
 
   return (
     <div className="max-w-3xl px-6 py-8">
@@ -503,6 +505,28 @@ export function DesignSystem() {
           >
             <p className="text-sm text-text-muted">Inquiries already sent stay in your inbox.</p>
           </Modal>
+        </Row>
+      </Section>
+
+      <Section title="Toast">
+        <Row label="Kinds">
+          <div className="grid w-full max-w-sm gap-2">
+            <Toast kind="create" title="Listing published" message="Karo is now listed for adoption." onDismiss={() => {}} />
+            <Toast kind="update" title="Stage changed" message="Kobi moved to home visit." onDismiss={() => {}} />
+            <Toast kind="delete" title="Listing removed" message="Halo is no longer listed." onDismiss={() => {}} />
+            <Toast title="Photo rejected" message="Only images up to 5 MB." onDismiss={() => {}} />
+          </div>
+        </Row>
+        <Row label="Live — 4 s, max 3 stacked">
+          <Button size="sm" onClick={() => toast({ kind: 'create', title: 'Listing published', message: 'Karo is now listed for adoption.' })}>
+            Created
+          </Button>
+          <Button size="sm" variant="danger" onClick={() => toast({ kind: 'delete', title: 'Listing removed' })}>
+            Deleted
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => toast({ title: 'Photo rejected', message: 'Only images up to 5 MB.' })}>
+            Info
+          </Button>
         </Row>
       </Section>
       
