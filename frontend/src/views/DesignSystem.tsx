@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Heart, Plus, Trash2 } from 'lucide-react'
 import { TOKEN_NAMES } from '../palettes/tokens'
-import { Badge, Button, Card, IconButton, Progress, Select, Chip, Toggle, Avatar, EmptyState, Pagination, Input, Tabs, Modal } from '../ds'
+import { Badge, Button, Card, IconButton, Progress, Select, Chip, Toggle, Avatar, EmptyState, Pagination, Input, Tabs, Modal, Textarea } from '../ds'
 import { AuthForm } from './AuthForm'
 import { AUTH_MOCKS } from './AuthForm.mocks'
 
@@ -443,6 +443,24 @@ export function DesignSystem() {
         </Row>
         <Row label="Disabled">
           <Input label="Pet name" placeholder="e.g. Buddy" disabled/>
+        </Row>
+      </Section>
+
+      <Section title="Textarea">
+        <Row label="States">
+          <div className="w-full max-w-md">
+            <Textarea label="Story" placeholder="Tell us about the fluffy one" />
+          </div>
+        </Row>
+        <Row label="With error">
+          <div className="w-full max-w-md">
+            <Textarea label="Story" placeholder="Tell us about the fluffy one" error="Must be at least 20 characters" />
+          </div>
+        </Row>
+        <Row label="Disabled">
+          <div className="w-full max-w-md">
+            <Textarea label="Story" placeholder="Tell us about the fluffy one" disabled />
+          </div>
         </Row>
       </Section>
 
