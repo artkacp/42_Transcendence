@@ -3,9 +3,9 @@
 // Kept apart from AuthProvider.tsx so fast refresh lint stays quiet
 // (a .tsx file should export only components).
 import { createContext, useContext } from 'react';
+import type { User as PublicUser } from '../data/types';
 
-// TODO: match the user shape from the backend (task B2)
-export type User = { id: number; username: string };
+export type User = PublicUser & { email: string; unread_notifications: number };
 
 // 'loading' = we don't know yet (page just reloaded) → show nothing, no logout flash
 export type AuthStatus = 'loading' | 'signed-in' | 'signed-out';

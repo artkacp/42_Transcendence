@@ -58,7 +58,8 @@ def send_message(sender, inquiry_id, body, attachment_ids):
         inquiry.save(update_fields=['last_message_at'])
 
     analytics_signals.message_sent.send(sender=None, user=sender, pet=inquiry.pet)
-    push(f'pet.{inquiry.pet_id}', 'chat.message', message=MessageSerializer(message).data)
+    for group in (f'user.{inquiry.pet.owner_id}', f'user.{inquiry.adopter_id}'):
+        push(group, 'chat.message', message=MessageSerializer(message).data)
     recipient = inquiry.pet.owner if sender == inquiry.adopter else inquiry.adopter
     notify(recipient, 'create', 'New message', f'{sender.full_name} wrote about {inquiry.pet.name}.', subject=inquiry)
     return message
@@ -74,7 +75,7 @@ def change_stage(user, inquiry_id, stage):
     body = f"{inquiry.adopter.full_name}'s adoption of {pet.name} moved to {inquiry.get_stage_display()}."
     for party in (pet.owner, inquiry.adopter):
         notify(party, 'update', 'Adoption stage changed', body, subject=inquiry)
-    for group in (f'pet.{pet.pk}', f'user.{pet.owner_id}', f'user.{inquiry.adopter_id}'):
+    for group in (f'user.{pet.owner_id}', f'user.{inquiry.adopter_id}'):
         push(group, 'inquiry.stage_changed', inquiry_id=str(inquiry.pk), stage=stage)
     return inquiry
 
