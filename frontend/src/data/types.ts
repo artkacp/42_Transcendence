@@ -34,3 +34,17 @@ export interface Pet {
   inquiry_count: number
   created_at: string
 }
+
+export interface NewPet {
+  name: string
+  species: Species
+  breed: string
+  age_years: number
+  size: PetSize
+  sex: PetSex
+  city: string
+  story: string
+  traits: string[]
+  is_vaccinated: boolean
+  is_neutered: boolean
+}
