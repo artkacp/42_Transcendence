@@ -1,7 +1,7 @@
 import { useEffect, useState, type MouseEvent, type ReactNode } from 'react'
 import { Search, SwatchBook } from 'lucide-react'
 import { navigate, viewHref, type View } from '../routing'
-import { useFaviconAnimation } from './useFaviconAnimation'
+import { useFaviconAnimation } from '../hooks/useFaviconAnimation'
 
 /*
  * (◕◕) Shell — layout from the prototype, colours from our roles.
