@@ -39,7 +39,7 @@ export function Browse() {
       }
     }, 300)
     return () => clearTimeout(timer)
-  }, [q, debouncedQ])  
+  }, [q, debouncedQ])
 
   const requestKey = JSON.stringify([debouncedQ, species, sex, size, city, breed, ageBucket, trait, vaccinatedOnly, neuteredOnly, page, retry])
   const loading = settledKey !== requestKey
