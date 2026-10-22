@@ -4,6 +4,28 @@
 
 A peer-to-peer adoption platform for dogs and cats: people rehoming a pet list it, and people looking to adopt browse the listings and talk to the owner directly.
 
+## Features
+
+- **Browse and adopt** — search listings by species, breed, size, age and location; filter in real time; send an adoption application directly to the owner
+- **Rehome a pet** — publish a listing with photos, description and pet details; manage incoming inquiries and move applications through adoption stages
+- **Chat** — real-time messaging between owner and applicant over WebSocket, scoped to each inquiry
+- **Notifications** — in-app notifications for new messages, application status changes and adoption confirmations
+- **Friends** — add other users, see who is online, start private conversations
+- **Analytics dashboard** — platform-wide adoption metrics and charts (visits, applications, adoptions, active users over time), filterable by pet type and date range
+- **Personal stats** — per-user activity summary: pets viewed, applications sent, listings published, adoptions completed
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| Backend | Django 4.2, Django REST Framework, Django Channels (Daphne) |
+| Database | PostgreSQL |
+| ORM | Django ORM + SQLAlchemy 2.0 (analytics store) |
+| Real-time | WebSocket via Django Channels, in-memory channel layer |
+| Frontend | React 19, TypeScript, Vite, Tailwind CSS v4 |
+| Infrastructure | Docker, nginx (reverse proxy + static files), HTTPS (local CA) |
+| Monitoring | Prometheus, Grafana |
+
 ## Instructions
 
 ### Prerequisites
