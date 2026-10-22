@@ -1,6 +1,7 @@
 from django.apps import AppConfig
 from django.core.exceptions import ImproperlyConfigured
 from django.db import connection
+from django.db.utils import OperationalError, ProgrammingError
 from sqlalchemy import inspect as sa_inspect
 
 from analytics import handlers, signals
@@ -24,13 +25,16 @@ class AnalyticsConfig(AppConfig):
         signals.user_registered.connect(handlers.handle_user_registered)
 
     def _check_mapping(self):
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT column_name
-                FROM information_schema.columns
-                WHERE table_schema = 'public' AND table_name = 'analytics_event'
-            """)
-            db_columns = {row[0] for row in cursor.fetchall()}
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    SELECT column_name
+                    FROM information_schema.columns
+                    WHERE table_schema = 'public' AND table_name = 'analytics_event'
+                """)
+                db_columns = {row[0] for row in cursor.fetchall()}
+        except (OperationalError, ProgrammingError):
+            return
 
         if not db_columns:
             return  # table not yet created — migration will handle it
