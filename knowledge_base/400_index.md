@@ -7,3 +7,4 @@ Backend framework, API design, authentication, and backend conventions.
 | 401 | Django & Django REST Framework — orientation |
 | 410 | REST API conventions |
 | 420 | Authentication & JWT |
+| 430 | WebSocket contract (B8) |
