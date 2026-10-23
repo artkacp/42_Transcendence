@@ -1,6 +1,6 @@
 # 601 — HTTPS and Network Access Strategy
 
-Resolves open decision #3 in note 010. Owner: faikhan.
+Resolves open decision #3 in note 010 and implements decision #12. Owner: faikhan.
 
 ---
 
@@ -24,11 +24,61 @@ This rules out Let's Encrypt (it must reach the machine from the public internet
 
 ## Decision
 
-**nginx serves a certificate signed by a local certificate authority (CA) generated with `openssl` in a one-shot `certgen` container.**
+**nginx is the only entry point, on host port 8443. It serves a certificate signed by a local certificate authority (CA) that a one-shot `certgen` container generates with `openssl`.**
 
-- On `docker-compose up`, `certgen` creates a local CA (`rootCA.pem`, `rootCA-key.pem`) and a server certificate for `localhost` signed by that CA, then exits. Existing files are reused, so a browser that already trusts the CA keeps trusting it.
-- `rootCA.pem` is imported once into the browser on the evaluation machine — one documented step in the README.
-- nginx serves the server certificate on host port **8443** (`https://localhost:8443`). Because the browser trusts the CA, it trusts nginx's certificate: no warning, clean padlock.
+- `certgen` (`infrastructure/certs/`: Alpine + openssl, script `generate.sh`) runs on every `docker compose up` and exits. nginx waits until it has completed successfully. It writes to `infrastructure/certs/out/`, which is bind-mounted and gitignored:
+  - `ca/rootCA.pem` and `ca/rootCA-key.pem`: the local CA, RSA 4096, valid 10 years.
+  - `server/fullchain.pem` and `server/privkey.pem`: the server certificate, RSA 2048, valid 365 days, for `DNS:localhost` and `IP:127.0.0.1`.
+- Existing files are reused:
+  - If the server certificate exists, `certgen` does nothing.
+  - If only the server certificate is missing, it is re-signed with the existing CA.
+  - So a browser that trusts the CA keeps trusting it for as long as the same clone is used.
+  - A fresh clone has no `out/` directory, so it gets a new CA, which must be imported again.
+- nginx mounts only `out/server/`, read-only. The CA key never reaches it.
+- `rootCA.pem` is imported into the evaluation browser (see [Browser import](#browser-import-chrome)). This is the only manual step besides `.env`, and it is documented in the README under "Trusting the certificate".
+
+---
+
+## Routing (single origin)
+
+Everything is served from one origin, `https://localhost:8443`. The browser never makes a cross-origin request, so there is no CORS configuration (decision #12). Config: `infrastructure/nginx/default.conf`.
+
+| Path | Goes to | Notes |
+|---|---|---|
+| `/` | Built frontend, served by nginx itself | Unknown paths fall back to `index.html` for client-side routing. |
+| `/api/` | Backend, `backend:8000` (the one Daphne process) | |
+| `/ws/` | Backend, `backend:8000` | WebSocket upgrade, with a 1 h read timeout so idle sockets stay open. Contract: note 430. |
+| `/grafana/` | Grafana, `grafana:3000` | The path is passed through unchanged, because Grafana serves from the sub-path. WebSocket upgrade for Grafana Live. `/grafana` redirects to `/grafana/` and keeps `:8443`. |
+| `/media/avatars/`, `/media/pets/` | Files from the `media` volume, read-only | Any other `/media/` path returns 404. Attachments are served only by the permission-checked Django view. |
+
+nginx resolves `backend` and `grafana` when it starts, and exits if either is missing. That is why it `depends_on` both.
+
+---
+
+## Published ports
+
+Only nginx is published: host **8443** → container 443. There is no plain-HTTP port.
+
+The following are **not published** in the evaluation run:
+- backend (8000)
+- PostgreSQL (5432)
+- Prometheus (9090)
+- Grafana (3000)
+- node-exporter (9100)
+
+They are reachable only on the Compose network. nginx doesn't route to Prometheus either; Grafana queries it internally.
+
+The dev overlay (`docker-compose.dev.yml`) also publishes the backend on 8000 and PostgreSQL on 5432. This is for development only, never for the evaluation run.
+
+---
+
+## Browser import (Chrome)
+
+1. Start the stack once so that `infrastructure/certs/out/ca/rootCA.pem` exists.
+2. In Chrome, open `chrome://certificate-manager` and go to **Local certificates** → **Installed by you** → **Trusted certificates** → **Import**. Select `rootCA.pem`.
+3. Reload `https://localhost:8443`. The padlock should be clean.
+
+The import applies to that browser profile only. Repeat it after a fresh clone, because the clone gets a new CA.
 
 ---
 
@@ -61,8 +111,17 @@ Decision #12 originally said nginx listens on port 443. Tested 2026-10-03 on a 4
 ## Implementation checklist
 
 - [x] Confirm whether port 443 can be bound on the evaluation machine — it can't (rootless Docker, tested 2026-10-03); host port 8443 is used
-- [ ] Generate the local CA and nginx certificate with `openssl` in a one-shot `certgen` container, covering `localhost` (the hostname used in the browser)
-- [ ] Add `rootCA-key.pem` and the generated certificate files to `.gitignore`
-- [ ] Configure nginx to serve the certificate for `/`, `/api/`, and `/ws/` (WebSocket upgrade)
-- [ ] Document the one-time CA import (`rootCA.pem`) in the README
-- [ ] On the evaluation machine and account: run `docker-compose up --build`, open `https://localhost:8443`, confirm a clean padlock and zero console warnings
+- [x] Generate the local CA and nginx certificate with `openssl` in a one-shot `certgen` container, covering `localhost` (and `127.0.0.1`)
+- [x] Add `rootCA-key.pem` and the generated certificate files to `.gitignore` (`*.pem`, `infrastructure/certs/out/`)
+- [x] Configure nginx to serve the certificate for `/`, `/api/`, `/ws/` (WebSocket upgrade) and `/grafana/`
+- [x] Document the one-time CA import (`rootCA.pem`) in the README
+- [ ] On the evaluation machine and account: run `docker compose up --build`, open `https://localhost:8443`, confirm a clean padlock and zero console warnings
+
+---
+
+2026-10-20: Updated to what's built:
+- `certgen` details
+- the routing table, including `/grafana/` and `/media/`
+- the published ports
+- the Chrome import steps and the re-import needed after a fresh clone
+- the implementation checklist, with built items ticked

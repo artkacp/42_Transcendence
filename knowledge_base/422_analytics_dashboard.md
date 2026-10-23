@@ -24,7 +24,7 @@ Returns all KPIs and chart series in one response. Private — requires authenti
 | `vaccinated` | boolean | Pet feature filter |
 | `neutered` | boolean | Pet feature filter |
 
-All parameters are optional. Without a date range the endpoint returns all-time data. Pet feature filters are applied via the `metadata` JSONB snapshot on `analytics_event` — the same fixed vocabularies used by Browse and Rehome.
+All parameters are optional. Without a date range the endpoint returns all-time data. `start` after `end` returns 400. Pet feature filters are applied via the `metadata` JSONB snapshot on `analytics_event` — the same fixed vocabularies used by Browse and Rehome. Invalid values for `age_bucket`, `vaccinated`, or `neutered` return 400; other string filters with unrecognised values return empty results.
 
 ---
 
@@ -64,9 +64,15 @@ Each KPI includes a period-over-period delta (current period vs previous period 
 | Offers over time | Area | Daily `COUNT` of `listing_published` events, with running total |
 | Users over time | Lines | Daily active users + daily new sign-ups (`registered` events), with totals |
 | Seekers vs rehomers per day | Areas | Daily `COUNT DISTINCT user_id` for `visit` events vs `listing_published` events |
-| Applications per adopted pet | Bars | Distribution: for each adopted pet, count how many `application` events it received; bucket into 1/2/3/4/5+, show average |
+| Applications per adopted pet | Bars | Distribution: for each adopted pet, count how many `application` events it received; bucket into 1/2/3/4/5+, show average. Average is computed over adopted pets that received at least one application; `null` if none did. |
 | Applications vs adoptions | Grouped bars | Daily `COUNT` of `application` events vs `adoption` events |
 | Community messages | Line | Daily `COUNT` of `message` events |
+
+---
+
+## Pet filter scope
+
+Most chart series are fully scoped to the active pet feature filters. The exception is **new sign-ups** in the "users over time" chart: `registered` events carry no pet metadata, so a pet filter would suppress them entirely. New sign-ups are therefore always computed from the full date range only — pet filters do not apply to that series. Daily active users in the same chart remain pet-filter-scoped.
 
 ---
 

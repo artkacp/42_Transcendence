@@ -19,10 +19,10 @@ Update the status column when a PR opens or merges.
 | Progress   | oostapen | #13 | merged               |
 | Stat       | oostapen | —   | next                 |
 | Input      | iskaraag | #28 | merged               |
-| Textarea   | iskaraag | —   | —                    |
+| Textarea   | iskaraag | #65 | in review            |
 | Tabs       | oostapen | #52 | in review            |
-| Modal      | iskaraag | —   | —                    |
-| Toast      | iskaraag | —   | —                    |
+| Modal      | iskaraag | #53 | merged               |
+| Toast      | iskaraag | #64 | in review            |
 | Pagination | oostapen | #31 | merged               |
 
 "merged, not wired up" — the file is in `ds/` but has no export line in
