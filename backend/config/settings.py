@@ -151,9 +151,6 @@ DATABASES = {
     'default': env.db('DATABASE_URL'),
 }
 
-ANALYTICS_DB_URL = env('ANALYTICS_DB_URL', default=env('DATABASE_URL'))
-
-
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
