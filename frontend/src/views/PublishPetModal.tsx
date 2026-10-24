@@ -90,14 +90,18 @@ function PhotoPicker({ file, species, error, onChange }: PhotoPickerProps) {
   const [rejected, setRejected] = useState('')
 
   useEffect(() => {
-    const url = file ? URL.createObjectURL(file) : null
-    setPreview(url)
     return () => {
-      if (url) URL.revokeObjectURL(url)
+      if (preview) URL.revokeObjectURL(preview)
     }
-  }, [file])
+  }, [preview])
+
+  const select = (next: File) => {
+    setPreview(URL.createObjectURL(next))
+    onChange(next)
+  }
 
   const remove = () => {
+    setPreview(null)
     onChange(null)
     setRejected('')
   }
@@ -149,7 +153,7 @@ function PhotoPicker({ file, species, error, onChange }: PhotoPickerProps) {
           if (!next) return
           const problem = photoProblem(next)
           setRejected(problem)
-          if (!problem) onChange(next)
+          if (!problem) select(next)
         }}
       />
       {message && (
@@ -330,7 +334,6 @@ function PublishFormLoader(props: Omit<PublishFormProps, 'petOptions'>) {
 
   useEffect(() => {
     let ignore = false
-    setFailed(false)
     getPetOptions()
       .then((data) => {
         if (!ignore) setPetOptions(data)
@@ -347,7 +350,14 @@ function PublishFormLoader(props: Omit<PublishFormProps, 'petOptions'>) {
     return (
       <div role="alert" className="flex items-center justify-between gap-3 rounded-2xl bg-danger-soft px-4 py-3 text-sm text-danger">
         Could not load the form options.
-        <Button size="sm" variant="secondary" onClick={() => setRetry((n) => n + 1)}>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => {
+            setFailed(false)
+            setRetry((n) => n + 1)
+          }}
+        >
           Try again
         </Button>
       </div>
