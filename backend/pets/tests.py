@@ -69,6 +69,7 @@ class PublishTests(APITestCase):
         self.assertEqual(r.status_code, status.HTTP_201_CREATED)
         self.assertEqual(r.data['owner']['handle'], 'alice')
         self.assertTrue(r.data['photo'].startswith('http'))
+        self.assertRegex(Pet.objects.get().photo.name, r'^pets/[0-9a-f]{32}\.png$')
         self.assertEqual(r.data['traits'], ['friendly', 'playful'])
         self.assertEqual(search_text_in_db(Pet.objects.get()), 'Karo Poodle friendly playful')
 
