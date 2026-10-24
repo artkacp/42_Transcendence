@@ -3,6 +3,7 @@ import { useView, type View } from './routing'
 import { Shell } from './components/Shell'
 import { Auth } from './views/Auth' 
 import { Browse } from './views/Browse'
+import { Adoptions } from './views/Adoptions'
 import { Rehome } from './views/Rehome'
 import { DesignSystem } from './views/DesignSystem'
 import { PrivacyPolicy, TermsOfService } from './views/Legal'
@@ -14,6 +15,7 @@ const PaletteLab = import.meta.env.DEV
 const PAGES: Record<View, ComponentType> = {
   auth: Auth,
   browse: Browse,
+  adoptions: Adoptions,
   rehome: Rehome,
   design: DesignSystem,
   privacy: PrivacyPolicy,

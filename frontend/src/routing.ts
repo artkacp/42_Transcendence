@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
  * Other query params (e.g. ?lab) are kept when switching views.
  */
 
-export const VIEWS = ['auth', 'browse', 'rehome', 'design', 'privacy', 'terms'] as const
+export const VIEWS = ['auth', 'browse', 'adoptions', 'rehome', 'design', 'privacy', 'terms'] as const
 export type View = (typeof VIEWS)[number]
 
 const DEFAULT_VIEW: View = 'browse'
