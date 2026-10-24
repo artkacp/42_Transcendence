@@ -1,6 +1,7 @@
-import type { MouseEvent, ReactNode } from 'react'
-import { PawPrint, Search, SwatchBook } from 'lucide-react'
+import { useEffect, useState, type MouseEvent, type ReactNode } from 'react'
+import { Search, SwatchBook } from 'lucide-react'
 import { navigate, viewHref, type View } from '../routing'
+import { useFaviconAnimation } from '../hooks/useFaviconAnimation'
 
 /*
  * (◕◕) Shell — layout from the prototype, colours from our roles.
@@ -47,19 +48,39 @@ function Link({ view, className, children, glow = false, ...rest }: {
     </a>
   )
 }
+
+const LOGO_FRAMES = [
+  '(︶ᴥ₍ᐢ◑ ◑ᐢ₎)',
+  '(︶ᴥ₍ᐢ◐ ◐ᐢ₎)',
+  '(︶ᴥ₍ᐢ◐ ◐ᐢ₎)',
+  '(︶ᴥ₍ᐢ◐ ◐ᐢ₎)',
+  '(︶ᴥ₍ᐢ◑ ◑ᐢ₎)',
+  '(︶ᴥ₍ᐢ◑ ◑ᐢ₎)',
+]
+const FRAME_MS = 500
+
+function useLogoFrame() {
+  const [index, setIndex] = useState(0)
+
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const id = setInterval(() => setIndex((i) => (i + 1) % LOGO_FRAMES.length), FRAME_MS)
+    return () => clearInterval(id)
+  }, [])
+
+  return LOGO_FRAMES[index]
+}
+
 function Logo({ small = false }: { small?: boolean }) {
+  const frame = useLogoFrame()
   return (
     <Link
       view="browse"
       glow
-      className="flex items-center gap-2.5 rounded-2xl px-3 py-1.5 [--focus-color:var(--color-terra-100)] [--focus-inner:var(--color-terra-100)] [--focus-edge:0px]"
+      className="flex items-center gap-1 rounded-2xl px-3 py-1.5 [--focus-color:var(--color-terra-100)] [--focus-inner:var(--color-terra-100)] [--focus-edge:0px]"
     >
-      <span
-        className={`flex items-center justify-center bg-primary text-on-primary ${
-          small ? 'size-8 rounded-xl' : 'size-9 rounded-2xl'
-        }`}
-      >
-        <PawPrint className={small ? 'size-4' : 'size-5'} />
+      <span aria-hidden="true" className={`font-logo font-bold whitespace-nowrap text-primary ${small ? 'text-lg' : 'text-xl'}`}>
+        {frame}
       </span>
       <span className={`font-display font-bold tracking-tight text-text ${small ? 'text-lg' : 'text-xl'}`}>
         Pawfect
@@ -69,8 +90,9 @@ function Logo({ small = false }: { small?: boolean }) {
 }
 
 export function Shell({ view, children }: { view: View; children: ReactNode }) {
+  useFaviconAnimation()
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[240px_1fr]">
+        <div className="min-h-dvh lg:grid lg:grid-cols-[288px_1fr]">
       {/* Sidebar (desktop) */}
       <aside className="sticky top-0 hidden h-dvh flex-col gap-1 border-r border-border bg-surface-raised/60 px-4 py-6 lg:flex">
         <div className="mb-6">
