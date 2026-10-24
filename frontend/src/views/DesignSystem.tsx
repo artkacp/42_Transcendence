@@ -417,6 +417,7 @@ export function DesignSystem() {
           <Avatar name="Artur Kacprzycki" size="sm" online />
           <Avatar name="Oleksiy Ostapenko" size="md" online />
           <Avatar name="Sarait Hernandez" size="lg" online />
+          <Avatar name="Alex Ostapenko" size="xl" online />
           <Avatar name="Isshak" size="md" online={false} />
           <Avatar name="Faizan Khan" size="md" />
         </Row>

@@ -299,10 +299,15 @@ export function Browse() {
                         <Badge key={t}>{t}</Badge>
                       ))}
                     </div>
-                    <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => navigate('profile', { user: p.owner.id })}
+                      aria-label={`View ${p.owner.full_name}'s profile`}
+                      className="flex cursor-pointer items-center gap-1.5 rounded-full focus-visible:outline-none focus-gradient"
+                    >
                       <Avatar name={p.owner.full_name} src={p.owner.avatar} size="sm" />
-                      <span className="text-xs text-text-subtle">{p.owner.full_name.split(' ')[0]}</span>
-                    </div>
+                      <span className="text-xs text-text-subtle hover:text-text">{p.owner.full_name.split(' ')[0]}</span>
+                    </button>
                   </div>
                 </div>
               </Card>

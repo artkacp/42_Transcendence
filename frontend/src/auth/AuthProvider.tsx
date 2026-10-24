@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // same object between renders unless something really changed
   const value = useMemo(
-    () => ({ status, user, signIn, signOut }),
+    () => ({ status, user, signIn, signOut, updateUser: setUser }),
     [status, user, signIn, signOut],
   );
 

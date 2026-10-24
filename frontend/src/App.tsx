@@ -4,6 +4,7 @@ import { Shell } from './components/Shell'
 import { Auth } from './views/Auth' 
 import { Browse } from './views/Browse'
 import { Rehome } from './views/Rehome'
+import { Profile } from './views/Profile'
 import { DesignSystem } from './views/DesignSystem'
 import { PrivacyPolicy, TermsOfService } from './views/Legal'
 
@@ -15,6 +16,7 @@ const PAGES: Record<View, ComponentType> = {
   auth: Auth,
   browse: Browse,
   rehome: Rehome,
+  profile: Profile,
   design: DesignSystem,
   privacy: PrivacyPolicy,
   terms: TermsOfService,
