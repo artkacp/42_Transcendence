@@ -1,4 +1,3 @@
-from django.db.models import Count
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
@@ -14,16 +13,9 @@ from inquiries.serializers import AdoptSerializer, InquirySerializer
 from inquiries.services import complete_adoption, newest_first, start_inquiry
 from notifications.services import notify
 
-from .models import AGE_BUCKETS, BREEDS, CITIES, SEX_CHOICES, SIZE_CHOICES, SPECIES_CHOICES, TRAITS, Pet
-from .serializers import PetFilterSerializer, PetSerializer
-
-LOOKUPS = {
-    'q': 'search_text__icontains',
-    'age_bucket': 'age_years__range',
-    'trait': 'traits__contains',
-    'vaccinated': 'is_vaccinated',
-    'neutered': 'is_neutered',
-}
+from .browse import filter_pets, visible_pets
+from .models import AGE_BUCKETS, BREEDS, CITIES, SEX_CHOICES, SIZE_CHOICES, SPECIES_CHOICES, TRAITS
+from .serializers import PetSerializer
 
 
 def values(choices):
@@ -46,6 +38,7 @@ class PetOptionsView(APIView):
 class PetViewSet(
     mixins.CreateModelMixin,
     mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
     mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
@@ -53,11 +46,7 @@ class PetViewSet(
     pagination_class = FixedPagePagination
 
     def get_queryset(self):
-        return (
-            Pet.objects.select_related('owner', 'adopted_by')
-            .annotate(inquiry_count=Count('inquiries'))
-            .order_by('-created_at')
-        )
+        return visible_pets()
 
     # GET /pets/{id}/
     def retrieve(self, request, *args, **kwargs):
@@ -71,6 +60,18 @@ class PetViewSet(
         analytics_signals.listing_published.send(sender=self.__class__, user=self.request.user, pet=pet)
         notify(pet.owner, 'create', 'Listing published', f'{pet.name} is now listed for adoption.', subject=pet)
         push('browse', 'pet.published', pet=serializer.data)
+
+    # PUT / PATCH /pets/{id}/ (owner only; an adopted listing is locked)
+    def perform_update(self, serializer):
+        pet = serializer.instance
+        if pet.owner != self.request.user:
+            raise PermissionDenied('Only the owner can edit this listing.')
+        if pet.adopted_by_id:
+            raise PermissionDenied('An adopted listing can no longer be edited.')
+        old_photo = pet.photo.name
+        pet = serializer.save()
+        if old_photo and pet.photo.name != old_photo:
+            pet.photo.storage.delete(old_photo)
 
     # DELETE /pets/{id}/ (owner only; adopters are notified first, while their threads still exist)
     def perform_destroy(self, pet):
@@ -91,17 +92,7 @@ class PetViewSet(
 
     # GET /pets/?q=&species=&sex=&size=&age_bucket=&city=&breed=&trait=&vaccinated=&neutered=&page=
     def list(self, request):
-        # .dict() because DRF treats booleans missing from a QueryDict as False
-        filters = PetFilterSerializer(data=request.query_params.dict())
-        filters.is_valid(raise_exception=True)
-        queryset = self.get_queryset()
-        for name, value in filters.validated_data.items():
-            if name == 'age_bucket':
-                value = AGE_BUCKETS[value]
-            elif name == 'trait':
-                value = [value]
-            queryset = queryset.filter(**{LOOKUPS.get(name, name): value})
-        page = self.paginate_queryset(queryset)
+        page = self.paginate_queryset(filter_pets(self.get_queryset(), request.query_params))
         return self.get_paginated_response(self.get_serializer(page, many=True).data)
 
     # GET /pets/mine/

@@ -1,5 +1,6 @@
 import tempfile
 
+from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import connection
 from django.test import override_settings
@@ -225,3 +226,61 @@ class MineAndDetailTests(APITestCase):
         self.client.credentials()
         r = self.client.get(reverse('pet-list'))
         self.assertEqual(r.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp())
+class UpdateTests(APITestCase):
+
+    def setUp(self):
+        self.alice = make_user('alice', 1)
+        self.bob = make_user('bob', 2)
+        self.pet = make_pet(self.alice)
+        auth(self.client, self.alice)
+
+    def put(self, **overrides):
+        return self.client.put(reverse('pet-detail', args=[self.pet.pk]), {**PET_PAYLOAD, **overrides}, format='json')
+
+    def patch(self, data, format='json'):
+        return self.client.patch(reverse('pet-detail', args=[self.pet.pk]), data, format=format)
+
+    def test_owner_replaces_the_listing_with_put(self):
+        r = self.put(name='Kobi', traits=['calm'])
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertEqual(r.data['name'], 'Kobi')
+        self.assertEqual(r.data['owner']['handle'], 'alice')
+        self.assertEqual(search_text_in_db(self.pet), 'Kobi Poodle calm')
+
+    def test_owner_patches_a_single_field(self):
+        r = self.patch({'city': 'Gdańsk'})
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.pet.refresh_from_db()
+        self.assertEqual(self.pet.city, 'Gdańsk')
+        self.assertEqual(self.pet.name, 'Karo')
+
+    def test_non_owner_gets_403(self):
+        auth(self.client, self.bob)
+        self.assertEqual(self.put(name='Kobi').status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(self.patch({'name': 'Kobi'}).status_code, status.HTTP_403_FORBIDDEN)
+        self.pet.refresh_from_db()
+        self.assertEqual(self.pet.name, 'Karo')
+
+    def test_adopted_listing_is_locked(self):
+        Pet.objects.filter(pk=self.pet.pk).update(adopted_by=self.bob)
+        self.assertEqual(self.patch({'name': 'Kobi'}).status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_breed_is_rechecked_when_species_changes(self):
+        r = self.patch({'species': 'cat'})
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('breed', r.data['fields'])
+        self.assertEqual(self.patch({'breed': 'Maine Coon'}).status_code, status.HTTP_400_BAD_REQUEST)
+        r = self.patch({'species': 'cat', 'breed': 'Maine Coon'})
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertEqual(r.data['species'], 'cat')
+
+    def test_new_photo_replaces_the_old_file(self):
+        old = self.patch({'photo': image_file('karo.png')}, format='multipart')
+        old_name = Pet.objects.get().photo.name
+        self.assertEqual(old.status_code, status.HTTP_200_OK)
+        self.patch({'photo': image_file('kobi.png')}, format='multipart')
+        self.assertFalse(default_storage.exists(old_name))
+        self.assertTrue(default_storage.exists(Pet.objects.get().photo.name))
