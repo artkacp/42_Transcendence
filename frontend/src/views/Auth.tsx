@@ -1,23 +1,20 @@
 // src/views/Auth.tsx
-// F1 · state machine: typing → submitting → success | error
-// AuthForm is look-only, so this file translates our 4 states into its props.
+// F1 · state machine: typing → submitting → browse | error
+// AuthForm is look-only, so this file translates our states into its props.
 
 import { useState } from 'react'
+import { useAuth } from '../auth/auth-context'
+import { ApiError } from '../api/client'
+import { navigate } from '../routing'
 import { AuthForm, type AuthMode, type AuthField, type AuthValues, type AuthErrors } from './AuthForm'
 
-type Status = 'typing' | 'submitting' | 'success' | 'error'
+type Status = 'typing' | 'submitting' | 'error'
 
 const EMPTY: AuthValues = { email: '', password: '', full_name: '' }
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-// fake server: password "wrong" → error, anything else → success
-function fakeSubmit(values: AuthValues): Promise<void> {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => (values.password === 'wrong' ? reject() : resolve()), 800)
-  })
-}
-
 export function Auth() {
+  const { signIn, register } = useAuth()
   const [mode, setMode] = useState<AuthMode>('signin')
   const [values, setValues] = useState<AuthValues>(EMPTY)
   const [status, setStatus] = useState<Status>('typing')
@@ -42,16 +39,22 @@ export function Auth() {
     }
     setStatus('submitting')
     try {
-      await fakeSubmit(values)
-      setStatus('success')
-    } catch {
+      if (mode === 'signin') await signIn(values.email, values.password)
+      else await register(values.full_name, values.email, values.password)
+      navigate('browse')
+    } catch (err) {
       setStatus('error')
-      setErrors({ form: 'Wrong email or password' })
+      if (!(err instanceof ApiError)) {
+        setErrors({ form: 'Something went wrong, try again' })
+        return
+      }
+      const fields: AuthErrors = {}
+      for (const f of ['email', 'password', 'full_name'] as const) {
+        if (err.fieldErrors[f]) fields[f] = err.fieldErrors[f]
+      }
+      if (Object.keys(fields).length > 0) setErrors(fields)
+      else setErrors({ form: err.status === 401 ? 'Wrong email or password' : err.message })
     }
-  }
-
-  if (status === 'success') {
-    return <p className="mx-auto max-w-sm">Done (fake). Real API comes in F1 part 2.</p>
   }
 
   return (

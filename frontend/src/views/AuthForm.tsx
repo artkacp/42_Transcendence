@@ -75,6 +75,7 @@ export function AuthForm({
 
       {errors.form && (
         <p role="alert" className="text-sm text-danger">
+          <span aria-hidden="true" className="mr-1 font-logo">≧◉_◉≦</span>
           {errors.form}
         </p>
       )}

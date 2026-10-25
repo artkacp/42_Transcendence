@@ -8,6 +8,7 @@ import { AuthContext, type AuthStatus, type User } from './auth-context';
 const ME_PATH = '/api/auth/me/';
 const LOGIN_PATH = '/api/auth/login/';
 const LOGOUT_PATH = '/api/auth/logout/';
+const REGISTER_PATH = '/api/auth/register/';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('loading');
@@ -54,6 +55,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus('signed-in');
   }, []);
   
+  // register gives no session → sign in right after
+  const register = useCallback(
+    async (fullName: string, email: string, password: string) => {
+      await post(REGISTER_PATH, { email, password, full_name: fullName });
+      await signIn(email, password);
+    },
+    [signIn],
+  );
+
   const signOut = useCallback(async () => {
     try {
       await post(LOGOUT_PATH); // server clears the refresh cookie
@@ -63,8 +73,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [dropSession]);
 
   const value = useMemo(
-    () => ({ status, user, signIn, signOut, updateUser: setUser }),
-    [status, user, signIn, signOut],
+    () => ({ status, user, signIn, register, signOut, updateUser: setUser }),
+    [status, user, signIn, register, signOut],
   );
 
   return <AuthContext value={value}>{children}</AuthContext>;
