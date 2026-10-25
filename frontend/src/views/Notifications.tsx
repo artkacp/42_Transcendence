@@ -5,6 +5,25 @@ import { useAuth } from '../auth/auth-context'
 import { Badge, Button, Card, EmptyState, toastKinds } from '../ds'
 import { navigate } from '../routing'
 
+const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
+
+const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
+  ['year', 31536000],
+  ['month', 2592000],
+  ['week', 604800],
+  ['day', 86400],
+  ['hour', 3600],
+  ['minute', 60],
+]
+
+function timeAgo(iso: string) {
+  const seconds = (new Date(iso).getTime() - Date.now()) / 1000
+  for (const [unit, size] of UNITS) {
+    if (Math.abs(seconds) >= size) return rtf.format(Math.trunc(seconds / size), unit)
+  }
+  return 'just now'
+}
+
 export function Notifications() {
   const { status } = useAuth()
   const [items, setItems] = useState<AppNotification[] | null>(null)
@@ -63,6 +82,13 @@ export function Notifications() {
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-sm font-semibold text-text">{n.title}</p>
                       <Badge>{label}</Badge>
+                      <time
+                        dateTime={n.created_at}
+                        title={new Date(n.created_at).toLocaleString()}
+                        className="ml-auto text-xs text-text-subtle"
+                      >
+                        {timeAgo(n.created_at)}
+                      </time>
                     </div>
                     {n.body && <p className="mt-0.5 text-sm text-text-muted">{n.body}</p>}
                   </div>

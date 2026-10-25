@@ -8,9 +8,9 @@ export interface AppNotification {
   title: string
   body: string
   is_read: boolean
-  subject_type: string
+  subject_type: string | null
   subject_id: string | null
-  created_at: string | null
+  created_at: string
 }
 
 export const getNotifications = () => get<Paginated<AppNotification>>('/api/notifications/')
