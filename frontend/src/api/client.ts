@@ -1,6 +1,5 @@
-// src/api/client.ts
 // One door for every request to the backend.┌│ │┐
-// No React inside: plain TypeScript, so it can be reused as-is in other project
+// No React inside: plain TypeScript.
 
 const REFRESH_PATH = '/api/auth/refresh/';
 
@@ -15,7 +14,6 @@ export function setAccessToken(token: string | null): void {
 }
 
 // Called when the session is really over (refresh failed).
-// AuthContext will plug its signOut() in here.
 let onSessionExpired: () => void = () => {};
 
 export function setOnSessionExpired(fn: () => void): void {
