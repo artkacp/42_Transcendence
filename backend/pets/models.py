@@ -4,6 +4,8 @@ from django.contrib.postgres.fields import ArrayField
 from django.contrib.postgres.indexes import GinIndex
 from django.db import models
 
+from core.uploads import UploadTo
+
 
 SPECIES_CHOICES = [('dog', 'Dog'), ('cat', 'Cat')]
 SIZE_CHOICES = [('small', 'Small'), ('medium', 'Medium'), ('large', 'Large')]
@@ -33,7 +35,7 @@ class Pet(models.Model):
     city = models.CharField(max_length=100)
     story = models.TextField()
     traits = ArrayField(models.CharField(max_length=50), size=4, default=list)
-    photo = models.FileField(upload_to='pets/', null=True, blank=True)
+    photo = models.FileField(upload_to=UploadTo('pets'), null=True, blank=True)
     is_vaccinated = models.BooleanField(default=False)
     is_neutered = models.BooleanField(default=False)
     adopted_by = models.ForeignKey(
