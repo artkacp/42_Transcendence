@@ -4,7 +4,7 @@ import type { Paginated } from './browse'
 
 export interface AppNotification {
   id: string
-  kind: ToastKind[]
+  kind: ToastKind
   title: string
   body: string
   is_read: boolean

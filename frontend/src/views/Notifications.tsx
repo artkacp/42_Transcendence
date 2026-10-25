@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { ApiError } from '../api/client'
 import { getNotifications, type AppNotification } from '../api/notifications'
 import { useAuth } from '../auth/auth-context'
-import { Button, EmptyState } from '../ds'
+import { Badge, Button, Card, EmptyState, toastKinds } from '../ds'
 import { navigate } from '../routing'
 
 export function Notifications() {
@@ -51,9 +51,25 @@ export function Notifications() {
         <p role="status" className="text-sm text-text-muted">Loading notifications…</p>
       ) : (
         <ul className="space-y-2">
-          {items.map((n) => (
-            <li key={n.id}>{n.title}</li>
-          ))}
+          {items.map((n) => {
+            const { icon, tint, label } = toastKinds[n.kind]
+            return (
+              <li key={n.id}>
+                <Card className="flex items-start gap-3 p-4">
+                  <span className={`flex size-8 shrink-0 items-center justify-center rounded-xl ${tint}`} aria-hidden="true">
+                    {icon}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-semibold text-text">{n.title}</p>
+                      <Badge>{label}</Badge>
+                    </div>
+                    {n.body && <p className="mt-0.5 text-sm text-text-muted">{n.body}</p>}
+                  </div>
+                </Card>
+              </li>
+            )
+          })}
         </ul>
       )}
     </div>
