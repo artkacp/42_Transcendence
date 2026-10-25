@@ -5,14 +5,14 @@ import { useEffect, useState } from 'react'
  * Other query params (e.g. ?lab) are kept when switching views.
  */
 
-export const VIEWS = ['auth', 'browse', 'rehome', 'profile', 'analytics', 'design', 'privacy', 'terms'] as const
+export const VIEWS = ['auth', 'browse', 'pet', 'rehome', 'profile', 'analytics', 'design', 'privacy', 'terms'] as const
 export type View = (typeof VIEWS)[number]
 
 const DEFAULT_VIEW: View = 'browse'
 
 // Params that belong to one page (e.g. ?view=profile&user=<id>); dropped on every view switch
-type PageParams = { user?: string }
-const PAGE_PARAMS = ['user']
+type PageParams = { user?: string; id?: string }
+const PAGE_PARAMS = ['user', 'id']
 
 function isView(value: string | null): value is View {
   return (VIEWS as readonly string[]).includes(value ?? '')
@@ -56,4 +56,11 @@ export function useView(): View {
 // ?user=<id> of the profile page, or null for your own profile
 export function useUserParam(): string | null {
   return usePopState(readUserParam)
+}
+
+const readIdParam = () => new URLSearchParams(window.location.search).get('id')
+
+// ?id=<pet id> of the pet page
+export function useIdParam(): string | null {
+  return usePopState(readIdParam)
 }
