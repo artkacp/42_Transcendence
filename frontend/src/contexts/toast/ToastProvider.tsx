@@ -19,8 +19,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const toast = useCallback((input: ToastInput) => {
-    const id = nextId.current++
-    setItems((prev) => [...prev, { ...input, id }])
+    setItems((prev) =>
+      prev.some((item) => item.kind === input.kind && item.title === input.title && item.message === input.message)
+        ? prev
+        : [...prev, { ...input, id: nextId.current++ }],
+    )
   }, [])
 
   useEffect(() => {
