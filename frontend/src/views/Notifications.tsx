@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
+import { CheckCheck, Trash2 } from 'lucide-react'
 import { ApiError } from '../api/client'
-import { getNotifications, type AppNotification } from '../api/notifications'
+import { clearNotifications, getNotifications, markAllRead, type AppNotification } from '../api/notifications'
 import { useAuth } from '../auth/auth-context'
+import { useToast } from '../contexts/toast/ToastContext'
 import { Badge, Button, Card, EmptyState, toastKinds } from '../ds'
 import { navigate } from '../routing'
 
@@ -26,8 +28,10 @@ function timeAgo(iso: string) {
 
 export function Notifications() {
   const { status } = useAuth()
+  const toast = useToast()
   const [items, setItems] = useState<AppNotification[] | null>(null)
   const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
 
   useEffect(() => {
     if (status !== 'signed-in') return
@@ -43,6 +47,20 @@ export function Notifications() {
       cancelled = true
     }
   }, [status])
+
+  const run = async (request: () => Promise<unknown>, apply: (list: AppNotification[]) => AppNotification[], failure: string) => {
+    setBusy(true)
+    try {
+      await request()
+      setItems((prev) => (prev ? apply(prev) : prev))
+    } catch (err) {
+      toast({ title: failure, message: err instanceof ApiError ? err.message : 'Please try again.' })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const hasUnread = items?.some((n) => !n.is_read) ?? false
 
   if (status === 'loading') return null
 
@@ -61,13 +79,41 @@ export function Notifications() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <h1 className="font-display text-4xl font-black tracking-tight">Notifications</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-display text-4xl font-black tracking-tight">Notifications</h1>
+        {items && items.length > 0 && (
+          <div className="flex gap-2">
+            {hasUnread && (
+              <Button
+                size="sm"
+                variant="ghost"
+                icon={<CheckCheck className="size-4" />}
+                disabled={busy}
+                onClick={() => void run(markAllRead, (list) => list.map((n) => ({ ...n, is_read: true })), 'Could not mark as read')}
+              >
+                Mark all read
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant="ghost"
+              icon={<Trash2 className="size-4" />}
+              disabled={busy}
+              onClick={() => void run(clearNotifications, () => [], 'Could not clear notifications')}
+            >
+              Clear all
+            </Button>
+          </div>
+        )}
+      </div>
       {error ? (
         <p role="alert" className="rounded-2xl bg-danger-soft px-4 py-2 text-sm text-danger">
           {error}
         </p>
       ) : items === null ? (
         <p role="status" className="text-sm text-text-muted">Loading notifications…</p>
+      ) : items.length === 0 ? (
+        <EmptyState emoji="🔔" title="No notifications yet" hint="Updates about your pets, friends and adoptions show up here." />
       ) : (
         <ul className="space-y-2">
           {items.map((n) => {
