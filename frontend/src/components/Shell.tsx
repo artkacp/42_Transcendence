@@ -1,5 +1,5 @@
 import { useEffect, useState, type MouseEvent, type ReactNode } from 'react'
-import { Bell, LogIn, LogOut, Search, SwatchBook, UserRound } from 'lucide-react'
+import { Bell, LogIn, LogOut, Search, SwatchBook, UserRound, Users } from 'lucide-react'
 import { navigate, viewHref, type View } from '../routing'
 import { useFaviconAnimation } from '../hooks/useFaviconAnimation'
 import { get } from '../api/client'
@@ -20,6 +20,7 @@ import { useSocketFrame, useSocketReconnect } from '../socket/SocketContext'
 
 const NAV: { view: View; label: string; icon: ReactNode }[] = [
   { view: 'browse', label: 'Browse', icon: <Search className="size-[18px]" /> },
+  { view: 'friends', label: 'Friends', icon: <Users className="size-[18px]" /> },
   { view: 'profile', label: 'Profile', icon: <UserRound className="size-[18px]" /> },
   { view: 'design', label: 'Design kit', icon: <SwatchBook className="size-[18px]" /> },
 ]

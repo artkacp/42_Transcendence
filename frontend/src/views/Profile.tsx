@@ -1,17 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, Camera, Check, PawPrint, Trash2, UserMinus, UserPlus, X } from 'lucide-react'
 import { ApiError } from '../api/client'
+import { acceptFriendRequest, deleteFriendship, sendFriendRequest } from '../api/friends'
 import { getPetOptions } from '../api/pets'
-import {
-  acceptFriendRequest,
-  deleteFriendship,
-  getUser,
-  getUserPets,
-  removeAvatar,
-  sendFriendRequest,
-  updateMe,
-  uploadAvatar,
-} from '../api/users'
+import { getUser, getUserPets, removeAvatar, updateMe, uploadAvatar } from '../api/users'
 import { useAuth, type User as Me } from '../auth/auth-context'
 import type { Pet, ProfileChanges, UserProfile } from '../data/types'
 import { Avatar, Badge, Button, Card, EmptyState, Input, Textarea } from '../ds'
