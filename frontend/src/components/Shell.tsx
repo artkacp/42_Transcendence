@@ -1,5 +1,5 @@
-import { Search, SwatchBook, BarChart2, LogIn, LogOut, UserRound } from 'lucide-react'
 import { useEffect, useState, type MouseEvent, type ReactNode } from 'react'
+import { Search, SwatchBook, BarChart2, LogIn, LogOut, UserRound } from 'lucide-react'
 import { navigate, viewHref, type View } from '../routing'
 import { useFaviconAnimation } from '../hooks/useFaviconAnimation'
 import { useAuth } from '../auth/auth-context'
