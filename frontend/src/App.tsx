@@ -6,6 +6,7 @@ import { Browse } from './views/Browse'
 import { Rehome } from './views/Rehome'
 import { DesignSystem } from './views/DesignSystem'
 import { PrivacyPolicy, TermsOfService } from './views/Legal'
+import { Analytics } from './views/Analytics'
 
 const PaletteLab = import.meta.env.DEV
   ? lazy(() => import('./dev/PaletteLab').then((m) => ({ default: m.PaletteLab })))
@@ -15,6 +16,7 @@ const PAGES: Record<View, ComponentType> = {
   auth: Auth,
   browse: Browse,
   rehome: Rehome,
+  analytics: Analytics,
   design: DesignSystem,
   privacy: PrivacyPolicy,
   terms: TermsOfService,

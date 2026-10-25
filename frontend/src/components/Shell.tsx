@@ -1,5 +1,5 @@
 import type { MouseEvent, ReactNode } from 'react'
-import { PawPrint, Search, SwatchBook } from 'lucide-react'
+import { PawPrint, Search, SwatchBook, BarChart2 } from 'lucide-react'
 import { navigate, viewHref, type View } from '../routing'
 
 /*
@@ -15,6 +15,7 @@ import { navigate, viewHref, type View } from '../routing'
 
 const NAV: { view: View; label: string; icon: ReactNode }[] = [
   { view: 'browse', label: 'Browse', icon: <Search className="size-[18px]" /> },
+  { view: 'analytics', label: 'Analytics', icon: <BarChart2 className="size-[18px]" /> },
   { view: 'design', label: 'Design kit', icon: <SwatchBook className="size-[18px]" /> },
 ]
 // A real <a href> keeps middle-click / open-in-new-tab working;
