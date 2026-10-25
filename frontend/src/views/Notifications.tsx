@@ -32,13 +32,16 @@ export function Notifications() {
   const [items, setItems] = useState<AppNotification[] | null>(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [nextPage, setNextPage] = useState<number | null>(null)
 
   useEffect(() => {
     if (status !== 'signed-in') return
     let cancelled = false
     getNotifications()
       .then((res) => {
-        if (!cancelled) setItems(res.results)
+        if (cancelled) return
+        setItems(res.results)
+        setNextPage(res.next ? 2 : null)
       })
       .catch((err: unknown) => {
         if (!cancelled) setError(err instanceof ApiError ? err.message : 'Could not load your notifications.')
@@ -54,8 +57,27 @@ export function Notifications() {
       await request()
       setItems((prev) => (prev ? apply(prev) : prev))
       updateUser((u) => u && { ...u, unread_notifications: 0 })
+      return true
     } catch (err) {
       toast({ title: failure, message: err instanceof ApiError ? err.message : 'Please try again.' })
+      return false
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const loadMore = async () => {
+    if (!nextPage) return
+    setBusy(true)
+    try {
+      const res = await getNotifications(nextPage)
+      setItems((prev) => {
+        const seen = new Set(prev?.map((n) => n.id))
+        return [...(prev ?? []), ...res.results.filter((n) => !seen.has(n.id))]
+      })
+      setNextPage(res.next ? nextPage + 1 : null)
+    } catch (err) {
+      toast({ title: 'Could not load more notifications', message: err instanceof ApiError ? err.message : 'Please try again.' })
     } finally {
       setBusy(false)
     }
@@ -100,7 +122,7 @@ export function Notifications() {
               variant="ghost"
               icon={<Trash2 className="size-4" />}
               disabled={busy}
-              onClick={() => void run(clearNotifications, () => [], 'Could not clear notifications')}
+              onClick={() => void run(clearNotifications, () => [], 'Could not clear notifications').then((ok) => ok && setNextPage(null))}
             >
               Clear all
             </Button>
@@ -116,38 +138,47 @@ export function Notifications() {
       ) : items.length === 0 ? (
         <EmptyState emoji="🔔" title="No notifications yet" hint="Updates about your pets, friends and adoptions show up here." />
       ) : (
-        <ul className="space-y-2">
-          {items.map((n) => {
-            const { icon, tint, label } = toastKinds[n.kind]
-            return (
-              <li key={n.id}>
-                <Card className={`flex items-start gap-3 p-4 ${n.is_read ? '' : 'ring-1 ring-primary/40'}`}>
-                  <span className={`flex size-8 shrink-0 items-center justify-center rounded-xl ${tint}`} aria-hidden="true">
-                    {icon}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className={`text-sm ${n.is_read ? 'font-medium text-text-muted' : 'font-semibold text-text'}`}>
-                        {!n.is_read && <span className="sr-only">Unread: </span>}
-                        {n.title}
-                      </p>
-                      <Badge>{label}</Badge>
-                      {!n.is_read && <span className="ml-auto size-2 rounded-full bg-primary" aria-hidden="true" />}
-                      <time
-                        dateTime={n.created_at}
-                        title={new Date(n.created_at).toLocaleString()}
-                        className={`text-xs text-text-subtle ${n.is_read ? 'ml-auto' : ''}`}
-                      >
-                        {timeAgo(n.created_at)}
-                      </time>
+        <>
+          <ul className="space-y-2">
+            {items.map((n) => {
+              const { icon, tint, label } = toastKinds[n.kind]
+              return (
+                <li key={n.id}>
+                  <Card className={`flex items-start gap-3 p-4 ${n.is_read ? '' : 'ring-1 ring-primary/40'}`}>
+                    <span className={`flex size-8 shrink-0 items-center justify-center rounded-xl ${tint}`} aria-hidden="true">
+                      {icon}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className={`text-sm ${n.is_read ? 'font-medium text-text-muted' : 'font-semibold text-text'}`}>
+                          {!n.is_read && <span className="sr-only">Unread: </span>}
+                          {n.title}
+                        </p>
+                        <Badge>{label}</Badge>
+                        {!n.is_read && <span className="ml-auto size-2 rounded-full bg-primary" aria-hidden="true" />}
+                        <time
+                          dateTime={n.created_at}
+                          title={new Date(n.created_at).toLocaleString()}
+                          className={`text-xs text-text-subtle ${n.is_read ? 'ml-auto' : ''}`}
+                        >
+                          {timeAgo(n.created_at)}
+                        </time>
+                      </div>
+                      {n.body && <p className="mt-0.5 text-sm text-text-muted">{n.body}</p>}
                     </div>
-                    {n.body && <p className="mt-0.5 text-sm text-text-muted">{n.body}</p>}
-                  </div>
-                </Card>
-              </li>
-            )
-          })}
-        </ul>
+                  </Card>
+                </li>
+              )
+            })}
+          </ul>
+          {nextPage && (
+            <div className="flex justify-center">
+              <Button size="sm" variant="ghost" disabled={busy} onClick={() => void loadMore()}>
+                Load more
+              </Button>
+            </div>
+          )}
+        </>
       )}
     </div>
   )

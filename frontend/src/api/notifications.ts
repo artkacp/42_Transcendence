@@ -13,7 +13,7 @@ export interface AppNotification {
   created_at: string
 }
 
-export const getNotifications = () => get<Paginated<AppNotification>>('/api/notifications/')
+export const getNotifications = (page = 1) => get<Paginated<AppNotification>>(`/api/notifications/?page=${page}`)
 
 export const markAllRead = () => post<null>('/api/notifications/read-all/')
 
