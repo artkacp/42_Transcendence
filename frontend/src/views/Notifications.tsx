@@ -74,18 +74,22 @@ export function Notifications() {
             const { icon, tint, label } = toastKinds[n.kind]
             return (
               <li key={n.id}>
-                <Card className="flex items-start gap-3 p-4">
+                <Card className={`flex items-start gap-3 p-4 ${n.is_read ? '' : 'ring-1 ring-primary/40'}`}>
                   <span className={`flex size-8 shrink-0 items-center justify-center rounded-xl ${tint}`} aria-hidden="true">
                     {icon}
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-semibold text-text">{n.title}</p>
+                      <p className={`text-sm ${n.is_read ? 'font-medium text-text-muted' : 'font-semibold text-text'}`}>
+                        {!n.is_read && <span className="sr-only">Unread: </span>}
+                        {n.title}
+                      </p>
                       <Badge>{label}</Badge>
+                      {!n.is_read && <span className="ml-auto size-2 rounded-full bg-primary" aria-hidden="true" />}
                       <time
                         dateTime={n.created_at}
                         title={new Date(n.created_at).toLocaleString()}
-                        className="ml-auto text-xs text-text-subtle"
+                        className={`text-xs text-text-subtle ${n.is_read ? 'ml-auto' : ''}`}
                       >
                         {timeAgo(n.created_at)}
                       </time>
