@@ -52,7 +52,7 @@ function photoProblem(file: File) {
   return ''
 }
 
-function SelectField({ label, error, ...rest }: ComponentProps<typeof Select> & { label: string; error?: string }) {
+export function SelectField({ label, error, ...rest }: ComponentProps<typeof Select> & { label: string; error?: string }) {
   const id = useId()
   const errorId = `${id}-error`
 

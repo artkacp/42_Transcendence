@@ -15,6 +15,7 @@ export type AuthValue = {
   user: User | null;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  updateUser: (user: User) => void; // after a profile or avatar change, so every avatar re-renders
 };
 
 export const AuthContext = createContext<AuthValue | null>(null);

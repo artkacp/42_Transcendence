@@ -5,10 +5,14 @@ import { useEffect, useState } from 'react'
  * Other query params (e.g. ?lab) are kept when switching views.
  */
 
-export const VIEWS = ['auth', 'browse', 'rehome', 'design', 'privacy', 'terms'] as const
+export const VIEWS = ['auth', 'browse', 'rehome', 'profile', 'design', 'privacy', 'terms'] as const
 export type View = (typeof VIEWS)[number]
 
 const DEFAULT_VIEW: View = 'browse'
+
+// Params that belong to one page (e.g. ?view=profile&user=<id>); dropped on every view switch
+type PageParams = { user?: string }
+const PAGE_PARAMS = ['user']
 
 function isView(value: string | null): value is View {
   return (VIEWS as readonly string[]).includes(value ?? '')
@@ -19,24 +23,37 @@ function readView(): View {
   return isView(value) ? value : DEFAULT_VIEW
 }
 
-export function viewHref(view: View): string {
+export function viewHref(view: View, pageParams: PageParams = {}): string {
   const params = new URLSearchParams(window.location.search)
+  PAGE_PARAMS.forEach((name) => params.delete(name))
   params.set('view', view)
+  for (const [name, value] of Object.entries(pageParams)) params.set(name, value)
   return `?${params.toString()}`
 }
 
-export function navigate(view: View) {
-  window.history.pushState(null, '', viewHref(view))
+export function navigate(view: View, pageParams: PageParams = {}) {
+  window.history.pushState(null, '', viewHref(view, pageParams))
   window.dispatchEvent(new PopStateEvent('popstate'))
 }
 
-// Current view; follows link clicks and the browser back/forward buttons.
-export function useView(): View {
-  const [view, setView] = useState(readView)
+function usePopState<T>(read: () => T): T {
+  const [value, setValue] = useState(read)
   useEffect(() => {
-    const onChange = () => setView(readView())
+    const onChange = () => setValue(read())
     window.addEventListener('popstate', onChange)
     return () => window.removeEventListener('popstate', onChange)
-  }, [])
-  return view
+  }, [read])
+  return value
+}
+
+const readUserParam = () => new URLSearchParams(window.location.search).get('user')
+
+// Current view; follows link clicks and the browser back/forward buttons.
+export function useView(): View {
+  return usePopState(readView)
+}
+
+// ?user=<id> of the profile page, or null for your own profile
+export function useUserParam(): string | null {
+  return usePopState(readUserParam)
 }
