@@ -27,7 +27,7 @@ function timeAgo(iso: string) {
 }
 
 export function Notifications() {
-  const { status } = useAuth()
+  const { status, updateUser } = useAuth()
   const toast = useToast()
   const [items, setItems] = useState<AppNotification[] | null>(null)
   const [error, setError] = useState('')
@@ -53,6 +53,7 @@ export function Notifications() {
     try {
       await request()
       setItems((prev) => (prev ? apply(prev) : prev))
+      updateUser((u) => u && { ...u, unread_notifications: 0 })
     } catch (err) {
       toast({ title: failure, message: err instanceof ApiError ? err.message : 'Please try again.' })
     } finally {
