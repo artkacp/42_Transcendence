@@ -97,11 +97,14 @@ SPECTACULAR_SETTINGS = {
     'TITLE': 'Pawfect Match Public API',
     'VERSION': 'v1',
     'DESCRIPTION': (
-        'Read-only access to the pets listed for adoption on Pawfect Match.\n\n'
+        'The pets listed for adoption on Pawfect Match: browse them, and publish, replace or remove your own.\n\n'
         '**Getting a key:** while logged in to Pawfect Match, send `POST /api/keys/` with a `label`. '
         'The response shows the full key once; it cannot be shown again.\n\n'
         '**Using it:** send the key in the `X-API-Key` header on every request (or use **Authorize** on this page). '
         'A missing, invalid or revoked key gets 401.\n\n'
+        "**Writes:** POST, PUT and DELETE act as the key's owner. A new pet is theirs, and only their own pets "
+        'can be replaced or removed (403 otherwise); an adopted pet can no longer be replaced. PUT replaces the '
+        'whole listing; PATCH is not supported (405).\n\n'
         '**Rate limit:** 60 requests per minute per key. Above that you get 429, with a `Retry-After` header '
         'giving the seconds to wait.'
     ),
@@ -109,6 +112,8 @@ SPECTACULAR_SETTINGS = {
     'PREPROCESSING_HOOKS': ['api.schema.public_endpoints_only'],
     # Leaves /schema/ itself out of the schema.
     'SERVE_INCLUDE_SCHEMA': False,
+    # Separate request and response components, so file fields are documented as binary uploads.
+    'COMPONENT_SPLIT_REQUEST': True,
     # Schema and docs check no JWT and no API key (permissions default to AllowAny) and have no throttle.
     'SERVE_AUTHENTICATION': [],
     # Swagger UI from its CDN (no CSP is set anywhere), pinned so the docs page can't change under us.
