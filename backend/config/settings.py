@@ -143,6 +143,18 @@ CHANNEL_LAYERS = {
 # Seconds a new /ws/ socket has to send its auth frame before it is closed with 4401.
 WS_AUTH_TIMEOUT = 10
 
+CACHES = {
+    # Same as Django's built-in default; spelled out because defining CACHES replaces it.
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    },
+    # Public API request counters (api/throttling.py), kept apart from everything else.
+    'throttle': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'api-throttle',
+    },
+}
+
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
