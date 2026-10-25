@@ -26,3 +26,5 @@ export interface PetOptions {
 }
 
 export const getPetOptions = () => get<PetOptions>('/api/pet-options/')
+
+export const getPet = (id: string) => get<Pet>(`/api/pets/${id}/`)
