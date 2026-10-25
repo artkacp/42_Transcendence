@@ -2,7 +2,10 @@ import { useEffect, useState, type MouseEvent, type ReactNode } from 'react'
 import { Bell, LogIn, LogOut, Search, SwatchBook, UserRound } from 'lucide-react'
 import { navigate, viewHref, type View } from '../routing'
 import { useFaviconAnimation } from '../hooks/useFaviconAnimation'
-import { useAuth } from '../auth/auth-context'
+import { get } from '../api/client'
+import { useAuth, type User } from '../auth/auth-context'
+import { useToast } from '../contexts/toast/ToastContext'
+import { useSocketFrame, useSocketReconnect } from '../socket/SocketContext'
 
 /*
  * (◕◕) Shell — layout from the prototype, colours from our roles.
@@ -125,7 +128,22 @@ function Me({ compact = false }: { compact?: boolean }) {
 }
 
 function NotificationBell({ active }: { active: boolean }) {
-  const { status, user } = useAuth()
+  const { status, user, updateUser } = useAuth()
+  const toast = useToast()
+
+  const syncCount = () => {
+    get<User>('/api/auth/me/')
+      .then((me) => updateUser(me))
+      .catch(() => {})
+  }
+
+  useSocketFrame('notification.created', ({ notification }) => {
+    toast({ kind: notification.kind, title: notification.title, message: notification.body || undefined })
+    syncCount()
+  })
+
+  useSocketReconnect(syncCount)
+
   if (status !== 'signed-in' || !user) return null
   const count = user.unread_notifications
 

@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { CheckCheck, Trash2 } from 'lucide-react'
 import { ApiError } from '../api/client'
-import { clearNotifications, getNotifications, markAllRead, type AppNotification } from '../api/notifications'
+import { clearNotifications, getNotifications, markAllRead } from '../api/notifications'
+import type { AppNotification } from '../data/types'
 import { useAuth } from '../auth/auth-context'
 import { useToast } from '../contexts/toast/ToastContext'
 import { Badge, Button, Card, EmptyState, toastKinds } from '../ds'
 import { navigate } from '../routing'
+import { useSocketFrame, useSocketReconnect } from '../socket/SocketContext'
 
 const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
 
@@ -33,6 +35,7 @@ export function Notifications() {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [nextPage, setNextPage] = useState<number | null>(null)
+  const [reload, setReload] = useState(0)
 
   useEffect(() => {
     if (status !== 'signed-in') return
@@ -49,7 +52,13 @@ export function Notifications() {
     return () => {
       cancelled = true
     }
-  }, [status])
+  }, [status, reload])
+
+  useSocketFrame('notification.created', ({ notification }) => {
+    setItems((prev) => (prev && !prev.some((n) => n.id === notification.id) ? [notification, ...prev] : prev))
+  })
+
+  useSocketReconnect(() => setReload((n) => n + 1))
 
   const run = async (request: () => Promise<unknown>, apply: (list: AppNotification[]) => AppNotification[], failure: string) => {
     setBusy(true)
