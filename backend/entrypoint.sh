@@ -5,6 +5,7 @@
 set -e
 
 python manage.py migrate --noinput
+python manage.py check_analytics_schema
 # Presence is in-process memory, so a fresh process starts with everyone offline
 python manage.py reset_presence
 python manage.py collectstatic --noinput
