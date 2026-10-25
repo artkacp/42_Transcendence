@@ -48,3 +48,19 @@ export interface NewPet {
   is_vaccinated: boolean
   is_neutered: boolean
 }
+
+export interface Friendship {
+  id: string
+  status: 'pending' | 'accepted'
+  requested_by_me: boolean
+}
+
+export interface UserProfile extends User {
+  friendship: Friendship | null
+}
+
+export interface ProfileChanges {
+  full_name: string
+  city: string | null
+  bio: string
+}

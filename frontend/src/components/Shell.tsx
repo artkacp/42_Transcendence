@@ -1,6 +1,8 @@
-import type { MouseEvent, ReactNode } from 'react'
-import { PawPrint, Search, SwatchBook, BarChart2 } from 'lucide-react'
+import { Search, SwatchBook, BarChart2, LogIn, LogOut, UserRound } from 'lucide-react'
+import { useEffect, useState, type MouseEvent, type ReactNode } from 'react'
 import { navigate, viewHref, type View } from '../routing'
+import { useFaviconAnimation } from '../hooks/useFaviconAnimation'
+import { useAuth } from '../auth/auth-context'
 
 /*
  * (◕◕) Shell — layout from the prototype, colours from our roles.
@@ -16,6 +18,7 @@ import { navigate, viewHref, type View } from '../routing'
 const NAV: { view: View; label: string; icon: ReactNode }[] = [
   { view: 'browse', label: 'Browse', icon: <Search className="size-[18px]" /> },
   { view: 'analytics', label: 'Analytics', icon: <BarChart2 className="size-[18px]" /> },
+  { view: 'profile', label: 'Profile', icon: <UserRound className="size-[18px]" /> },
   { view: 'design', label: 'Design kit', icon: <SwatchBook className="size-[18px]" /> },
 ]
 // A real <a href> keeps middle-click / open-in-new-tab working;
@@ -48,19 +51,39 @@ function Link({ view, className, children, glow = false, ...rest }: {
     </a>
   )
 }
+
+const LOGO_FRAMES = [
+  '(︶ᴥ₍ᐢ◑ ◑ᐢ₎)',
+  '(︶ᴥ₍ᐢ◐ ◐ᐢ₎)',
+  '(︶ᴥ₍ᐢ◐ ◐ᐢ₎)',
+  '(︶ᴥ₍ᐢ◐ ◐ᐢ₎)',
+  '(︶ᴥ₍ᐢ◑ ◑ᐢ₎)',
+  '(︶ᴥ₍ᐢ◑ ◑ᐢ₎)',
+]
+const FRAME_MS = 500
+
+function useLogoFrame() {
+  const [index, setIndex] = useState(0)
+
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const id = setInterval(() => setIndex((i) => (i + 1) % LOGO_FRAMES.length), FRAME_MS)
+    return () => clearInterval(id)
+  }, [])
+
+  return LOGO_FRAMES[index]
+}
+
 function Logo({ small = false }: { small?: boolean }) {
+  const frame = useLogoFrame()
   return (
     <Link
       view="browse"
       glow
-      className="flex items-center gap-2.5 rounded-2xl px-3 py-1.5 [--focus-color:var(--color-terra-100)] [--focus-inner:var(--color-terra-100)] [--focus-edge:0px]"
+      className="flex items-center gap-1 rounded-2xl px-3 py-1.5 [--focus-color:var(--color-terra-100)] [--focus-inner:var(--color-terra-100)] [--focus-edge:0px]"
     >
-      <span
-        className={`flex items-center justify-center bg-primary text-on-primary ${
-          small ? 'size-8 rounded-xl' : 'size-9 rounded-2xl'
-        }`}
-      >
-        <PawPrint className={small ? 'size-4' : 'size-5'} />
+      <span aria-hidden="true" className={`font-logo font-bold whitespace-nowrap text-primary ${small ? 'text-lg' : 'text-xl'}`}>
+        {frame}
       </span>
       <span className={`font-display font-bold tracking-tight text-text ${small ? 'text-lg' : 'text-xl'}`}>
         Pawfect
@@ -69,9 +92,43 @@ function Logo({ small = false }: { small?: boolean }) {
   )
 }
 
-export function Shell({ view, children }: { view: View; children: ReactNode }) {
+// who is signed in + the way out; nothing while we don't know yet
+function Me({ compact = false }: { compact?: boolean }) {
+  const { status, user, signOut } = useAuth()
+  const item =
+    'flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-sm font-medium text-text-muted transition-all hover:bg-surface/60 hover:text-text focus-visible:outline-1 focus-visible:outline-text focus-visible:outline-offset-0'
+
+  if (status === 'loading') return null
+
+  if (status === 'signed-out') {
+    return (
+      <Link view="auth" className={item}>
+        <LogIn className="size-[18px]" />
+        Sign in
+      </Link>
+    )
+  }
+
+  async function handleSignOut() {
+    await signOut()
+    navigate('auth')
+  }
+
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[240px_1fr]">
+    <div className="flex flex-col gap-1">
+      {!compact && <span className="truncate px-3.5 text-sm text-text">{user?.full_name}</span>}
+      <button type="button" onClick={() => void handleSignOut()} className={item}>
+        <LogOut className="size-[18px]" />
+        Sign out
+      </button>
+    </div>
+  )
+}
+
+export function Shell({ view, children }: { view: View; children: ReactNode }) {
+  useFaviconAnimation()
+  return (
+        <div className="min-h-dvh lg:grid lg:grid-cols-[288px_1fr]">
       {/* Sidebar (desktop) */}
       <aside className="sticky top-0 hidden h-dvh flex-col gap-1 border-r border-border bg-surface-raised/60 px-4 py-6 lg:flex">
         <div className="mb-6">
@@ -94,6 +151,9 @@ export function Shell({ view, children }: { view: View; children: ReactNode }) {
             </Link>
           ))}
         </nav>
+        <div className="mt-auto">
+          <Me />
+        </div>
       </aside>
 
       <div className="flex min-w-0 flex-col">
@@ -101,6 +161,7 @@ export function Shell({ view, children }: { view: View; children: ReactNode }) {
             Bring it back for desktop when bell / avatar arrive. */}
         <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-border bg-surface/90 px-4 py-3 backdrop-blur lg:hidden">
           <Logo small />
+          <Me compact />
         </header>
 
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-6 pb-10 lg:px-8">{children}</main>

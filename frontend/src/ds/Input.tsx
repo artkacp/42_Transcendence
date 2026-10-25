@@ -29,6 +29,7 @@ export function Input({label, error, className = '', id, ...rest}: InputProps) {
 			/>
 			{error && (
 				<p id={errorId} className="text-sm text-danger">
+					<span aria-hidden="true" className="mr-1 font-logo">≧◉_◉≦</span>
 					{error}
 				</p>
 			)}

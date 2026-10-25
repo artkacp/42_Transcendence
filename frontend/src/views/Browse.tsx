@@ -24,8 +24,8 @@ export function Browse() {
   const [page, setPage] = useState(1)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [data, setData] = useState<Paginated<Pet> | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
+  const [settledKey, setSettledKey] = useState('')
+  const [errorKey, setErrorKey] = useState('')
   const [retry, setRetry] = useState(0)
   const { status, user } = useAuth()
   const [debouncedQ, setDebouncedQ] = useState('')
@@ -39,29 +39,30 @@ export function Browse() {
       }
     }, 300)
     return () => clearTimeout(timer)
-  }, [q, debouncedQ])  
+  }, [q, debouncedQ])
+
+  const requestKey = JSON.stringify([debouncedQ, species, sex, size, city, breed, ageBucket, trait, vaccinatedOnly, neuteredOnly, page, retry])
+  const loading = settledKey !== requestKey
+  const error = errorKey === requestKey
 
   useEffect(() => {
     if (status !== 'signed-in') return
     let ignore = false
-    setLoading(true)
-    setError(false)
     getPets({ q: debouncedQ, species, sex, size, city, breed, ageBucket, trait, vaccinated: vaccinatedOnly, neutered: neuteredOnly, page })
       .then((res) => {
-        if (!ignore) setData(res)
+        if (ignore) return
+        setData(res)
+        setSettledKey(requestKey)
       })
       .catch((err) => {
         if (ignore) return
         if (err instanceof ApiError && err.status === 404 && page > 1) setPage(1)
-        else setError(true)
-      })
-      .finally(() => {
-        if (!ignore) setLoading(false)
+        else setErrorKey(requestKey)
       })
     return () => {
       ignore = true
     }
-  }, [status, debouncedQ, species, sex, size, city, breed, ageBucket, trait, vaccinatedOnly, neuteredOnly, page, retry])
+  }, [status, requestKey, debouncedQ, species, sex, size, city, breed, ageBucket, trait, vaccinatedOnly, neuteredOnly, page])
 
   const changeFilter = (apply: () => void) => {
     apply()
@@ -298,10 +299,15 @@ export function Browse() {
                         <Badge key={t}>{t}</Badge>
                       ))}
                     </div>
-                    <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => navigate('profile', { user: p.owner.id })}
+                      aria-label={`View ${p.owner.full_name}'s profile`}
+                      className="flex cursor-pointer items-center gap-1.5 rounded-full focus-visible:outline-none focus-gradient"
+                    >
                       <Avatar name={p.owner.full_name} src={p.owner.avatar} size="sm" />
-                      <span className="text-xs text-text-subtle">{p.owner.full_name.split(' ')[0]}</span>
-                    </div>
+                      <span className="text-xs text-text-subtle hover:text-text">{p.owner.full_name.split(' ')[0]}</span>
+                    </button>
                   </div>
                 </div>
               </Card>
