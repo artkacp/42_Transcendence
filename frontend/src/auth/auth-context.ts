@@ -2,7 +2,7 @@
 // The "box" that holds who is signed in, plus the hook to read it.
 // Kept apart from AuthProvider.tsx so fast refresh lint stays quiet
 // (a .tsx file should export only components).
-import { createContext, useContext } from 'react';
+import { createContext, useContext, type Dispatch, type SetStateAction } from 'react';
 import type { User as PublicUser } from '../data/types';
 
 export type User = PublicUser & { email: string; unread_notifications: number };
@@ -16,7 +16,7 @@ export type AuthValue = {
   signIn: (email: string, password: string) => Promise<void>;
   register: (fullName: string, email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-  updateUser: (user: User) => void; // after a profile or avatar change, so every avatar re-renders
+  updateUser: Dispatch<SetStateAction<User | null>>; // after a profile, avatar or notification change, so every reader re-renders
 };
 
 export const AuthContext = createContext<AuthValue | null>(null);

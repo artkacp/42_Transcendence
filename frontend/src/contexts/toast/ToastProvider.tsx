@@ -18,18 +18,28 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setItems((prev) => prev.filter((item) => item.id !== id))
   }, [])
 
-  const toast = useCallback(
-    (input: ToastInput) => {
-      const id = nextId.current++
-      setItems((prev) => [...prev, { ...input, id }].slice(-MAX_VISIBLE))
-      timers.current.set(id, window.setTimeout(() => dismiss(id), DURATION))
-    },
-    [dismiss],
-  )
+  const toast = useCallback((input: ToastInput) => {
+    setItems((prev) =>
+      prev.some((item) => item.kind === input.kind && item.title === input.title && item.message === input.message)
+        ? prev
+        : [...prev, { ...input, id: nextId.current++ }],
+    )
+  }, [])
+
+  useEffect(() => {
+    for (const item of items.slice(0, MAX_VISIBLE)) {
+      if (!timers.current.has(item.id)) {
+        timers.current.set(item.id, window.setTimeout(() => dismiss(item.id), DURATION))
+      }
+    }
+  }, [items, dismiss])
 
   useEffect(() => {
     const active = timers.current
-    return () => active.forEach((timer) => window.clearTimeout(timer))
+    return () => {
+      active.forEach((timer) => window.clearTimeout(timer))
+      active.clear()
+    }
   }, [])
 
   return (
@@ -39,7 +49,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         aria-live="polite"
         className="pointer-events-none fixed inset-x-4 bottom-20 z-50 flex flex-col gap-2 sm:left-auto sm:w-96 lg:bottom-6 lg:right-6"
       >
-        {items.map((item) => (
+        {items.slice(0, MAX_VISIBLE).map((item) => (
           <Toast key={item.id} kind={item.kind} title={item.title} message={item.message} onDismiss={() => dismiss(item.id)} />
         ))}
       </div>
