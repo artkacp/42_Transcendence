@@ -3,7 +3,8 @@ import type { Species } from '../data/types'
 
 export interface KpiMetric {
   value: number
-  delta: number
+  delta_abs: number | null
+  delta_pct: number | null
 }
 
 export interface AnalyticsKpis {

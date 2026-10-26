@@ -43,17 +43,18 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-function formatPct(delta: number): string {
-  const abs = Math.abs(delta * 100).toFixed(0)
+function formatPct(delta: number | null): string {
+  if (delta == null) return '—'
+  const abs = Math.abs(delta).toFixed(0)
   return `${delta >= 0 ? '+' : '−'}${abs}%`
 }
 
 const formatLabel = (l: unknown) => (typeof l === 'string' ? formatDate(l) : '')
 
-// KPI tile 
-function KpiTile({ label, value, delta }: { label: string; value: number; delta: number }) {
-  const isUp = delta > 0
-  const isFlat = delta === 0
+// KPI tile
+function KpiTile({ label, value, delta }: { label: string; value: number; delta: number | null }) {
+  const isUp = delta != null && delta > 0
+  const isFlat = delta == null || delta === 0
   const color = isFlat ? AXIS_TICK : isUp ? DELTA_UP : DELTA_DOWN
 
   return (
@@ -385,10 +386,10 @@ export function Analytics() {
 
           {/* ── KPI row ── */}
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <KpiTile label="Listing visits" value={kpis!.listing_visits.value} delta={kpis!.listing_visits.delta} />
-            <KpiTile label="Applications" value={kpis!.applications.value} delta={kpis!.applications.delta} />
-            <KpiTile label="Adoptions" value={kpis!.adoptions.value} delta={kpis!.adoptions.delta} />
-            <KpiTile label="Messages" value={kpis!.messages.value} delta={kpis!.messages.delta} />
+            <KpiTile label="Listing visits" value={kpis!.listing_visits.value} delta={kpis!.listing_visits.delta_pct} />
+            <KpiTile label="Applications" value={kpis!.applications.value} delta={kpis!.applications.delta_pct} />
+            <KpiTile label="Adoptions" value={kpis!.adoptions.value} delta={kpis!.adoptions.delta_pct} />
+            <KpiTile label="Messages" value={kpis!.messages.value} delta={kpis!.messages.delta_pct} />
           </div>
 
           {/* ── charts ── */}
