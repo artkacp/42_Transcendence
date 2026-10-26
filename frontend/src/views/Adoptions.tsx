@@ -104,8 +104,7 @@ function AdoptionsTable({ inquiries, meId }: AdoptionsTableProps) {
                   <Button
                     size="sm"
                     variant="secondary"
-                    disabled
-                    title="Opens with the pet page"
+                    onClick={() => navigate('pet', { id: pet.id })}
                     aria-label={`Open ${pet.name}`}
                   >
                     Open
