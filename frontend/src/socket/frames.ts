@@ -17,6 +17,7 @@ export type ServerFrame =
   | { type: 'pet.adopted'; pet_id: string; adopted_by_id: string }
   | { type: 'pet.removed'; pet_id: string }
   | { type: 'notification.created'; notification: AppNotification }
+  | { type: 'analytics.ping' }
   | { type: 'error'; for: string; detail: string }; // `for` = the type of the rejected client frame
 
 export type ServerFrameType = ServerFrame['type'];

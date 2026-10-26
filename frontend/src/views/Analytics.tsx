@@ -159,8 +159,7 @@ export function Analytics() {
 
   // Live updates: refetch when pets are published/adopted (browse group, all signed-in users)
   // and on reconnect (catches missed events). 60s interval covers events without a socket push.
-  useSocketFrame('pet.published', () => setRetry((r) => r + 1))
-  useSocketFrame('pet.adopted', () => setRetry((r) => r + 1))
+  useSocketFrame('analytics.ping', () => setRetry((r) => r + 1))
   useSocketReconnect(() => setRetry((r) => r + 1))
   useEffect(() => {
     if (status !== 'signed-in') return
