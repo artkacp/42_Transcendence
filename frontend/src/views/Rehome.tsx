@@ -69,7 +69,7 @@ function ListingsTable({ pets, busy, onRemove }: ListingsTableProps) {
               </td>
               <td className="px-5 py-3">
                 <div className="flex justify-end gap-2">
-                  <Button size="sm" variant="secondary" disabled title="Opens with the pet page">
+                  <Button size="sm" variant="secondary" onClick={() => navigate('pet', { id: pet.id })}>
                     View & reply
                   </Button>
                   <Button

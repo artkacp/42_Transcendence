@@ -1,14 +1,20 @@
 import { SlidersHorizontal } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type MouseEvent } from 'react'
 import { getPets, type Paginated } from '../api/browse'
 import { ApiError } from '../api/client'
 import { useAuth } from '../auth/auth-context'
 import { CITIES, BREEDS_BY_SPECIES, ALL_TRAITS, AGE_BUCKETS } from '../data/constants'
 import type { Pet, Species, PetSize, PetSex } from '../data/types'
 import { Select, Chip, Avatar, EmptyState, Button, Card, Badge, Input, Pagination } from '../ds'
-import { navigate } from '../routing'
+import { navigate, viewHref } from '../routing'
 
 const PAGE_SIZE = 6
+
+function openPet(e: MouseEvent<HTMLAnchorElement>, id: string) {
+  if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+  e.preventDefault()
+  navigate('pet', { id })
+}
 
 export function Browse() {
   const [q, setQ] = useState('')
@@ -267,7 +273,7 @@ export function Browse() {
         <>
           <div aria-busy={loading} className={`grid gap-4 sm:grid-cols-2 xl:grid-cols-3 ${loading ? 'opacity-60' : ''}`}>
             {results.map((p) => (
-              <Card key={p.id} hover className="cursor-pointer overflow-hidden">
+              <Card key={p.id} hover className="relative overflow-hidden has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-primary">
                 <div className="relative flex h-40 items-center justify-center bg-secondary">
                   {p.photo ? (
                     <img src={p.photo} alt={p.name} className="absolute inset-0 size-full object-cover" />
@@ -287,7 +293,15 @@ export function Browse() {
                 </div>
                 <div className="p-4">
                   <div className="flex items-baseline justify-between gap-2">
-                    <h3 className="font-display text-xl font-bold">{p.name}</h3>
+                    <h3 className="font-display text-xl font-bold">
+                      <a
+                        href={viewHref('pet', { id: p.id })}
+                        onClick={(e) => openPet(e, p.id)}
+                        className="after:absolute after:inset-0 focus-visible:outline-none"
+                      >
+                        {p.name}
+                      </a>
+                    </h3>
                     <span className="text-xs text-text-subtle">{p.city}</span>
                   </div>
                   <p className="text-sm text-text-muted">
@@ -303,7 +317,7 @@ export function Browse() {
                       type="button"
                       onClick={() => navigate('profile', { user: p.owner.id })}
                       aria-label={`View ${p.owner.full_name}'s profile`}
-                      className="flex cursor-pointer items-center gap-1.5 rounded-full focus-visible:outline-none focus-gradient"
+                      className="relative z-10 flex cursor-pointer items-center gap-1.5 rounded-full focus-visible:outline-none focus-gradient"
                     >
                       <Avatar name={p.owner.full_name} src={p.owner.avatar} size="sm" />
                       <span className="text-xs text-text-subtle hover:text-text">{p.owner.full_name.split(' ')[0]}</span>
