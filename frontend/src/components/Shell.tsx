@@ -1,5 +1,5 @@
 import { useEffect, useState, type MouseEvent, type ReactNode } from 'react'
-import { LogIn, LogOut, Search, SwatchBook, UserRound } from 'lucide-react'
+import { HeartHandshake, LogIn, LogOut, Search, SwatchBook, UserRound } from 'lucide-react'
 import { navigate, viewHref, type View } from '../routing'
 import { useFaviconAnimation } from '../hooks/useFaviconAnimation'
 import { useAuth } from '../auth/auth-context'
@@ -17,6 +17,7 @@ import { useAuth } from '../auth/auth-context'
 
 const NAV: { view: View; label: string; icon: ReactNode }[] = [
   { view: 'browse', label: 'Browse', icon: <Search className="size-[18px]" /> },
+  { view: 'rehome', label: 'Rehome', icon: <HeartHandshake className="size-[18px]" /> },
   { view: 'profile', label: 'Profile', icon: <UserRound className="size-[18px]" /> },
   { view: 'design', label: 'Design kit', icon: <SwatchBook className="size-[18px]" /> },
 ]
