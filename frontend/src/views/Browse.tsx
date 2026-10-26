@@ -7,6 +7,7 @@ import { CITIES, BREEDS_BY_SPECIES, ALL_TRAITS, AGE_BUCKETS } from '../data/cons
 import type { Pet, Species, PetSize, PetSex } from '../data/types'
 import { Select, Chip, Avatar, EmptyState, Button, Card, Badge, Input, Pagination } from '../ds'
 import { navigate, viewHref } from '../routing'
+import { useSocketFrame, useSocketReconnect } from '../socket/SocketContext'
 
 const PAGE_SIZE = 6
 
@@ -35,6 +36,7 @@ export function Browse() {
   const [retry, setRetry] = useState(0)
   const { status, user } = useAuth()
   const [debouncedQ, setDebouncedQ] = useState('')
+  const [live, setLive] = useState(0)
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -68,7 +70,13 @@ export function Browse() {
     return () => {
       ignore = true
     }
-  }, [status, requestKey, debouncedQ, species, sex, size, city, breed, ageBucket, trait, vaccinatedOnly, neuteredOnly, page])
+  }, [status, requestKey, debouncedQ, species, sex, size, city, breed, ageBucket, trait, vaccinatedOnly, neuteredOnly, page, live])
+
+  const refresh = () => setLive((n) => n + 1)
+  useSocketFrame('pet.published', refresh)
+  useSocketFrame('pet.removed', refresh)
+  useSocketFrame('pet.adopted', refresh)
+  useSocketReconnect(refresh)
 
   const changeFilter = (apply: () => void) => {
     apply()
