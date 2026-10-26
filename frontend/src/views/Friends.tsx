@@ -20,18 +20,7 @@ import { useSocketFrame, useSocketReconnect } from '../socket/SocketContext'
 const errorText = (err: unknown, fallback: string) =>
   err instanceof ApiError ? err.message : fallback
 
-//  small shared pieces 
-
-function OnlineDot({ online }: { online: boolean }) {
-  return (
-    <span
-      aria-label={online ? 'online' : 'offline'}
-      className={`inline-block size-2.5 rounded-full ring-2 ring-surface ${online ? 'bg-on-secondary' : 'bg-text-subtle'}`}
-    />
-  )
-}
-
-//  Friends tab 
+//  Friends tab
 
 function FriendCard({
   record,
@@ -58,12 +47,7 @@ function FriendCard({
 
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-3">
-      <div className="relative shrink-0">
-        <Avatar name={other_user.full_name} src={other_user.avatar} size="md" />
-        <span className="absolute -right-0.5 -bottom-0.5">
-          <OnlineDot online={other_user.is_online} />
-        </span>
-      </div>
+      <Avatar name={other_user.full_name} src={other_user.avatar} size="md" online={other_user.is_online} />
       <div className="min-w-0 flex-1">
         <button
           type="button"
@@ -173,12 +157,7 @@ function RequestCard({
 
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-3">
-      <div className="relative shrink-0">
-        <Avatar name={other_user.full_name} src={other_user.avatar} size="md" />
-        <span className="absolute -right-0.5 -bottom-0.5">
-          <OnlineDot online={other_user.is_online} />
-        </span>
-      </div>
+      <Avatar name={other_user.full_name} src={other_user.avatar} size="md" online={other_user.is_online} />
       <div className="min-w-0 flex-1">
         <button
           type="button"
@@ -241,14 +220,15 @@ export function Friends() {
   const [requestsError, setRequestsError] = useState(false)
   const [reload, setReload] = useState(0)
 
-  const load = () => setReload((n) => n + 1)
+  const load = () => {
+    setFriendsError(false)
+    setRequestsError(false)
+    setReload((n) => n + 1)
+  }
 
   useEffect(() => {
     if (status !== 'signed-in') return
     let ignore = false
-
-    setFriendsError(false)
-    setRequestsError(false)
 
     getFriends()
       .then((res) => { if (!ignore) setFriends(res) })
