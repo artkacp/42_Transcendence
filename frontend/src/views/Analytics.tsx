@@ -18,21 +18,21 @@ import { SlidersHorizontal, TrendingUp, TrendingDown, Minus } from 'lucide-react
 import { getPlatformAnalytics, type AnalyticsResponse, type AnalyticsFilters } from '../api/analytics'
 import { ApiError } from '../api/client'
 import { useAuth } from '../auth/auth-context'
+import { useSocketFrame, useSocketReconnect } from '../socket/SocketContext'
 import { CITIES, BREEDS_BY_SPECIES, ALL_TRAITS, AGE_BUCKETS } from '../data/constants'
 import type { Species } from '../data/types'
 import { Button, Card, Chip, Select, EmptyState, Input, Badge } from '../ds'
 import { navigate } from '../routing'
 
-// chart series colors (validated reference palette, adjacent-pairs) 
-const C1 = '#2a78d6'
-const C2 = '#eb6834'
-const C3 = '#1baf7a'
-const C1_FILL = 'rgba(42,120,214,0.10)'
-const C2_FILL = 'rgba(235,104,52,0.10)'
-const GRID = 'var(--color-cream-200)'
-const AXIS_TICK = 'var(--color-ink-400)'
-const DELTA_UP = '#006300'
-const DELTA_DOWN = 'var(--color-danger-600)'
+const C1 = 'var(--color-chart-1)'
+const C2 = 'var(--color-chart-2)'
+const C3 = 'var(--color-chart-3)'
+const C1_FILL = 'var(--color-chart-1-fill)'
+const C2_FILL = 'var(--color-chart-2-fill)'
+const GRID = 'var(--color-border)'
+const AXIS_TICK = 'var(--color-text-subtle)'
+const DELTA_UP = 'var(--color-success)'
+const DELTA_DOWN = 'var(--color-danger)'
 
 function formatK(n: number): string {
   if (n >= 1000) return `${(n / 1000).toFixed(1).replace(/\.0$/, '')}K`
@@ -47,6 +47,8 @@ function formatPct(delta: number): string {
   const abs = Math.abs(delta * 100).toFixed(0)
   return `${delta >= 0 ? '+' : '−'}${abs}%`
 }
+
+const formatLabel = (l: unknown) => (typeof l === 'string' ? formatDate(l) : '')
 
 // KPI tile 
 function KpiTile({ label, value, delta }: { label: string; value: number; delta: number }) {
@@ -147,9 +149,24 @@ export function Analytics() {
   const [filtersOpen, setFiltersOpen] = useState(false)
 
   const [data, setData] = useState<AnalyticsResponse | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
+  const [settledKey, setSettledKey] = useState('')
+  const [errorKey, setErrorKey] = useState('')
   const [retry, setRetry] = useState(0)
+
+  const requestKey = JSON.stringify([start, end, species, sex, size, ageBucket, city, breed, trait, vaccinated, neutered, retry])
+  const loading = settledKey !== requestKey && status === 'signed-in'
+  const error = errorKey === requestKey
+
+  // Live updates: refetch when pets are published/adopted (browse group, all signed-in users)
+  // and on reconnect (catches missed events). 60s interval covers events without a socket push.
+  useSocketFrame('pet.published', () => setRetry((r) => r + 1))
+  useSocketFrame('pet.adopted', () => setRetry((r) => r + 1))
+  useSocketReconnect(() => setRetry((r) => r + 1))
+  useEffect(() => {
+    if (status !== 'signed-in') return
+    const id = setInterval(() => setRetry((r) => r + 1), 60_000)
+    return () => clearInterval(id)
+  }, [status])
 
   const breedOptions =
     species === 'dog' || species === 'cat'
@@ -164,8 +181,6 @@ export function Analytics() {
   useEffect(() => {
     if (status !== 'signed-in') return
     let ignore = false
-    setLoading(true)
-    setError(false)
 
     const filters: AnalyticsFilters = {}
     if (start) filters.start = start
@@ -182,19 +197,19 @@ export function Analytics() {
 
     getPlatformAnalytics(filters)
       .then((res) => {
-        if (!ignore) setData(res)
+        if (!ignore) { setData(res); setSettledKey(requestKey) }
       })
       .catch((err) => {
-        if (!ignore && !(err instanceof ApiError && err.status === 401)) setError(true)
-      })
-      .finally(() => {
-        if (!ignore) setLoading(false)
+        if (!ignore) {
+          if (!(err instanceof ApiError && err.status === 401)) setErrorKey(requestKey)
+          else setSettledKey(requestKey)
+        }
       })
 
     return () => {
       ignore = true
     }
-  }, [status, start, end, species, sex, size, ageBucket, city, breed, trait, vaccinated, neutered, retry])
+  }, [status, requestKey, start, end, species, sex, size, ageBucket, city, breed, trait, vaccinated, neutered])
 
   if (status !== 'signed-in') {
     return (
@@ -239,6 +254,7 @@ export function Analytics() {
           <Input
             type="date"
             value={start}
+            max={end || undefined}
             onChange={(e) => setStart(e.target.value)}
             aria-label="Start date"
             className="w-auto text-sm"
@@ -247,6 +263,7 @@ export function Analytics() {
           <Input
             type="date"
             value={end}
+            min={start || undefined}
             onChange={(e) => setEnd(e.target.value)}
             aria-label="End date"
             className="w-auto text-sm"
@@ -387,7 +404,7 @@ export function Analytics() {
                   <YCountAxis />
                   <Tooltip
                     contentStyle={{ fontSize: 12 }}
-                    labelFormatter={(l) => (typeof l === 'string' ? formatDate(l) : String(l ?? ''))}
+                    labelFormatter={formatLabel}
                     formatter={(v) => [formatK(Number(v ?? 0)), 'Visits']}
                   />
                   <Line
@@ -434,7 +451,7 @@ export function Analytics() {
                   <YCountAxis />
                   <Tooltip
                     contentStyle={{ fontSize: 12 }}
-                    labelFormatter={(l) => (typeof l === 'string' ? formatDate(l) : String(l ?? ''))}
+                    labelFormatter={formatLabel}
                     formatter={(v, name) => [
                       formatK(Number(v ?? 0)),
                       name === 'running_total' ? 'Cumulative' : 'Daily new',
@@ -461,7 +478,7 @@ export function Analytics() {
                   <YCountAxis />
                   <Tooltip
                     contentStyle={{ fontSize: 12 }}
-                    labelFormatter={(l) => (typeof l === 'string' ? formatDate(l) : String(l ?? ''))}
+                    labelFormatter={formatLabel}
                     formatter={(v, name) => [
                       formatK(Number(v ?? 0)),
                       name === 'active_users' ? 'Active users' : 'New sign-ups',
@@ -502,7 +519,7 @@ export function Analytics() {
                   <YCountAxis />
                   <Tooltip
                     contentStyle={{ fontSize: 12 }}
-                    labelFormatter={(l) => (typeof l === 'string' ? formatDate(l) : String(l ?? ''))}
+                    labelFormatter={formatLabel}
                     formatter={(v, name) => [
                       formatK(Number(v ?? 0)),
                       name === 'seekers' ? 'Seekers' : 'Rehomers',
@@ -539,7 +556,12 @@ export function Analytics() {
             {/* 6. applications per adopted pet */}
             <ChartCard
               title="Applications per adoption"
-              subtitle={`Distribution · avg ${charts!.applications_per_adopted_pet.average.toFixed(1)} applications`}
+              subtitle={(() => {
+                const avg = charts!.applications_per_adopted_pet.average
+                return avg != null
+                  ? `Distribution · avg ${avg.toFixed(1)} applications`
+                  : 'Distribution · no adoptions yet'
+              })()}
             >
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart
@@ -552,16 +574,25 @@ export function Analytics() {
                   <Tooltip
                     contentStyle={{ fontSize: 12 }}
                     formatter={(v) => [formatK(Number(v ?? 0)), 'Pets']}
-                    labelFormatter={(l) => `${String(l ?? '')} application${l === '1' ? '' : 's'}`}
+                    labelFormatter={(l) => `${typeof l === 'string' ? l : ''} application${l === '1' ? '' : 's'}`}
                   />
                   <Bar dataKey="count" fill={C1} radius={[4, 4, 0, 0]} maxBarSize={24} />
-                  <ReferenceLine
-                    x={String(Math.round(charts!.applications_per_adopted_pet.average))}
-                    stroke={C2}
-                    strokeWidth={2}
-                    strokeDasharray="4 3"
-                    label={{ value: 'avg', position: 'top', fontSize: 10, fill: AXIS_TICK }}
-                  />
+                  {(() => {
+                    const avg = charts!.applications_per_adopted_pet.average
+                    if (avg == null) return null
+                    const dist = charts!.applications_per_adopted_pet.distribution
+                    const last = dist[dist.length - 1]?.bucket ?? '1'
+                    const avgKey = Math.round(avg) >= parseInt(last) ? last : String(Math.round(avg))
+                    return (
+                      <ReferenceLine
+                        x={avgKey}
+                        stroke={C2}
+                        strokeWidth={2}
+                        strokeDasharray="4 3"
+                        label={{ value: 'avg', position: 'top', fontSize: 10, fill: AXIS_TICK }}
+                      />
+                    )
+                  })()}
                 </BarChart>
               </ResponsiveContainer>
             </ChartCard>
@@ -575,7 +606,7 @@ export function Analytics() {
                   <YCountAxis />
                   <Tooltip
                     contentStyle={{ fontSize: 12 }}
-                    labelFormatter={(l) => (typeof l === 'string' ? formatDate(l) : String(l ?? ''))}
+                    labelFormatter={formatLabel}
                     formatter={(v, name) => [
                       formatK(Number(v ?? 0)),
                       name === 'applications' ? 'Applications' : 'Adoptions',
@@ -616,7 +647,7 @@ export function Analytics() {
                   <YCountAxis />
                   <Tooltip
                     contentStyle={{ fontSize: 12 }}
-                    labelFormatter={(l) => (typeof l === 'string' ? formatDate(l) : String(l ?? ''))}
+                    labelFormatter={formatLabel}
                     formatter={(v) => [formatK(Number(v ?? 0)), 'Messages']}
                   />
                   <Area

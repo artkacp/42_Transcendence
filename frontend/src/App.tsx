@@ -9,7 +9,7 @@ import { Profile } from './views/Profile'
 import { DesignSystem } from './views/DesignSystem'
 import { Notifications } from './views/Notifications'
 import { PrivacyPolicy, TermsOfService } from './views/Legal'
-import { Analytics } from './views/Analytics'
+const Analytics = lazy(() => import('./views/Analytics').then((m) => ({ default: m.Analytics })))
 
 const PaletteLab = import.meta.env.DEV
   ? lazy(() => import('./dev/PaletteLab').then((m) => ({ default: m.PaletteLab })))
@@ -37,7 +37,9 @@ function App() {
     <>
       <div className={labOpen ? 'pr-80' : ''}>
         <Shell view={view}>
-          <Page />
+          <Suspense fallback={null}>
+            <Page />
+          </Suspense>
         </Shell>
       </div>
       {labOpen && (

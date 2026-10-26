@@ -48,7 +48,7 @@ export interface DistributionBucket {
 
 export interface ApplicationsDistribution {
   distribution: DistributionBucket[]
-  average: number
+  average: number | null
 }
 
 export interface AppAdoptionsPoint {
