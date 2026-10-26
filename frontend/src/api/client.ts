@@ -1,6 +1,5 @@
-// src/api/client.ts
 // One door for every request to the backend.┌│ │┐
-// No React inside: plain TypeScript, so it can be reused as-is in other project
+// No React inside: plain TypeScript.
 
 const REFRESH_PATH = '/api/auth/refresh/';
 
@@ -14,8 +13,12 @@ export function setAccessToken(token: string | null): void {
   accessToken = token;
 }
 
+// The socket sends it as its first frame (src/socket/useSocket.ts)
+export function getAccessToken(): string | null {
+  return accessToken;
+}
+
 // Called when the session is really over (refresh failed).
-// AuthContext will plug its signOut() in here.
 let onSessionExpired: () => void = () => {};
 
 export function setOnSessionExpired(fn: () => void): void {
@@ -68,9 +71,10 @@ function toApiError(status: number, body: unknown): ApiError {
 // ── refresh: only ONE refresh at a time, even if 5 requests get 401 ─────
 // The backend rotates refresh tokens and blacklists the old one, so two
 // parallel refreshes would log the user out. One shared promise prevents it.
+// The socket reuses it on a 4401, so there is still only one refresh path.
 let refreshing: Promise<boolean> | null = null;
 
-function refresh(): Promise<boolean> {
+export function refresh(): Promise<boolean> {
   if (!refreshing) {
     refreshing = fetch(REFRESH_PATH, { method: 'POST', credentials: 'include' })
       .then(async (res) => {

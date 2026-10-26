@@ -78,3 +78,31 @@ export interface NewPet {
   is_vaccinated: boolean
   is_neutered: boolean
 }
+
+export interface Friendship {
+  id: string
+  status: 'pending' | 'accepted'
+  requested_by_me: boolean
+}
+
+export interface UserProfile extends User {
+  friendship: Friendship | null
+}
+
+export interface ProfileChanges {
+  full_name: string
+  city: string | null
+  bio: string
+}
+
+// "App" so it doesn't hide the browser's own Notification type
+export interface AppNotification {
+  id: string
+  kind: 'create' | 'update' | 'delete' | 'info'
+  title: string
+  body: string
+  is_read: boolean
+  subject_type: string | null
+  subject_id: string | null
+  created_at: string
+}

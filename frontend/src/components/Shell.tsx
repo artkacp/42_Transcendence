@@ -1,7 +1,8 @@
 import { useEffect, useState, type MouseEvent, type ReactNode } from 'react'
-import { HeartHandshake, Search, SwatchBook } from 'lucide-react'
+import { HeartHandshake, LogIn, LogOut, Search, SwatchBook, UserRound } from 'lucide-react'
 import { navigate, viewHref, type View } from '../routing'
 import { useFaviconAnimation } from '../hooks/useFaviconAnimation'
+import { useAuth } from '../auth/auth-context'
 
 /*
  * (◕◕) Shell — layout from the prototype, colours from our roles.
@@ -17,6 +18,7 @@ import { useFaviconAnimation } from '../hooks/useFaviconAnimation'
 const NAV: { view: View; label: string; icon: ReactNode }[] = [
   { view: 'browse', label: 'Browse', icon: <Search className="size-[18px]" /> },
   { view: 'adoptions', label: 'Adoptions', icon: <HeartHandshake className="size-[18px]" /> },
+  { view: 'profile', label: 'Profile', icon: <UserRound className="size-[18px]" /> },
   { view: 'design', label: 'Design kit', icon: <SwatchBook className="size-[18px]" /> },
 ]
 // A real <a href> keeps middle-click / open-in-new-tab working;
@@ -90,6 +92,39 @@ function Logo({ small = false }: { small?: boolean }) {
   )
 }
 
+// who is signed in + the way out; nothing while we don't know yet
+function Me({ compact = false }: { compact?: boolean }) {
+  const { status, user, signOut } = useAuth()
+  const item =
+    'flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-sm font-medium text-text-muted transition-all hover:bg-surface/60 hover:text-text focus-visible:outline-1 focus-visible:outline-text focus-visible:outline-offset-0'
+
+  if (status === 'loading') return null
+
+  if (status === 'signed-out') {
+    return (
+      <Link view="auth" className={item}>
+        <LogIn className="size-[18px]" />
+        Sign in
+      </Link>
+    )
+  }
+
+  async function handleSignOut() {
+    await signOut()
+    navigate('auth')
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      {!compact && <span className="truncate px-3.5 text-sm text-text">{user?.full_name}</span>}
+      <button type="button" onClick={() => void handleSignOut()} className={item}>
+        <LogOut className="size-[18px]" />
+        Sign out
+      </button>
+    </div>
+  )
+}
+
 export function Shell({ view, children }: { view: View; children: ReactNode }) {
   useFaviconAnimation()
   return (
@@ -116,6 +151,9 @@ export function Shell({ view, children }: { view: View; children: ReactNode }) {
             </Link>
           ))}
         </nav>
+        <div className="mt-auto">
+          <Me />
+        </div>
       </aside>
 
       <div className="flex min-w-0 flex-col">
@@ -123,6 +161,7 @@ export function Shell({ view, children }: { view: View; children: ReactNode }) {
             Bring it back for desktop when bell / avatar arrive. */}
         <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-border bg-surface/90 px-4 py-3 backdrop-blur lg:hidden">
           <Logo small />
+          <Me compact />
         </header>
 
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-6 pb-10 lg:px-8">{children}</main>

@@ -32,7 +32,9 @@ class PetSerializer(serializers.ModelSerializer):
         }
 
     def validate(self, attrs):
-        if attrs['breed'] not in BREEDS[attrs['species']]:
+        # A PATCH may send only species or only breed: check the pair the pet will end up with
+        pet = {'species': self.instance.species, 'breed': self.instance.breed, **attrs} if self.instance else attrs
+        if pet['breed'] not in BREEDS[pet['species']]:
             raise serializers.ValidationError({'breed': 'Breed does not belong to the selected species.'})
         return attrs
 

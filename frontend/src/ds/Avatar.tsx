@@ -1,17 +1,19 @@
 import type { HTMLAttributes } from "react";
 
-type AvatarSize = 'sm' | 'md' | 'lg'
+type AvatarSize = 'sm' | 'md' | 'lg' | 'xl'
 
 const sizes: Record<AvatarSize, string> = {
 	sm: 'size-8 text-xs',
 	md: 'size-10 text-sm',
 	lg: 'size-14 text-lg',
+	xl: 'size-24 text-3xl',
 }
 
 const dotSizes: Record<AvatarSize, string> = {
 	sm: 'size-2',
 	md: 'size-2.5',
 	lg: 'size-3.5',
+	xl: 'size-5',
 }
 
 export interface AvatarProps extends HTMLAttributes<HTMLDivElement> {
