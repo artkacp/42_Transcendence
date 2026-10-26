@@ -7,6 +7,7 @@ import { PetPage } from './views/PetPage'
 import { Rehome } from './views/Rehome'
 import { Profile } from './views/Profile'
 import { DesignSystem } from './views/DesignSystem'
+import { Notifications } from './views/Notifications'
 import { PrivacyPolicy, TermsOfService } from './views/Legal'
 
 const PaletteLab = import.meta.env.DEV
@@ -19,6 +20,7 @@ const PAGES: Record<View, ComponentType> = {
   pet: PetPage,
   rehome: Rehome,
   profile: Profile,
+  notifications: Notifications,
   design: DesignSystem,
   privacy: PrivacyPolicy,
   terms: TermsOfService,
