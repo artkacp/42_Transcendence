@@ -5,6 +5,24 @@ import { useAuth } from '../auth/auth-context'
 import type { Inquiry, InquiryMessage, InquiryStage, Pet } from '../data/types'
 import { Avatar, Badge, Button, Card, EmptyState } from '../ds'
 import { navigate } from '../routing'
+import { useSocketFrame, useSocketReconnect } from '../socket/SocketContext'
+
+// pet.adopted carries only the adopter's id, so a row keeps that id
+// (taken from pet.adopted_by on load) and the badge reads it from there
+type Row = Inquiry & { adoptedById: string | null }
+
+const toRow = (inquiry: Inquiry): Row => ({ ...inquiry, adoptedById: inquiry.pet.adopted_by?.id ?? null })
+
+// Changes only the matching rows. No match → the same array, so React skips the re-render
+function updateRows(rows: Row[], matches: (row: Row) => boolean, change: (row: Row) => Row): Row[] {
+  let changed = false
+  const next = rows.map((row) => {
+    if (!matches(row)) return row
+    changed = true
+    return change(row)
+  })
+  return changed ? next : rows
+}
 
 // Badge for a pet that is not adopted yet: mirrors the stage the owner set
 const STAGE_BADGES = {
@@ -42,16 +60,16 @@ function LastMessage({ message }: { message: InquiryMessage | null }) {
 }
 
 interface StatusBadgeProps {
-  pet: Pet
+  adoptedById: string | null
   stage: InquiryStage
   meId?: string
 }
 
-function StatusBadge({ pet, stage, meId }: StatusBadgeProps) {
-  if (pet.adopted_by && pet.adopted_by.id === meId) {
+function StatusBadge({ adoptedById, stage, meId }: StatusBadgeProps) {
+  if (adoptedById && adoptedById === meId) {
     return <Badge tone="success">adopted ︶ᴥ₍^◕◕^₎･ﾟ✧ by You</Badge>
   }
-  if (pet.adopted_by) {
+  if (adoptedById) {
     return <Badge tone="neutral">already adopted ︶ᴥ－－).｡O</Badge>
   }
   const { label, tone } = STAGE_BADGES[stage]
@@ -59,11 +77,11 @@ function StatusBadge({ pet, stage, meId }: StatusBadgeProps) {
 }
 
 interface AdoptionsTableProps {
-  inquiries: Inquiry[]
+  rows: Row[]
   meId?: string
 }
 
-function AdoptionsTable({ inquiries, meId }: AdoptionsTableProps) {
+function AdoptionsTable({ rows, meId }: AdoptionsTableProps) {
   return (
     <Card className="overflow-x-auto">
       <table className="w-full min-w-[640px] text-left text-sm">
@@ -79,7 +97,7 @@ function AdoptionsTable({ inquiries, meId }: AdoptionsTableProps) {
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
-          {inquiries.map(({ id, pet, stage, last_message }) => (
+          {rows.map(({ id, pet, stage, last_message, adoptedById }) => (
             <tr key={id}>
               <td className="px-5 py-3">
                 <div className="flex items-center gap-3">
@@ -97,7 +115,7 @@ function AdoptionsTable({ inquiries, meId }: AdoptionsTableProps) {
                 </div>
               </td>
               <td className="px-5 py-3">
-                <StatusBadge pet={pet} stage={stage} meId={meId} />
+                <StatusBadge adoptedById={adoptedById} stage={stage} meId={meId} />
               </td>
               <td className="px-5 py-3">
                 <div className="flex justify-end">
@@ -120,14 +138,17 @@ function AdoptionsTable({ inquiries, meId }: AdoptionsTableProps) {
 }
 
 function YourAdoptions({ meId }: { meId?: string }) {
-  const [inquiries, setInquiries] = useState<Inquiry[] | null>(null)
+  const [rows, setRows] = useState<Row[] | null>(null)
   const [error, setError] = useState('')
+  const [reloads, setReloads] = useState(0)
 
   useEffect(() => {
     let cancelled = false
     getMyInquiries()
       .then((data) => {
-        if (!cancelled) setInquiries(data)
+        if (cancelled) return
+        setRows(data.map(toRow))
+        setError('')
       })
       .catch((err: unknown) => {
         if (!cancelled) setError(err instanceof ApiError ? err.message : 'Could not load your adoptions.')
@@ -135,7 +156,61 @@ function YourAdoptions({ meId }: { meId?: string }) {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [reloads])
+
+  // frames sent while the socket was down are lost: load the whole list again
+  useSocketReconnect(() => setReloads((n) => n + 1))
+
+  useSocketFrame('inquiry.stage_changed', ({ inquiry_id, stage }) =>
+    setRows(
+      (prev) =>
+        prev &&
+        updateRows(
+          prev,
+          (r) => r.id === inquiry_id && r.stage !== stage,
+          (r) => ({ ...r, stage }),
+        ),
+    ),
+  )
+
+  // a new message is the newest one, so its row goes first: the backend's newest_first() order
+  useSocketFrame('chat.message', ({ message }) =>
+    setRows((prev) => {
+      const row = prev?.find((r) => r.id === message.inquiry)
+      if (!prev || !row || row.last_message?.id === message.id) return prev
+      const updated = { ...row, last_message: message, last_message_at: message.created_at }
+      return [updated, ...prev.filter((r) => r !== row)]
+    }),
+  )
+
+  // can arrive twice (browse + pet.<id>); the second one matches no row and changes nothing
+  useSocketFrame('pet.adopted', ({ pet_id, adopted_by_id }) =>
+    setRows(
+      (prev) =>
+        prev &&
+        updateRows(
+          prev,
+          (r) => r.pet.id === pet_id && r.adoptedById !== adopted_by_id,
+          (r) => ({ ...r, adoptedById: adopted_by_id }),
+        ),
+    ),
+  )
+
+  useSocketFrame('pet.removed', ({ pet_id }) =>
+    setRows((prev) => (prev?.some((r) => r.pet.id === pet_id) ? prev.filter((r) => r.pet.id !== pet_id) : prev)),
+  )
+
+  useSocketFrame('presence.changed', ({ user_id, online }) =>
+    setRows(
+      (prev) =>
+        prev &&
+        updateRows(
+          prev,
+          (r) => r.pet.owner.id === user_id && r.pet.owner.is_online !== online,
+          (r) => ({ ...r, pet: { ...r.pet, owner: { ...r.pet.owner, is_online: online } } }),
+        ),
+    ),
+  )
 
   return (
     <div className="space-y-6 p-8">
@@ -146,9 +221,9 @@ function YourAdoptions({ meId }: { meId?: string }) {
 
       {error ? (
         <EmptyState emoji="😿" title="Something went wrong" hint={error} />
-      ) : inquiries === null ? (
+      ) : rows === null ? (
         <p role="status" className="text-sm text-text-muted">Loading your adoptions…</p>
-      ) : inquiries.length === 0 ? (
+      ) : rows.length === 0 ? (
         <EmptyState
           emoji="🐾"
           title="No adoptions yet"
@@ -156,7 +231,7 @@ function YourAdoptions({ meId }: { meId?: string }) {
           action={<Button onClick={() => navigate('browse')}>Browse pets</Button>}
         />
       ) : (
-        <AdoptionsTable inquiries={inquiries} meId={meId} />
+        <AdoptionsTable rows={rows} meId={meId} />
       )}
     </div>
   )
