@@ -1,30 +1,26 @@
-import { Check, UserMinus, UserPlus, X } from 'lucide-react'
-import { useEffect, useState, type ReactNode } from 'react'
+import { Check, UserMinus, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import {
   acceptFriendRequest,
   deleteFriendship,
   getFriendRequests,
   getFriends,
-  rejectFriendRequest,
-  searchUsers,
-  sendFriendRequest,
   type FriendRecord,
   type FriendRequestRecord,
-  type UserSearchResult,
 } from '../api/friends'
 import { ApiError } from '../api/client'
 import { useAuth } from '../auth/auth-context'
-import { Avatar, Badge, Button, EmptyState, Input, Tabs, type TabItem } from '../ds'
+import { Avatar, Button, EmptyState, Tabs, type TabItem } from '../ds'
 import { useToast } from '../contexts/toast/ToastContext'
 import { navigate } from '../routing'
-import { useSocket } from '../socket/useSocket'
+import { useSocketFrame, useSocketReconnect } from '../socket/SocketContext'
 
-// Helpers
+//  helpers 
 
 const errorText = (err: unknown, fallback: string) =>
   err instanceof ApiError ? err.message : fallback
 
-// Small shared pieces  
+//  small shared pieces 
 
 function OnlineDot({ online }: { online: boolean }) {
   return (
@@ -35,7 +31,7 @@ function OnlineDot({ online }: { online: boolean }) {
   )
 }
 
-// Friends tab
+//  Friends tab 
 
 function FriendCard({
   record,
@@ -46,13 +42,13 @@ function FriendCard({
 }) {
   const toast = useToast()
   const [busy, setBusy] = useState(false)
-  const { friend } = record
+  const { other_user } = record
 
   const remove = async () => {
     setBusy(true)
     try {
       await deleteFriendship(record.id)
-      toast({ kind: 'delete', title: 'Friend removed', message: `${friend.full_name.split(' ')[0]} is no longer your friend.` })
+      toast({ kind: 'delete', title: 'Friend removed', message: `${other_user.full_name.split(' ')[0]} is no longer your friend.` })
       onRemoved(record.id)
     } catch (err) {
       toast({ title: 'Could not remove friend', message: errorText(err, 'Please try again.') })
@@ -63,27 +59,27 @@ function FriendCard({
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-3">
       <div className="relative shrink-0">
-        <Avatar name={friend.full_name} src={friend.avatar} size="md" />
+        <Avatar name={other_user.full_name} src={other_user.avatar} size="md" />
         <span className="absolute -right-0.5 -bottom-0.5">
-          <OnlineDot online={friend.is_online} />
+          <OnlineDot online={other_user.is_online} />
         </span>
       </div>
       <div className="min-w-0 flex-1">
         <button
           type="button"
           className="block truncate text-left font-semibold hover:text-primary focus-visible:outline-none focus-visible:underline"
-          onClick={() => navigate('profile', { user: friend.id })}
+          onClick={() => navigate('profile', { user: other_user.id })}
         >
-          {friend.full_name}
+          {other_user.full_name}
         </button>
-        <p className="truncate text-xs text-text-muted">@{friend.handle}</p>
+        <p className="truncate text-xs text-text-muted">@{other_user.handle}</p>
       </div>
       <Button
         size="sm"
         variant="ghost"
         icon={<UserMinus className="size-3.5" />}
         disabled={busy}
-        aria-label={`Remove ${friend.full_name}`}
+        aria-label={`Remove ${other_user.full_name}`}
         onClick={() => void remove()}
       >
         Remove
@@ -104,13 +100,13 @@ function FriendsList({
       <EmptyState
         emoji="🐾"
         title="No friends yet"
-        hint="Search for people to add them as friends."
+        hint="Go to someone's profile and add them as a friend."
       />
     )
   }
 
-  const online = records.filter((r) => r.friend.is_online)
-  const offline = records.filter((r) => !r.friend.is_online)
+  const online = records.filter((r) => r.other_user.is_online)
+  const offline = records.filter((r) => !r.other_user.is_online)
 
   return (
     <div className="space-y-4">
@@ -142,25 +138,33 @@ function FriendsList({
   )
 }
 
-// Requests tab
+//  Requests tab ─
 
 function RequestCard({
   record,
   onSettled,
+  onAccepted,
 }: {
   record: FriendRequestRecord
   onSettled: (id: string) => void
+  onAccepted: () => void
 }) {
   const toast = useToast()
   const [busy, setBusy] = useState(false)
-  const { requester } = record
+  const { other_user } = record
 
-  const run = async (action: () => Promise<unknown>, title: string, message: string) => {
+  const run = async (
+    action: () => Promise<unknown>,
+    title: string,
+    message: string,
+    accepted: boolean,
+  ) => {
     setBusy(true)
     try {
       await action()
       toast({ kind: 'update', title, message })
       onSettled(record.id)
+      if (accepted) onAccepted()
     } catch (err) {
       toast({ title: 'Could not update request', message: errorText(err, 'Please try again.') })
       setBusy(false)
@@ -170,32 +174,33 @@ function RequestCard({
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-3">
       <div className="relative shrink-0">
-        <Avatar name={requester.full_name} src={requester.avatar} size="md" />
+        <Avatar name={other_user.full_name} src={other_user.avatar} size="md" />
         <span className="absolute -right-0.5 -bottom-0.5">
-          <OnlineDot online={requester.is_online} />
+          <OnlineDot online={other_user.is_online} />
         </span>
       </div>
       <div className="min-w-0 flex-1">
         <button
           type="button"
           className="block truncate text-left font-semibold hover:text-primary focus-visible:outline-none focus-visible:underline"
-          onClick={() => navigate('profile', { user: requester.id })}
+          onClick={() => navigate('profile', { user: other_user.id })}
         >
-          {requester.full_name}
+          {other_user.full_name}
         </button>
-        <p className="truncate text-xs text-text-muted">@{requester.handle}</p>
+        <p className="truncate text-xs text-text-muted">@{other_user.handle}</p>
       </div>
       <div className="flex shrink-0 gap-1.5">
         <Button
           size="sm"
           icon={<Check className="size-3.5" />}
           disabled={busy}
-          aria-label={`Accept ${requester.full_name}`}
+          aria-label={`Accept ${other_user.full_name}`}
           onClick={() =>
             void run(
               () => acceptFriendRequest(record.id),
               'Friend added',
-              `You and ${requester.full_name.split(' ')[0]} are now friends.`,
+              `You and ${other_user.full_name.split(' ')[0]} are now friends.`,
+              true,
             )
           }
         >
@@ -206,12 +211,13 @@ function RequestCard({
           variant="ghost"
           icon={<X className="size-3.5" />}
           disabled={busy}
-          aria-label={`Decline ${requester.full_name}`}
+          aria-label={`Decline ${other_user.full_name}`}
           onClick={() =>
             void run(
-              () => rejectFriendRequest(record.id),
+              () => deleteFriendship(record.id),
               'Request declined',
-              `You declined ${requester.full_name.split(' ')[0]}'s request.`,
+              `You declined ${other_user.full_name.split(' ')[0]}'s request.`,
+              false,
             )
           }
         >
@@ -222,190 +228,9 @@ function RequestCard({
   )
 }
 
-// Find people tab 
+//  root view 
 
-type SearchState = 'idle' | 'searching' | 'done' | 'error'
-
-function SearchResultCard({ result, onAction }: { result: UserSearchResult; onAction: (id: string, next: UserSearchResult['friendship']) => void }) {
-  const toast = useToast()
-  const [busy, setBusy] = useState(false)
-  const { friendship } = result
-
-  const run = async (action: () => Promise<unknown>, title: string, message: string, nextFriendship: UserSearchResult['friendship']) => {
-    setBusy(true)
-    try {
-      await action()
-      toast({ kind: 'update', title, message })
-      onAction(result.id, nextFriendship)
-    } catch (err) {
-      toast({ title: 'Could not update', message: errorText(err, 'Please try again.') })
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  let action: ReactNode
-
-  if (!friendship) {
-    action = (
-      <Button
-        size="sm"
-        icon={<UserPlus className="size-3.5" />}
-        disabled={busy}
-        onClick={() =>
-          void run(
-            () => sendFriendRequest(result.id),
-            'Request sent',
-            `${result.full_name.split(' ')[0]} will see your request.`,
-            { id: '', status: 'pending', requested_by_me: true },
-          )
-        }
-      >
-        Add friend
-      </Button>
-    )
-  } else if (friendship.status === 'pending' && friendship.requested_by_me) {
-    action = (
-      <Button
-        size="sm"
-        variant="ghost"
-        icon={<X className="size-3.5" />}
-        disabled={busy}
-        onClick={() =>
-          void run(
-            () => deleteFriendship(friendship.id),
-            'Request withdrawn',
-            `Your request to ${result.full_name.split(' ')[0]} was cancelled.`,
-            null,
-          )
-        }
-      >
-        Cancel
-      </Button>
-    )
-  } else if (friendship.status === 'pending' && !friendship.requested_by_me) {
-    action = (
-      <Button
-        size="sm"
-        icon={<Check className="size-3.5" />}
-        disabled={busy}
-        onClick={() =>
-          void run(
-            () => acceptFriendRequest(friendship.id),
-            'Friend added',
-            `You and ${result.full_name.split(' ')[0]} are now friends.`,
-            { ...friendship, status: 'accepted' },
-          )
-        }
-      >
-        Accept
-      </Button>
-    )
-  } else {
-    action = <Badge tone="success">Friends</Badge>
-  }
-
-  return (
-    <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-3">
-      <div className="relative shrink-0">
-        <Avatar name={result.full_name} src={result.avatar} size="md" />
-        <span className="absolute -right-0.5 -bottom-0.5">
-          <OnlineDot online={result.is_online} />
-        </span>
-      </div>
-      <div className="min-w-0 flex-1">
-        <button
-          type="button"
-          className="block truncate text-left font-semibold hover:text-primary focus-visible:outline-none focus-visible:underline"
-          onClick={() => navigate('profile', { user: result.id })}
-        >
-          {result.full_name}
-        </button>
-        <p className="truncate text-xs text-text-muted">@{result.handle}</p>
-      </div>
-      <div className="shrink-0">{action}</div>
-    </div>
-  )
-}
-
-function FindPeople({ myId }: { myId: string }) {
-  const [q, setQ] = useState('')
-  const [debouncedQ, setDebouncedQ] = useState('')
-  const [results, setResults] = useState<UserSearchResult[]>([])
-  const [state, setState] = useState<SearchState>('idle')
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedQ(q.trim()), 300)
-    return () => clearTimeout(timer)
-  }, [q])
-
-  useEffect(() => {
-    if (!debouncedQ) {
-      setResults([])
-      setState('idle')
-      return
-    }
-    let ignore = false
-    setState('searching')
-    searchUsers(debouncedQ)
-      .then((res) => {
-        if (ignore) return
-        setResults(res.filter((u) => u.id !== myId))
-        setState('done')
-      })
-      .catch(() => {
-        if (!ignore) setState('error')
-      })
-    return () => {
-      ignore = true
-    }
-  }, [debouncedQ, myId])
-
-  const updateResult = (userId: string, next: UserSearchResult['friendship']) => {
-    setResults((prev) =>
-      prev.map((r) => (r.id === userId ? { ...r, friendship: next } : r)),
-    )
-  }
-
-  return (
-    <div className="space-y-4">
-      <Input
-        type="search"
-        placeholder="Search by name or username…"
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        aria-label="Search for people"
-      />
-      {state === 'idle' && (
-        <p className="py-8 text-center text-sm text-text-muted">
-          Start typing to find people.
-        </p>
-      )}
-      {state === 'searching' && (
-        <p className="py-8 text-center text-sm text-text-muted">Searching…</p>
-      )}
-      {state === 'error' && (
-        <p role="alert" className="rounded-2xl bg-danger-soft px-4 py-3 text-sm text-danger">
-          Search failed. Please try again.
-        </p>
-      )}
-      {state === 'done' && results.length === 0 && (
-        <EmptyState emoji="🔍" title="No results" hint="Try a different name or handle." />
-      )}
-      {state === 'done' && results.length > 0 && (
-        <div className="grid gap-2 sm:grid-cols-2">
-          {results.map((r) => (
-            <SearchResultCard key={r.id} result={r} onAction={updateResult} />
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-// Main view
-
-type Tab = 'friends' | 'requests' | 'find'
+type Tab = 'friends' | 'requests'
 
 export function Friends() {
   const { status, user } = useAuth()
@@ -437,22 +262,20 @@ export function Friends() {
   }, [status, reload])
 
   // Live presence updates
-  useSocket(
-    status === 'signed-in',
-    (frame) => {
-      if (frame.type !== 'presence') return
-      const userId = frame.user_id as string
-      const isOnline = frame.is_online as boolean
-      setFriends((prev) =>
-        prev
-          ? prev.map((r) =>
-              r.friend.id === userId ? { ...r, friend: { ...r.friend, is_online: isOnline } } : r,
-            )
-          : prev,
-      )
-    },
-    load,
-  )
+  useSocketFrame('presence.changed', (frame) => {
+    setFriends((prev) =>
+      prev
+        ? prev.map((r) =>
+            r.other_user.id === frame.user_id
+              ? { ...r, other_user: { ...r.other_user, is_online: frame.online } }
+              : r,
+          )
+        : prev,
+    )
+  })
+
+  // Refetch after reconnect — frames sent while offline were missed
+  useSocketReconnect(load)
 
   if (status === 'loading') return null
 
@@ -470,12 +293,10 @@ export function Friends() {
   }
 
   const pendingCount = requests?.length ?? 0
-  const friendsCount = friends?.length ?? 0
 
   const tabs: readonly TabItem<Tab>[] = [
-    { id: 'friends', label: friends ? `Friends (${friendsCount})` : 'Friends' },
+    { id: 'friends', label: friends ? `Friends (${friends.length})` : 'Friends' },
     { id: 'requests', label: pendingCount > 0 ? `Requests (${pendingCount})` : 'Requests' },
-    { id: 'find', label: 'Find people' },
   ]
 
   const removeFromFriends = (id: string) =>
@@ -529,14 +350,17 @@ export function Friends() {
             ) : (
               <div className="grid gap-2 sm:grid-cols-2">
                 {requests.map((r) => (
-                  <RequestCard key={r.id} record={r} onSettled={removeFromRequests} />
+                  <RequestCard
+                    key={r.id}
+                    record={r}
+                    onSettled={removeFromRequests}
+                    onAccepted={load}
+                  />
                 ))}
               </div>
             )}
           </>
         )}
-
-        {tab === 'find' && <FindPeople myId={user.id} />}
       </Tabs>
     </div>
   )

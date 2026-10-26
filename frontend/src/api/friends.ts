@@ -2,32 +2,24 @@ import { del, get, post } from './client'
 import type { User } from '../data/types'
 
 export interface FriendRecord {
-  id: string        
-  friend: User
+  id: string
+  other_user: User
 }
 
 export interface FriendRequestRecord {
-  id: string       
-  requester: User
+  id: string
+  other_user: User
   created_at: string
 }
 
-export interface UserSearchResult extends User {
-  friendship: { id: string; status: 'pending' | 'accepted'; requested_by_me: boolean } | null
-}
+export const getFriends = () => get<FriendRecord[]>('/api/users/friends/')
 
-export const getFriends = () => get<FriendRecord[]>('/api/friends/')
-
-export const getFriendRequests = () => get<FriendRequestRecord[]>('/api/friends/requests/')
+export const getFriendRequests = () => get<FriendRequestRecord[]>('/api/users/friends/incoming/')
 
 export const sendFriendRequest = (userId: string) =>
-  post('/api/friends/request/', { addressee: userId })
+  post('/api/users/friends/', { addressee: userId })
 
-export const acceptFriendRequest = (id: string) => post(`/api/friends/${id}/accept/`)
+export const acceptFriendRequest = (id: string) => post(`/api/users/friends/${id}/accept/`)
 
-export const rejectFriendRequest = (id: string) => post(`/api/friends/${id}/reject/`)
-
-export const deleteFriendship = (id: string) => del(`/api/friends/${id}/`)
-
-export const searchUsers = (q: string) =>
-  get<UserSearchResult[]>(`/api/users/?search=${encodeURIComponent(q)}`)
+// decline and cancel both use DELETE — there is no separate reject action
+export const deleteFriendship = (id: string) => del(`/api/users/friends/${id}/`)
