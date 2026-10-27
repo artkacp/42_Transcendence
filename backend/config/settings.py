@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'drf_spectacular',
     'channels',
     'django.contrib.postgres',
     'core',
@@ -87,6 +88,36 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
     'EXCEPTION_HANDLER': 'core.exceptions.exception_handler',
+    # Read only while drf-spectacular builds the OpenAPI schema, never while serving a request.
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+# OpenAPI schema and Swagger UI for the public API (/api/public/v1/schema/ and /docs/).
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Pawfect Match Public API',
+    'VERSION': 'v1',
+    'DESCRIPTION': (
+        'The pets listed for adoption on Pawfect Match: browse them, and publish, replace or remove your own.\n\n'
+        '**Getting a key:** while logged in to Pawfect Match, send `POST /api/keys/` with a `label`. '
+        'The response shows the full key once; it cannot be shown again.\n\n'
+        '**Using it:** send the key in the `X-API-Key` header on every request (or use **Authorize** on this page). '
+        'A missing, invalid or revoked key gets 401.\n\n'
+        "**Writes:** POST, PUT and DELETE act as the key's owner. A new pet is theirs, and only their own pets "
+        'can be replaced or removed (403 otherwise); an adopted pet can no longer be replaced. PUT replaces the '
+        'whole listing; PATCH is not supported (405).\n\n'
+        '**Rate limit:** 60 requests per minute per key. Above that you get 429, with a `Retry-After` header '
+        'giving the seconds to wait.'
+    ),
+    # Only /api/public/v1/ is documented: the app API and /api/keys/ are not part of the public contract.
+    'PREPROCESSING_HOOKS': ['api.schema.public_endpoints_only'],
+    # Leaves /schema/ itself out of the schema.
+    'SERVE_INCLUDE_SCHEMA': False,
+    # Separate request and response components, so file fields are documented as binary uploads.
+    'COMPONENT_SPLIT_REQUEST': True,
+    # Schema and docs check no JWT and no API key (permissions default to AllowAny) and have no throttle.
+    'SERVE_AUTHENTICATION': [],
+    # Swagger UI from its CDN (no CSP is set anywhere), pinned so the docs page can't change under us.
+    'SWAGGER_UI_DIST': 'https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.33.0',
 }
 
 SIMPLE_JWT = {

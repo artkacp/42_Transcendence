@@ -5,6 +5,7 @@ import { Auth } from './views/Auth'
 import { Browse } from './views/Browse'
 import { Friends } from './views/Friends'
 import { PetPage } from './views/PetPage'
+import { Adoptions } from './views/Adoptions'
 import { Rehome } from './views/Rehome'
 import { Profile } from './views/Profile'
 import { DesignSystem } from './views/DesignSystem'
@@ -19,6 +20,7 @@ const PAGES: Record<View, ComponentType> = {
   auth: Auth,
   browse: Browse,
   pet: PetPage,
+  adoptions: Adoptions,
   rehome: Rehome,
   profile: Profile,
   notifications: Notifications,
