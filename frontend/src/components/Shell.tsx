@@ -1,8 +1,11 @@
 import { useEffect, useState, type MouseEvent, type ReactNode } from 'react'
-import { HeartHandshake, LogIn, LogOut, Search, SwatchBook, UserRound } from 'lucide-react'
+import { Bell, LogIn, LogOut, PawPrint, Search, SwatchBook, UserRound } from 'lucide-react'
 import { navigate, viewHref, type View } from '../routing'
 import { useFaviconAnimation } from '../hooks/useFaviconAnimation'
-import { useAuth } from '../auth/auth-context'
+import { get } from '../api/client'
+import { useAuth, type User } from '../auth/auth-context'
+import { useToast } from '../contexts/toast/ToastContext'
+import { useSocketFrame, useSocketReconnect } from '../socket/SocketContext'
 
 /*
  * (◕◕) Shell — layout from the prototype, colours from our roles.
@@ -17,7 +20,7 @@ import { useAuth } from '../auth/auth-context'
 
 const NAV: { view: View; label: string; icon: ReactNode }[] = [
   { view: 'browse', label: 'Browse', icon: <Search className="size-[18px]" /> },
-  { view: 'adoptions', label: 'Adoptions', icon: <HeartHandshake className="size-[18px]" /> },
+  { view: 'adoptions', label: 'Adoptions', icon: <PawPrint className="size-[18px]" /> },
   { view: 'profile', label: 'Profile', icon: <UserRound className="size-[18px]" /> },
   { view: 'design', label: 'Design kit', icon: <SwatchBook className="size-[18px]" /> },
 ]
@@ -125,10 +128,53 @@ function Me({ compact = false }: { compact?: boolean }) {
   )
 }
 
+function NotificationBell({ active }: { active: boolean }) {
+  const { status, user, updateUser } = useAuth()
+  const toast = useToast()
+
+  const syncCount = () => {
+    get<User>('/api/auth/me/')
+      .then((me) => updateUser(me))
+      .catch(() => {})
+  }
+
+  useSocketFrame('notification.created', ({ notification }) => {
+    toast({ kind: notification.kind, title: notification.title, message: notification.body || undefined })
+    syncCount()
+  })
+
+  useSocketReconnect(syncCount)
+
+  if (status !== 'signed-in' || !user) return null
+  const count = user.unread_notifications
+
+  return (
+    <Link
+      view="notifications"
+      aria-current={active ? 'page' : undefined}
+      aria-label={count > 0 ? `Notifications, ${count} unread` : 'Notifications'}
+      className={`relative flex size-10 items-center justify-center rounded-full transition-all hover:bg-surface-raised hover:text-text ${
+        active ? 'text-primary' : 'text-text-muted'
+      }`}
+    >
+      <Bell className="size-5" />
+      {count > 0 && (
+        <span
+          aria-hidden="true"
+          className="absolute -top-0.5 -right-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[11px] font-semibold text-on-primary"
+        >
+          {count > 99 ? '99+' : count}
+        </span>
+      )}
+    </Link>
+  )
+}
+
 export function Shell({ view, children }: { view: View; children: ReactNode }) {
   useFaviconAnimation()
+  const { status } = useAuth()
   return (
-        <div className="min-h-dvh lg:grid lg:grid-cols-[288px_1fr]">
+    <div className="min-h-dvh lg:grid lg:grid-cols-[288px_1fr]">
       {/* Sidebar (desktop) */}
       <aside className="sticky top-0 hidden h-dvh flex-col gap-1 border-r border-border bg-surface-raised/60 px-4 py-6 lg:flex">
         <div className="mb-6">
@@ -157,11 +203,21 @@ export function Shell({ view, children }: { view: View; children: ReactNode }) {
       </aside>
 
       <div className="flex min-w-0 flex-col">
-        {/* Top bar (mobile only: logo). Hidden on lg+ — it was an empty strip there.
-            Bring it back for desktop when bell / avatar arrive. */}
-        <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-border bg-surface/90 px-4 py-3 backdrop-blur lg:hidden">
-          <Logo small />
-          <Me compact />
+        {/* Top bar: logo and sign out on mobile, bell everywhere once signed in. */}
+        <header
+          className={`sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-border bg-surface/90 px-4 py-3 backdrop-blur lg:px-8 ${
+            status === 'signed-in' ? '' : 'lg:hidden'
+          }`}
+        >
+          <div className="lg:hidden">
+            <Logo small />
+          </div>
+          <div className="ml-auto flex items-center gap-2">
+            <NotificationBell active={view === 'notifications'} />
+            <div className="lg:hidden">
+              <Me compact />
+            </div>
+          </div>
         </header>
 
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-6 pb-10 lg:px-8">{children}</main>
@@ -187,7 +243,6 @@ export function Shell({ view, children }: { view: View; children: ReactNode }) {
             </nav>
           </div>
         </footer>
-
         {/* Bottom nav (mobile) */}
         <nav
           aria-label="Main"

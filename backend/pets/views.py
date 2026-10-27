@@ -7,15 +7,13 @@ from rest_framework.views import APIView
 from analytics import signals as analytics_signals
 
 from core.pagination import FixedPagePagination
-from core.realtime import push
-from inquiries.models import Attachment
 from inquiries.serializers import AdoptSerializer, InquirySerializer
 from inquiries.services import complete_adoption, newest_first, start_inquiry
-from notifications.services import notify
 
 from .browse import filter_pets, visible_pets
 from .models import AGE_BUCKETS, BREEDS, CITIES, SEX_CHOICES, SIZE_CHOICES, SPECIES_CHOICES, TRAITS
 from .serializers import PetSerializer
+from .services import create_pet, delete_pet, update_pet
 
 
 def values(choices):
@@ -54,41 +52,21 @@ class PetViewSet(
         analytics_signals.pet_viewed.send(sender=self.__class__, user=request.user, pet=instance)
         return Response(self.get_serializer(instance).data)
 
-    # POST /pets/
-    def perform_create(self, serializer):
-        pet = serializer.save(owner=self.request.user)
-        analytics_signals.listing_published.send(sender=self.__class__, user=self.request.user, pet=pet)
-        notify(pet.owner, 'create', 'Listing published', f'{pet.name} is now listed for adoption.', subject=pet)
-        push('browse', 'pet.published', pet=serializer.data)
+    # POST /pets/ (rules and side effects in pets/services.py)
+    def create(self, request, *args, **kwargs):
+        pet = create_pet(request.user, request.data, context=self.get_serializer_context())
+        return Response(self.get_serializer(pet).data, status=status.HTTP_201_CREATED)
 
-    # PUT / PATCH /pets/{id}/ (owner only; an adopted listing is locked)
-    def perform_update(self, serializer):
-        pet = serializer.instance
-        if pet.owner != self.request.user:
-            raise PermissionDenied('Only the owner can edit this listing.')
-        if pet.adopted_by_id:
-            raise PermissionDenied('An adopted listing can no longer be edited.')
-        old_photo = pet.photo.name
-        pet = serializer.save()
-        if old_photo and pet.photo.name != old_photo:
-            pet.photo.storage.delete(old_photo)
+    # PUT / PATCH /pets/{id}/ (owner only; an adopted listing is locked; partial_update passes partial=True)
+    def update(self, request, *args, **kwargs):
+        pet = update_pet(self.get_object(), request.user, request.data, partial=kwargs.pop('partial', False),
+                         context=self.get_serializer_context())
+        return Response(self.get_serializer(pet).data)
 
-    # DELETE /pets/{id}/ (owner only; adopters are notified first, while their threads still exist)
-    def perform_destroy(self, pet):
-        if pet.owner != self.request.user:
-            raise PermissionDenied('Only the owner can remove this listing.')
-        for inquiry in pet.inquiries.select_related('adopter'):
-            notify(inquiry.adopter, 'delete', 'Listing removed',
-                   f'{pet.owner.full_name} removed the listing for {pet.name}, so your adoption conversation was closed.')
-        files = [attachment.file for attachment in Attachment.objects.filter(message__inquiry__pet=pet)]
-        if pet.photo:
-            files.append(pet.photo)
-        pet_id = str(pet.pk)
-        pet.delete()
-        for file in files:
-            file.delete(save=False)
-        for group in (f'pet.{pet_id}', 'browse'):
-            push(group, 'pet.removed', pet_id=pet_id)
+    # DELETE /pets/{id}/ (owner only)
+    def destroy(self, request, *args, **kwargs):
+        delete_pet(self.get_object(), request.user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     # GET /pets/?q=&species=&sex=&size=&age_bucket=&city=&breed=&trait=&vaccinated=&neutered=&page=
     def list(self, request):

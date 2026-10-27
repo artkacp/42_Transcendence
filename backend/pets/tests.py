@@ -2,7 +2,7 @@ import tempfile
 
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.db import connection
+from django.db import connection, transaction
 from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
@@ -12,6 +12,7 @@ from accounts.tests import auth, image_file, make_pet, make_user
 from inquiries.models import Inquiry
 
 from .models import AGE_BUCKETS, BREEDS, CITIES, TRAITS, Pet
+from .services import update_pet
 
 
 def search_text_in_db(pet):
@@ -282,6 +283,33 @@ class UpdateTests(APITestCase):
         old = self.patch({'photo': image_file('karo.png')}, format='multipart')
         old_name = Pet.objects.get().photo.name
         self.assertEqual(old.status_code, status.HTTP_200_OK)
-        self.patch({'photo': image_file('kobi.png')}, format='multipart')
+        with self.captureOnCommitCallbacks(execute=True):
+            self.patch({'photo': image_file('kobi.png')}, format='multipart')
         self.assertFalse(default_storage.exists(old_name))
         self.assertTrue(default_storage.exists(Pet.objects.get().photo.name))
+
+    def test_non_owner_or_adopted_with_invalid_body_gets_403(self):
+        auth(self.client, self.bob)
+        self.assertEqual(self.put(name='K').status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(self.patch({'species': 'bird'}).status_code, status.HTTP_403_FORBIDDEN)
+        auth(self.client, self.alice)
+        Pet.objects.filter(pk=self.pet.pk).update(adopted_by=self.bob)
+        self.assertEqual(self.patch({'species': 'bird'}).status_code, status.HTTP_403_FORBIDDEN)
+        self.pet.refresh_from_db()
+        self.assertEqual(self.pet.name, 'Karo')
+
+    def test_old_photo_is_kept_when_the_update_fails(self):
+        self.patch({'photo': image_file('karo.png')}, format='multipart')
+        old_name = Pet.objects.get().photo.name
+
+        # Rejected by validation: nothing is saved
+        r = self.patch({'photo': image_file('kobi.png'), 'name': 'K'}, format='multipart')
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(default_storage.exists(old_name))
+
+        # Saved, then rolled back with the surrounding transaction: the on_commit delete is discarded
+        with self.captureOnCommitCallbacks(execute=True), self.assertRaises(RuntimeError), transaction.atomic():
+            update_pet(Pet.objects.get(), self.alice, {'photo': image_file('kobi.png')}, partial=True)
+            raise RuntimeError('rolled back')
+        self.assertEqual(Pet.objects.get().photo.name, old_name)
+        self.assertTrue(default_storage.exists(old_name))
