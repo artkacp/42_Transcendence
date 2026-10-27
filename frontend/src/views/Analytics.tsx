@@ -14,7 +14,7 @@ import {
   ReferenceLine,
   ResponsiveContainer,
 } from 'recharts'
-import { SlidersHorizontal, TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { Download, SlidersHorizontal, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { getPlatformAnalytics, type AnalyticsResponse, type AnalyticsFilters } from '../api/analytics'
 import { ApiError } from '../api/client'
 import { useAuth } from '../auth/auth-context'
@@ -47,6 +47,73 @@ function formatPct(delta: number | null): string {
   if (delta == null) return '—'
   const abs = Math.abs(delta).toFixed(0)
   return `${delta >= 0 ? '+' : '−'}${abs}%`
+}
+
+function exportCsv(data: AnalyticsResponse, start: string, end: string) {
+  const rows: string[] = []
+  const row = (...cells: (string | number | null | undefined)[]) =>
+    rows.push(cells.map((c) => (c == null ? '' : String(c))).join(','))
+
+  rows.push('KPIs')
+  row('metric', 'value', 'delta_abs', 'delta_pct')
+  const kpiLabels: Record<string, string> = {
+    listing_visits: 'Listing visits',
+    applications: 'Applications',
+    adoptions: 'Adoptions',
+    messages: 'Messages',
+  }
+  for (const [key, m] of Object.entries(data.kpis)) {
+    row(kpiLabels[key] ?? key, m.value, m.delta_abs, m.delta_pct)
+  }
+
+  rows.push('')
+  rows.push('Listing visits over time')
+  row('date', 'count')
+  for (const p of data.charts.listing_visits_over_time) row(p.date, p.count)
+
+  rows.push('')
+  rows.push('Adoptions by species')
+  row('species', 'count')
+  for (const p of data.charts.adoptions_by_species) row(p.species, p.count)
+
+  rows.push('')
+  rows.push('Offers over time')
+  row('date', 'count', 'running_total')
+  for (const p of data.charts.offers_over_time) row(p.date, p.count, p.running_total)
+
+  rows.push('')
+  rows.push('Users over time')
+  row('date', 'active_users', 'new_signups')
+  for (const p of data.charts.users_over_time) row(p.date, p.active_users, p.new_signups)
+
+  rows.push('')
+  rows.push('Seekers vs rehomers')
+  row('date', 'seekers', 'rehomers')
+  for (const p of data.charts.seekers_vs_rehomers) row(p.date, p.seekers, p.rehomers)
+
+  rows.push('')
+  rows.push('Applications per adopted pet')
+  row('bucket', 'count')
+  for (const b of data.charts.applications_per_adopted_pet.distribution) row(b.bucket, b.count)
+
+  rows.push('')
+  rows.push('Applications vs adoptions')
+  row('date', 'applications', 'adoptions')
+  for (const p of data.charts.applications_vs_adoptions) row(p.date, p.applications, p.adoptions)
+
+  rows.push('')
+  rows.push('Community messages')
+  row('date', 'count')
+  for (const p of data.charts.community_messages) row(p.date, p.count)
+
+  const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  const suffix = [start, end].filter(Boolean).join('_to_')
+  a.download = suffix ? `analytics_${suffix}.csv` : 'analytics.csv'
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 const formatLabel = (l: unknown) => (typeof l === 'string' ? formatDate(l) : '')
@@ -254,9 +321,19 @@ export function Analytics() {
             Adoption activity, engagement, and community trends.
           </p>
         </div>
-        {loading && data && (
-          <Badge className="text-xs">Refreshing…</Badge>
-        )}
+        <div className="flex items-center gap-3">
+          {loading && data && <Badge className="text-xs">Refreshing…</Badge>}
+          {data && (
+            <Button
+              size="sm"
+              variant="secondary"
+              icon={<Download className="size-4" />}
+              onClick={() => exportCsv(data, start, end)}
+            >
+              Export CSV
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* ── filters ── */}
