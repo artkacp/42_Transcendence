@@ -6,6 +6,7 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import transaction
 from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -14,6 +15,7 @@ from rest_framework.test import APITestCase
 
 from accounts.tests import auth, image_file, make_pet, make_user
 from pets.models import Pet
+from pets.services import delete_pet
 
 from .models import Attachment, Inquiry, Message
 
@@ -349,7 +351,8 @@ class RemoveListingTests(InquiryTestCase):
 
     def test_delete_notifies_adopters_then_removes_rows_and_files(self):
         receive = listen(f'pet.{self.pet.pk}')
-        r = self.remove()
+        with self.captureOnCommitCallbacks(execute=True):
+            r = self.remove()
         self.assertEqual(r.status_code, status.HTTP_204_NO_CONTENT)
         for model in [Pet, Inquiry, Message, Attachment]:
             self.assertFalse(model.objects.exists())
@@ -357,6 +360,15 @@ class RemoveListingTests(InquiryTestCase):
         self.assertFalse(default_storage.exists(self.attachment.file.name))
         self.assertEqual(self.adopter.notifications.filter(title='Listing removed').count(), 1)
         self.assertEqual(receive(), {'type': 'pet.removed', 'pet_id': str(self.pet.pk)})
+
+    def test_files_are_kept_when_the_delete_is_rolled_back(self):
+        photo_name = self.pet.photo.name
+        with self.captureOnCommitCallbacks(execute=True), self.assertRaises(RuntimeError), transaction.atomic():
+            delete_pet(self.pet, self.owner)
+            raise RuntimeError('rolled back')
+        self.assertTrue(Pet.objects.exists())
+        self.assertTrue(default_storage.exists(photo_name))
+        self.assertTrue(default_storage.exists(self.attachment.file.name))
 
     def test_removal_notification_stands_alone_after_the_pet_is_gone(self):
         self.remove()
