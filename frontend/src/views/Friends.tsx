@@ -241,6 +241,11 @@ export function Friends() {
     return () => { ignore = true }
   }, [status, reload])
 
+  // Live incoming requests
+  useSocketFrame('notification.created', (frame) => {
+    if (frame.notification.subject_type === 'user') load()
+  })
+
   // Live presence updates
   useSocketFrame('presence.changed', (frame) => {
     setFriends((prev) =>

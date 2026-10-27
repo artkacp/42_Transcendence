@@ -221,7 +221,8 @@ interface FriendActionProps {
 function FriendAction({ user, onChanged }: FriendActionProps) {
   const toast = useToast()
   const [busy, setBusy] = useState(false)
-  const { friendship } = user
+  const [localFriendship, setLocalFriendship] = useState<typeof user.friendship>(null)
+  const friendship = localFriendship ?? user.friendship
   const firstName = user.full_name.split(' ')[0]
 
   const run = async (request: () => Promise<unknown>, title: string, message: string) => {
@@ -238,11 +239,24 @@ function FriendAction({ user, onChanged }: FriendActionProps) {
   }
 
   if (!friendship) {
+    const addFriend = async () => {
+      setBusy(true)
+      try {
+        const result = await sendFriendRequest(user.id)
+        setLocalFriendship({ id: result.id, status: result.status, requested_by_me: true })
+        toast({ kind: 'update', title: 'Friend request sent', message: `${firstName} will see your request.` })
+        onChanged()
+      } catch (err) {
+        toast({ title: 'Could not update friendship', message: errorText(err, 'Please try again.') })
+      } finally {
+        setBusy(false)
+      }
+    }
     return (
       <Button
         icon={<UserPlus className="size-4" />}
         disabled={busy}
-        onClick={() => void run(() => sendFriendRequest(user.id), 'Friend request sent', `${firstName} will see your request.`)}
+        onClick={() => void addFriend()}
       >
         Add friend
       </Button>

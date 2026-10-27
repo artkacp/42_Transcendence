@@ -17,7 +17,7 @@ export const getFriends = () => get<FriendRecord[]>('/api/users/friends/')
 export const getFriendRequests = () => get<FriendRequestRecord[]>('/api/users/friends/incoming/')
 
 export const sendFriendRequest = (userId: string) =>
-  post('/api/users/friends/', { addressee: userId })
+  post<{ id: string; status: 'pending' | 'accepted' }>('/api/users/friends/', { addressee: userId })
 
 export const acceptFriendRequest = (id: string) => post(`/api/users/friends/${id}/accept/`)
 
