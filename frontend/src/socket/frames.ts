@@ -29,4 +29,6 @@ export type FrameOf<T extends ServerFrameType> = Extract<ServerFrame, { type: T 
 export type ClientFrame =
   | { type: 'chat.send'; inquiry_id: string; body?: string; attachment_ids?: string[] }
   | { type: 'pet.subscribe'; pet_id: string }
-  | { type: 'pet.unsubscribe'; pet_id: string };
+  | { type: 'pet.unsubscribe'; pet_id: string }
+  | { type: 'analytics.subscribe' }
+  | { type: 'analytics.unsubscribe' };

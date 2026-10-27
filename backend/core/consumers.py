@@ -58,6 +58,8 @@ class SocketConsumer(AsyncJsonWebsocketConsumer):
     frames = {
         'pet.subscribe': 'subscribe',
         'pet.unsubscribe': 'unsubscribe',
+        'analytics.subscribe': 'subscribe',
+        'analytics.unsubscribe': 'unsubscribe',
         'chat.send': 'send_chat',
     }
 
@@ -147,7 +149,7 @@ class SocketConsumer(AsyncJsonWebsocketConsumer):
         if presence.join(self.user.pk):
             await presence.announce(self.user.pk)
         # Channels leaves self.groups on disconnect, pet.<id> groups added later included
-        self.groups = [f'user.{self.user.pk}', 'browse', 'analytics']
+        self.groups = [f'user.{self.user.pk}', 'browse']
         for group in self.groups:
             await self.channel_layer.group_add(group, self.channel_name)
         await self.send_json({'type': 'auth.ok'})

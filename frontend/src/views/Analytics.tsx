@@ -18,7 +18,7 @@ import { SlidersHorizontal, TrendingUp, TrendingDown, Minus } from 'lucide-react
 import { getPlatformAnalytics, type AnalyticsResponse, type AnalyticsFilters } from '../api/analytics'
 import { ApiError } from '../api/client'
 import { useAuth } from '../auth/auth-context'
-import { useSocketFrame, useSocketReconnect } from '../socket/SocketContext'
+import { useSocketFrame, useSocketReconnect, useSocketSend } from '../socket/SocketContext'
 import { CITIES, BREEDS_BY_SPECIES, ALL_TRAITS, AGE_BUCKETS } from '../data/constants'
 import type { Species } from '../data/types'
 import { Button, Card, Chip, Select, EmptyState, Input, Badge } from '../ds'
@@ -158,10 +158,21 @@ export function Analytics() {
   const loading = settledKey !== requestKey && status === 'signed-in'
   const error = errorKey === requestKey
 
-  // Live updates: refetch when pets are published/adopted (browse group, all signed-in users)
-  // and on reconnect (catches missed events). 60s interval covers events without a socket push.
+  const send = useSocketSend()
+
+  // Join the analytics group while on this page; leave on unmount
+  useEffect(() => {
+    send({ type: 'analytics.subscribe' })
+    return () => { send({ type: 'analytics.unsubscribe' }) }
+  }, [send])
+
+  // Live updates: refetch on analytics.ping (opt-in group above)
+  // and on reconnect (catches missed events + re-joins the group). 60s interval covers page visits.
   useSocketFrame('analytics.ping', () => setRetry((r) => r + 1))
-  useSocketReconnect(() => setRetry((r) => r + 1))
+  useSocketReconnect(() => {
+    send({ type: 'analytics.subscribe' })
+    setRetry((r) => r + 1)
+  })
   useEffect(() => {
     if (status !== 'signed-in') return
     const id = setInterval(() => setRetry((r) => r + 1), 60_000)
