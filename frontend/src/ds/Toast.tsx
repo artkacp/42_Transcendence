@@ -1,14 +1,7 @@
-import type { ReactNode } from 'react'
-import { Info, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { X } from 'lucide-react'
+import { toastKinds } from './ToastKinds'
 import { IconButton } from './Button'
 export type ToastKind = 'create' | 'update' | 'delete' | 'info'
-
-const kinds: Record<ToastKind, { icon: ReactNode; tint: string; label: string }> = {
-  create: { icon: <Plus className="size-4" />, tint: 'bg-secondary text-on-secondary', label: 'Created' },
-  update: { icon: <Pencil className="size-4" />, tint: 'bg-warning-soft text-text', label: 'Updated' },
-  delete: { icon: <Trash2 className="size-4" />, tint: 'bg-danger-soft text-danger', label: 'Deleted' },
-  info: { icon: <Info className="size-4" />, tint: 'bg-surface-sunken text-text-muted', label: 'Info' },
-}
 
 export interface ToastProps {
   kind?: ToastKind
@@ -18,7 +11,7 @@ export interface ToastProps {
 }
 
 export function Toast({ kind = 'info', title, message, onDismiss }: ToastProps) {
-  const { icon, tint, label } = kinds[kind]
+  const { icon, tint, label } = toastKinds[kind]
 
   return (
     <div className="pointer-events-auto flex w-full items-start gap-3 rounded-2xl border border-border bg-surface p-4 shadow-[0_8px_24px_rgba(70,50,40,0.1)]">
