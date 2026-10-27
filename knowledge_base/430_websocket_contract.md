@@ -52,6 +52,8 @@ These are accepted only after `auth.ok`.
 | `chat.send` | `inquiry_id`, `body`, `attachment_ids` | Sends a chat message in an inquiry thread. See the rules below. |
 | `pet.subscribe` | `pet_id` | Joins `pet.<id>` to get live updates for that pet's page. Any signed-in user may subscribe, because listings are public. The pet is not looked up: an unknown id simply never receives anything. Subscribing twice has no effect. |
 | `pet.unsubscribe` | `pet_id` | Leaves `pet.<id>`. Has no effect if not subscribed. |
+| `analytics.subscribe` | — | Joins the `analytics` group to receive `analytics.ping`. Send when the analytics dashboard mounts; re-send after reconnect. |
+| `analytics.unsubscribe` | — | Leaves the `analytics` group. Send when the analytics dashboard unmounts. |
 
 `chat.send` rules:
 - It uses the same validation and service as the REST fallback `POST /api/inquiries/{id}/messages/`.
@@ -78,6 +80,7 @@ If a frame is rejected, the server sends an `error` frame (see below) and the so
 | `pet.adopted` | `pet_id`, `adopted_by_id` | `pet.<id>` and `browse` |
 | `pet.removed` | `pet_id` | `pet.<id>` and `browse` |
 | `notification.created` | `notification` | `user.<recipient>` |
+| `analytics.ping` | — | `analytics` |
 | `error` | `for`, `detail` | this socket |
 
 `error` is **an addition to the TRD**. Its fields:
@@ -96,6 +99,7 @@ If a frame is rejected, the server sends an `error` frame (see below) and the so
 | `user.<id>` | Every authenticated socket of that user, joined at auth | The user's own `notification.created`; `inquiry.created` (to the pet owner); `chat.message` and `inquiry.stage_changed` for threads the user is a party to |
 | `browse` | Every authenticated socket, joined at auth | `presence.changed`, `pet.published`, `pet.adopted`, `pet.removed` |
 | `pet.<id>` | Sockets that sent `pet.subscribe` for that pet | `pet.adopted` and `pet.removed` for that pet |
+| `analytics` | Sockets that sent `analytics.subscribe` (opt-in) | `analytics.ping` |
 
 Every socket is in `browse`, so a socket subscribed to `pet.<id>` receives that pet's `pet.adopted` and `pet.removed` **twice**, once from each group. Clients must handle these frames idempotently.
 

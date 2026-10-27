@@ -58,6 +58,8 @@ class SocketConsumer(AsyncJsonWebsocketConsumer):
     frames = {
         'pet.subscribe': 'subscribe',
         'pet.unsubscribe': 'unsubscribe',
+        'analytics.subscribe': 'subscribe',
+        'analytics.unsubscribe': 'unsubscribe',
         'chat.send': 'send_chat',
     }
 

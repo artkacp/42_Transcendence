@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import './palettes/spaniel_in_dunes.css';
+@import './palettes/dataviz.css';
 /*@import './palettes/mockup.css';*/
 
 @theme {
@@ -21,11 +22,17 @@
   --color-danger: var(--color-danger-600);
   --color-danger-soft: var(--color-danger-100);
   --color-warning-soft: var(--color-honey-100);
+  --color-success: var(--color-sage-600);
+  --color-chart-1: var(--color-series-1);
+  --color-chart-2: var(--color-series-2);
+  --color-chart-3: var(--color-series-3);
   /* ʕᐢ•ᴥ₍ᐢ◑ ◑ᐢ₎) DejaVu draws every glyph of the logo on school Ubuntu */
   --font-logo: 'DejaVu Sans Mono', 'DejaVu Sans', monospace;
 }
 
 :root {
+  --color-chart-1-fill: var(--color-series-1-fill);
+  --color-chart-2-fill: var(--color-series-2-fill);
   --gradient-rim-secondary: linear-gradient(
     to bottom,
     var(--color-sage-100),
