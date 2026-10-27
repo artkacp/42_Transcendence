@@ -9,3 +9,4 @@ django-environ==0.14.0
 Pillow==12.3.0
 SQLAlchemy==2.1.4
 django-prometheus==2.5.0
+drf-spectacular==0.30.0
