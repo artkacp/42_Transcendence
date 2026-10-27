@@ -1,8 +1,9 @@
 import { lazy, Suspense, type ComponentType } from 'react'
 import { useView, type View } from './routing'
 import { Shell } from './components/Shell'
-import { Auth } from './views/Auth' 
+import { Auth } from './views/Auth'
 import { Browse } from './views/Browse'
+import { Friends } from './views/Friends'
 import { PetPage } from './views/PetPage'
 import { Adoptions } from './views/Adoptions'
 import { Rehome } from './views/Rehome'
@@ -23,6 +24,7 @@ const PAGES: Record<View, ComponentType> = {
   rehome: Rehome,
   profile: Profile,
   notifications: Notifications,
+  friends: Friends,
   design: DesignSystem,
   privacy: PrivacyPolicy,
   terms: TermsOfService,
