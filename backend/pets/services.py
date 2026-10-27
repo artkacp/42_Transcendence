@@ -46,12 +46,12 @@ def delete_pet(pet, user):
     for inquiry in pet.inquiries.select_related('adopter'):
         notify(inquiry.adopter, 'delete', 'Listing removed',
                f'{pet.owner.full_name} removed the listing for {pet.name}, so your adoption conversation was closed.')
-    files = [attachment.file for attachment in Attachment.objects.filter(message__inquiry__pet=pet)]
-    if pet.photo:
-        files.append(pet.photo)
+    fields = [attachment.file for attachment in Attachment.objects.filter(message__inquiry__pet=pet)] + [pet.photo]
+    files = [(field.storage, field.name) for field in fields if field.name]
     pet_id = str(pet.pk)
     pet.delete()
-    for file in files:
-        file.delete(save=False)
+    # Only once the delete is committed: a rolled-back delete must keep its files
+    for storage, name in files:
+        transaction.on_commit(lambda s=storage, n=name: s.delete(n))
     for group in (f'pet.{pet_id}', 'browse'):
         push(group, 'pet.removed', pet_id=pet_id)
