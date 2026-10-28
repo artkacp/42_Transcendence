@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   AreaChart,
   Area,
@@ -168,7 +168,16 @@ export function Analytics() {
 
   // Live updates: refetch on analytics.ping (opt-in group above)
   // and on reconnect (catches missed events + re-joins the group). 60s interval covers page visits.
-  useSocketFrame('analytics.ping', () => setRetry((r) => r + 1))
+  // Pings are throttled: the first one starts a 2s window, the rest of the burst joins that one refetch
+  const pingTimer = useRef<number | undefined>(undefined)
+  useSocketFrame('analytics.ping', () => {
+    if (pingTimer.current !== undefined) return
+    pingTimer.current = window.setTimeout(() => {
+      pingTimer.current = undefined
+      setRetry((r) => r + 1)
+    }, 2_000)
+  })
+  useEffect(() => () => window.clearTimeout(pingTimer.current), [])
   useSocketReconnect(() => {
     send({ type: 'analytics.subscribe' })
     setRetry((r) => r + 1)
