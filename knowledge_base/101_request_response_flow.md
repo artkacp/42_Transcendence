@@ -25,13 +25,15 @@ Every REST call follows this path. nginx terminates TLS and proxies `/api/` to t
 
 ### 1. The browser makes a request
 
-The frontend calls the API through `api/client.ts`. For example, fetching a list of pets:
+The frontend calls the API through domain-specific files in `api/`. For example, fetching a list of pets:
 
 ```typescript
-const pets = await get<Pet[]>('/api/pets/');
+// api/browse.ts
+const result = await getPets({ q, species, page, ... })
+// result: { count: 42, next: '/api/pets/?page=2', previous: null, results: Pet[] }
 ```
 
-This sends: `GET https://localhost:8443/api/pets/` with an `Authorization: Bearer <access token>` header.
+This sends: `GET https://localhost:8443/api/pets/?species=dog&page=2` with an `Authorization: Bearer <access token>` header. List endpoints return a paginated envelope, not a bare array — see note 410 for the pagination shape.
 
 ### 2. nginx receives it
 
@@ -68,10 +70,15 @@ For more complex logic, views call service functions, fire signals, or interact 
 
 ### 8. The serializer formats the response
 
-The view passes the model instance(s) to the serializer, which converts them to a Python dict, then Django renders that as JSON:
+The view passes the model instance(s) to the serializer, which converts them to a Python dict, then Django renders that as JSON. A paginated list looks like:
 
 ```json
-[{"id": "...", "name": "Max", "species": "dog", ...}]
+{
+  "count": 42,
+  "next": "/api/pets/?page=2",
+  "previous": null,
+  "results": [{"id": "...", "name": "Max", "species": "dog", ...}]
+}
 ```
 
 ### 9. The response travels back
@@ -108,10 +115,16 @@ DRF returns standard HTTP codes:
 | 404 | Not found |
 | 429 | Rate limited (public API only) |
 
-Validation errors come back as a dict of field → list of errors:
+Validation errors use a shared envelope defined in `core/exceptions.py`:
 ```json
-{"email": ["Enter a valid email address."]}
+{
+  "error": "validation_failed",
+  "detail": "Invalid input.",
+  "fields": {"email": ["Enter a valid email address."]}
+}
 ```
+
+The frontend's `ApiError` reads exactly this shape. See note 410 for the full error contract.
 
 ---
 
