@@ -1,5 +1,6 @@
 // src/views/PetPage.tsx
-// F3a · one pet: loading → ready | error. F3b · "Ask about" opens the adopter's chat under the pet.
+// F3a · one pet: loading → ready | error. F3b · "Ask about" opens the adopter's chat under the pet;
+// the owner gets the inquiries for the pet instead.
 import { useEffect, useState, type MouseEvent } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '../ds'
@@ -10,6 +11,7 @@ import { useAuth } from '../auth/auth-context'
 import { navigate, useIdParam, viewHref } from '../routing'
 import type { Pet } from '../data/types'
 import { PetChat } from './PetChat'
+import { PetInquiries } from './PetInquiries'
 
 type Result = { id: string; pet: Pet } | { id: string; error: string }
 
@@ -173,6 +175,7 @@ export function PetPage() {
       </article>
 
       {inquiryId && !pet.adopted_by && <PetChat key={inquiryId} inquiryId={inquiryId} />}
+      {mine && <PetInquiries petId={pet.id} />}
     </div>
   )
 }
