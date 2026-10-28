@@ -80,7 +80,7 @@ export function PetInquiries({ petId }: { petId: string }) {
           <p role="alert" className="text-text-muted">{ready.error}</p>
         ) : ready.inquiries.length === 0 ? (
           <p className="text-text-muted">
-            <span aria-hidden="true" className="mr-1 font-logo">(・ω・)</span>
+            <span aria-hidden="true" className="mr-1 font-logo">₍^◕◕^₎….</span>
             No inquiries yet
           </p>
         ) : (

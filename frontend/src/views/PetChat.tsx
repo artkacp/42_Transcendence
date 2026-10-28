@@ -156,7 +156,7 @@ export function PetChat({ inquiryId }: { inquiryId: string }) {
         <>
           {ready.messages.length === 0 && (
             <p className="text-text-muted">
-              <span aria-hidden="true" className="mr-1 font-logo">(・ω・)</span>
+              <span aria-hidden="true" className="mr-1 font-logo">︶ᴥ︶...｡O</span>
               No messages yet
             </p>
           )}
