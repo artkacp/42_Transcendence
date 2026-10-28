@@ -145,7 +145,7 @@ export function Notifications() {
       ) : items === null ? (
         <p role="status" className="text-sm text-text-muted">Loading notifications…</p>
       ) : items.length === 0 ? (
-        <EmptyState emoji="🔔" title="No notifications yet" hint="Updates about your pets, friends and adoptions show up here." />
+        <EmptyState emoji="︶ᴥ︶ .｡O" title="No notifications yet" hint="Updates about your pets, friends and adoptions show up here." />
       ) : (
         <>
           <ul className="space-y-2">
