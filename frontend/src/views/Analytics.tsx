@@ -167,7 +167,7 @@ export function Analytics() {
   }, [send])
 
   // Live updates: refetch on analytics.ping (opt-in group above)
-  // and on reconnect (catches missed events + re-joins the group). 60s interval covers page visits.
+  // and on reconnect (catches missed events + re-joins the group). 60s interval is a fallback if a ping is lost.
   // Pings are throttled: the first one starts a 2s window, the rest of the burst joins that one refetch
   const pingTimer = useRef<number | undefined>(undefined)
   useSocketFrame('analytics.ping', () => {

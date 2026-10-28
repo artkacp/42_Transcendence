@@ -347,6 +347,16 @@ class FrameTests(SocketTestCase):
         await tab.disconnect()
         self.assertFalse(get_channel_layer().groups.get('analytics'))
 
+    async def test_opening_a_pet_page_pings_analytics_subscribers(self):
+        tab = await self.signed_in(self.carol)
+        await self.analytics_frame(tab, 'analytics.subscribe')
+
+        shown = await sync_to_async(self.client_for(self.adopter).get)(reverse('pet-detail', args=[self.pet.pk]))
+        self.assertEqual(shown.status_code, status.HTTP_200_OK)
+        self.assertEqual(await tab.receive_json_from(), {'type': 'analytics.ping'})
+
+        await tab.disconnect()
+
     async def test_pet_subscriber_gets_no_chat_or_stage_frames(self):
         owner, adopter, carol = await self.everyone()
         await self.pet_frame(carol, 'pet.subscribe', self.pet)

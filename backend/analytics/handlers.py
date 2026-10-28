@@ -48,6 +48,7 @@ def _write_event(user_id, pet_id, event_type, metadata):
 def handle_pet_viewed(sender, user, pet, **kwargs):
     uid, pid, meta = user.id, pet.id, _pet_metadata(pet)
     transaction.on_commit(lambda: _write_event(uid, pid, 'visit', meta))
+    transaction.on_commit(_ping)
 
 
 def _ping():
