@@ -11,18 +11,6 @@ Reference: full detail on every decision and open question is in the TRD — htt
 | # | Topic | Context | Owner |
 |---|-------|---------|-------|
 | 2 | PM and PO roles | Not yet formally assigned. sarherna acting as initial PM. | All |
-| 5 | OAuth provider | OAuth 2.0 module is under consideration. Provider not yet decided (Google, GitHub, 42 intranet, etc.). | TBD |
-| 6 | 2FA method | 2FA module is under consideration. Method not decided (TOTP app, SMS, email OTP, etc.). | TBD |
-| 8 | Additional modules | Advanced permissions, OAuth, 2FA, i18n are under consideration but not committed. | All |
-| 10 | Branch naming convention | Defined in note 022. Confirm the team has read and agreed. | All |
-
-### Open questions from TRD v3.0 (block specific tasks)
-
-These are unresolved design questions from the TRD. Full context in TRD section 7.2.
-
-| Q | Question | Blocks |
-|---|----------|--------|
-| Q-19 | Where friend requests surface in the UI | F6 (Friends view UI). Backend task B3 can proceed without this. |
 
 ---
 
@@ -41,3 +29,6 @@ These are unresolved design questions from the TRD. Full context in TRD section 
 | Q-26 | Analytics event table read ownership | **Django reads, SQLAlchemy writes.** The Advanced analytics dashboard queries `analytics_event` directly via Django ORM (read-only). SQLAlchemy still owns the table's schema mapping and all writes. The strict "two layers never cross" rule from decision #7 is relaxed to this boundary. See note 520. | 2026-10-11 |
 | 1 | Design system approach | **shadcn/ui — approved.** TRD v4.0 confirms shadcn/ui as the platform design system; all UI is built on standard shadcn components with the platform palette (terracotta/cream/sage/honey) mapped onto shadcn semantic tokens. Decision #4 (Tailwind extra point) is void — shadcn satisfies the design system module requirement. | 2026-10-11 |
 | Q-23 | Dashboard metric definitions | **Active = any event; seeker = visit event; rehomer = listing_published event — all within the selected period.** A user can be counted as both seeker and rehomer on the same day (not mutually exclusive). See note 422. | 2026-10-17 |
+| 5, 6, 8 | Additional modules (OAuth, 2FA, Advanced permissions, i18n) | **Dropped.** ORM Minor and Real-time Features Major confirmed (both already implemented). OAuth, 2FA, Advanced permissions, and i18n will not be pursued. Confirmed module total: 20 pts. | 2026-10-29 |
+| 10 | Branch naming convention | **Adopted in practice.** Convention defined in note 022 and used consistently throughout the project. | 2026-10-29 |
+| Q-19 | Where friend requests surface in the UI | **Dedicated view** (`?view=friends`), linked from the user profile and the analytics page. | 2026-10-29 |
