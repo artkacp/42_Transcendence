@@ -155,10 +155,10 @@ export function PetChat({ inquiryId }: { inquiryId: string }) {
       ) : (
         <>
           {ready.messages.length === 0 && (
-            <p className="text-text-muted">
-              <span aria-hidden="true" className="mr-1 font-logo">︶ᴥ︶...｡O</span>
-              No messages yet
-            </p>
+          <p className="text-terra-400">
+            <span aria-hidden="true" className="mr-1 font-logo">^◕◕^｡｡｡｡</span>
+            No messages yet
+          </p>
           )}
           {/* always mounted, so the first message is announced too */}
           <ol ref={logRef} role="log" aria-live="polite" className="flex max-h-96 flex-col gap-3 overflow-y-auto">
