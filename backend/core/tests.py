@@ -282,6 +282,11 @@ class FrameTests(SocketTestCase):
         # No reply on success; the wait gives the consumer time to join or leave the group
         self.assertTrue(await communicator.receive_nothing())
 
+    async def analytics_frame(self, communicator, kind):
+        await communicator.send_json_to({'type': kind})
+        # Same as pet_frame: an error frame would show up here instead of nothing
+        self.assertTrue(await communicator.receive_nothing())
+
     async def assert_both_got_chat(self, owner, adopter, sender, body, attachment_ids=()):
         frames = [await owner.receive_json_from(), await adopter.receive_json_from()]
         message = await Message.objects.aget()
@@ -308,6 +313,39 @@ class FrameTests(SocketTestCase):
         self.assertTrue(await tab.receive_nothing())
 
         await tab.disconnect()
+
+    async def test_signed_in_socket_gets_no_analytics_pings_without_subscribing(self):
+        tab = await self.signed_in(self.carol)
+
+        await sync_to_async(push)('analytics', 'analytics.ping')
+        self.assertTrue(await tab.receive_nothing())
+
+        await tab.disconnect()
+
+    async def test_subscribed_socket_gets_analytics_pings_until_it_unsubscribes(self):
+        tab = await self.signed_in(self.carol)
+
+        await self.analytics_frame(tab, 'analytics.subscribe')
+        await sync_to_async(push)('analytics', 'analytics.ping')
+        self.assertEqual(await tab.receive_json_from(), {'type': 'analytics.ping'})
+
+        await self.analytics_frame(tab, 'analytics.unsubscribe')
+        await sync_to_async(push)('analytics', 'analytics.ping')
+        self.assertTrue(await tab.receive_nothing())
+
+        await tab.disconnect()
+
+    async def test_subscribing_to_analytics_twice_gets_one_ping_per_push(self):
+        tab = await self.signed_in(self.carol)
+
+        await self.analytics_frame(tab, 'analytics.subscribe')
+        await self.analytics_frame(tab, 'analytics.subscribe')
+        await sync_to_async(push)('analytics', 'analytics.ping')
+        self.assertEqual(await tab.receive_json_from(), {'type': 'analytics.ping'})
+        self.assertTrue(await tab.receive_nothing())
+
+        await tab.disconnect()
+        self.assertFalse(get_channel_layer().groups.get('analytics'))
 
     async def test_pet_subscriber_gets_no_chat_or_stage_frames(self):
         owner, adopter, carol = await self.everyone()
