@@ -4,7 +4,7 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, mixins, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -214,9 +214,15 @@ class FriendshipViewSet(viewsets.GenericViewSet):
     def destroy(self, request, pk=None):
         friendship = self._get_friendship(pk)
         self._assert_is_party(friendship, request.user)
-        if friendship.status == Friendship.STATUS_ACCEPTED:
+        # Lock the row so we notify based on the status we actually delete: a
+        # concurrent accept waits for us, a concurrent delete then finds no row
+        with transaction.atomic():
+            current = Friendship.objects.select_for_update().filter(pk=friendship.pk).first()
+            if current is None:
+                raise NotFound()
+            current.delete()
+        if current.status == Friendship.STATUS_ACCEPTED:
             notify_both_friends(friendship, 'delete', 'Friend removed', 'You and {name} are no longer friends.')
-        friendship.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     # GET /friends/incoming/

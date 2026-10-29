@@ -205,6 +205,32 @@ class FriendshipTests(APITestCase):
         r = self.client.delete(reverse('friendship-detail', args=[f.pk]))
         self.assertEqual(r.status_code, status.HTTP_404_NOT_FOUND)
 
+    def test_second_unfriend_not_found_without_notifying_again(self):
+        f = Friendship.objects.create(
+            requester=self.alice, addressee=self.bob, status=Friendship.STATUS_ACCEPTED
+        )
+        # A request that loaded the row before the first delete removed it
+        stale = Friendship.objects.select_related('requester', 'addressee').get(pk=f.pk)
+        auth(self.client, self.bob)
+        first = self.client.delete(reverse('friendship-detail', args=[f.pk]))
+        with mock.patch.object(FriendshipViewSet, '_get_friendship', return_value=stale):
+            second = self.client.delete(reverse('friendship-detail', args=[f.pk]))
+        self.assertEqual(first.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(second.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(Notification.objects.filter(title='Friend removed').count(), 2)
+
+    def test_cancel_racing_accept_notifies_removal(self):
+        f = Friendship.objects.create(requester=self.alice, addressee=self.bob)
+        # Loaded while pending, then accepted before the delete ran
+        stale = Friendship.objects.select_related('requester', 'addressee').get(pk=f.pk)
+        Friendship.objects.filter(pk=f.pk).update(status=Friendship.STATUS_ACCEPTED)
+        auth(self.client, self.alice)
+        with mock.patch.object(FriendshipViewSet, '_get_friendship', return_value=stale):
+            r = self.client.delete(reverse('friendship-detail', args=[f.pk]))
+        self.assertEqual(r.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Friendship.objects.exists())
+        self.assertEqual(Notification.objects.filter(title='Friend removed').count(), 2)
+
     # --- list / incoming / outgoing ---
 
     def test_list_returns_accepted_only(self):
