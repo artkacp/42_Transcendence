@@ -1,13 +1,17 @@
 // src/views/PetPage.tsx
-// F3a · one pet: loading → ready | error. "Ask about" + chat come in F3b.
+// F3a · one pet: loading → ready | error. F3b · "Ask about" opens the adopter's chat under the pet;
+// the owner gets the inquiries for the pet instead.
 import { useEffect, useState, type MouseEvent } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '../ds'
 import { getPet } from '../api/pets'
+import { getMyInquiries, startInquiry } from '../api/inquiries'
 import { ApiError } from '../api/client'
 import { useAuth } from '../auth/auth-context'
 import { navigate, useIdParam, viewHref } from '../routing'
 import type { Pet } from '../data/types'
+import { PetChat } from './PetChat'
+import { PetInquiries } from './PetInquiries'
 
 type Result = { id: string; pet: Pet } | { id: string; error: string }
 
@@ -45,6 +49,10 @@ export function PetPage() {
   const id = useIdParam()
   const { user } = useAuth()
   const [result, setResult] = useState<Result | null>(null)
+  // kept with its pet id, so another pet's thread is never shown here
+  const [inquiry, setInquiry] = useState<{ petId: string; id: string } | null>(null)
+  const [asking, setAsking] = useState(false)
+  const [askError, setAskError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!id) return
@@ -63,6 +71,34 @@ export function PetPage() {
     }
   }, [id])
 
+  const loaded = result && 'pet' in result && result.id === id ? result.pet : null
+  const canAsk = !!user && !!loaded && loaded.owner.id !== user.id && !loaded.adopted_by
+  const loadedId = loaded?.id
+
+  // an earlier "Ask about" shows its chat right away. Errors stay silent: the button still works
+  useEffect(() => {
+    if (!canAsk || !loadedId) return
+    let cancelled = false
+    getMyInquiries()
+      .then((mine) => {
+        const found = mine.find((inq) => inq.pet.id === loadedId)
+        if (!cancelled && found) setInquiry({ petId: loadedId, id: found.id })
+      })
+      .catch(() => undefined)
+    return () => {
+      cancelled = true
+    }
+  }, [canAsk, loadedId])
+
+  const ask = (petId: string) => {
+    setAsking(true)
+    setAskError(null)
+    startInquiry(petId)
+      .then((inq) => setInquiry({ petId, id: inq.id }))
+      .catch((err) => setAskError(err instanceof ApiError ? err.message : 'Could not start the conversation'))
+      .finally(() => setAsking(false))
+  }
+
   if (!id) return <Message text="No pet selected" />
   // derived, not stored: an answer for another id means we are still loading
   if (!result || result.id !== id) {
@@ -72,6 +108,7 @@ export function PetPage() {
 
   const { pet } = result
   const mine = user?.id === pet.owner.id
+  const inquiryId = inquiry?.petId === pet.id ? inquiry.id : null
 
   return (
     <div className="flex flex-col gap-4">
@@ -120,13 +157,25 @@ export function PetPage() {
             <p className="text-sm text-text-muted">Already adopted</p>
           ) : mine ? (
             <p className="text-sm text-text-muted">This is your listing</p>
+          ) : inquiryId ? (
+            <p className="text-sm text-text-muted">You asked about {pet.name}</p>
           ) : (
-            <Button type="button" disabled>
-              Ask about {pet.name}
-            </Button>
+            <div className="flex flex-col items-start gap-2">
+              <Button type="button" disabled={asking} onClick={() => ask(pet.id)}>
+                Ask about {pet.name}
+              </Button>
+              {askError && (
+                <p role="alert" className="text-sm text-danger">
+                  {askError}
+                </p>
+              )}
+            </div>
           )}
         </div>
       </article>
+
+      {inquiryId && !pet.adopted_by && <PetChat key={inquiryId} inquiryId={inquiryId} />}
+      {mine && <PetInquiries petId={pet.id} />}
     </div>
   )
 }
