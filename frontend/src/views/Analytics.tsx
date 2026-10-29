@@ -342,6 +342,9 @@ export function Analytics() {
               Export CSV
             </Button>
           )}
+          <Button size="sm" variant="secondary" onClick={() => navigate('activity')}>
+            Your activity
+          </Button>
         </div>
       </div>
 
