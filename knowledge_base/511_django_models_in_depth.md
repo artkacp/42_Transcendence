@@ -137,7 +137,7 @@ class Meta:
             name='unique_friendship_unordered_pair',
         ),
         models.CheckConstraint(
-            check=~Q(requester=F('addressee')),
+            condition=~Q(requester=F('addressee')),
             name='no_self_friendship',
         ),
     ]
