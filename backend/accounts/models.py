@@ -3,6 +3,7 @@ import uuid
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 from django.db.models import F, Q
+from django.db.models.functions import Greatest, Least
 from django.utils.text import slugify
 
 from core.uploads import UploadTo
@@ -82,9 +83,11 @@ class Friendship(models.Model):
 
     class Meta:
         constraints = [
+            # One row per pair in either direction, so A→B and B→A can't coexist
             models.UniqueConstraint(
-                fields=['requester', 'addressee'],
-                name='unique_friendship_pair',
+                Least('requester', 'addressee'),
+                Greatest('requester', 'addressee'),
+                name='unique_friendship_unordered_pair',
             ),
             models.CheckConstraint(
                 check=~Q(requester=F('addressee')),
