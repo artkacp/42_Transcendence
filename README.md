@@ -2,29 +2,253 @@
 
 # Pawfect Match
 
+## Description
+
 A peer-to-peer adoption platform for dogs and cats: people rehoming a pet list it, and people looking to adopt browse the listings and talk to the owner directly.
 
 ## Features
 
 - **Browse and adopt** — search listings by species, breed, size, age and location; filter in real time; send an adoption application directly to the owner
-- **Rehome a pet** — publish a listing with photos, description and pet details; manage incoming inquiries and move applications through adoption stages
-- **Chat** — real-time messaging between owner and applicant over WebSocket, scoped to each inquiry
-- **Notifications** — in-app notifications for new messages, application status changes and adoption confirmations
-- **Friends** — add other users, see who is online, start private conversations
-- **Analytics dashboard** — platform-wide adoption metrics and charts (visits, applications, adoptions, active users over time), filterable by pet type and date range
-- **Personal stats** — per-user activity summary: pets viewed, applications sent, listings published, adoptions completed
+- **Rehome a pet** — publish a listing with photos, description and pet details
+- **Adoptions** — track the status of your applications as an adopter; manage incoming inquiries and move them through adoption stages as an owner
+- **Notifications** — in-app notifications for application status changes and adoption confirmations, delivered in real time
+- **Friends** — send and accept friend requests, see who is online, browse your friends list
+- **Analytics dashboard** — platform-wide adoption metrics and charts (visits, applications, adoptions, active users over time), filterable by pet type and date range, with CSV export
 
-## Tech stack
+<!-- TODO(oostapen): add chat once PR #87 is merged -->
+<!-- TODO(iskaraag): add personal stats once personal stats view lands -->
+
+## Tech Stack
 
 | Layer | Technology |
-|---|---|
-| Backend | Django 4.2, Django REST Framework, Django Channels (Daphne) |
+|-------|------------|
+| Backend | Django 5.2, Django REST Framework 3.18 |
+| Real-time | Django Channels 4.3, Daphne 4.2 (ASGI server) |
 | Database | PostgreSQL |
-| ORM | Django ORM + SQLAlchemy 2.0 (analytics store) |
-| Real-time | WebSocket via Django Channels, in-memory channel layer |
+| ORM | Django ORM (all tables) + SQLAlchemy 2.1 (analytics only) |
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS v4 |
-| Infrastructure | Docker, nginx (reverse proxy + static files), HTTPS (local CA) |
-| Monitoring | Prometheus, Grafana |
+| File handling | Pillow 12, Django FileField |
+| Infrastructure | Docker, nginx (reverse proxy + TLS termination + static files) |
+| Monitoring | Prometheus (django-prometheus + node-exporter), Grafana |
+
+The backend is a single Django application served by Daphne, handling both REST requests and WebSocket connections in one process. Django Channels adds WebSocket support without a separate server or message broker. The in-memory channel layer keeps the setup simple — see [Architecture: one backend process](#architecture-one-backend-process).
+
+PostgreSQL is used for its native array and JSONB column types (pet traits, event metadata) and for GIN trigram indexes that power full-text search.
+
+SQLAlchemy 2.1 is used alongside Django ORM to satisfy the ORM module requirement. It owns the `analytics_event` table exclusively; Django ORM owns all other tables. The schema is created by a Django `RunSQL` migration; SQLAlchemy maps the existing table and never emits DDL.
+
+## Database Schema
+
+All tables use UUID primary keys. The `analytics_event` table is owned by SQLAlchemy; all others are managed by Django migrations.
+
+### accounts_user
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | Primary key |
+| email | varchar(254) | Unique |
+| full_name | varchar(150) | |
+| handle | varchar(50) | Unique, auto-generated from full name |
+| city | varchar(100) | Optional |
+| bio | text | Optional |
+| avatar | file | Optional |
+| is_online | boolean | Updated by WebSocket presence |
+| last_seen_at | timestamptz | |
+| date_joined | timestamptz | |
+| is_active | boolean | |
+| is_staff | boolean | |
+
+### accounts_friendship
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | Primary key |
+| requester_id | UUID | FK → accounts_user |
+| addressee_id | UUID | FK → accounts_user |
+| status | varchar(10) | `pending` / `accepted` |
+| created_at | timestamptz | |
+
+Constraints: `unique(requester, addressee)`; `requester ≠ addressee`.
+
+### pets_pet
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | Primary key |
+| owner_id | UUID | FK → accounts_user |
+| name | varchar(100) | |
+| species | varchar(10) | `dog` / `cat` |
+| breed | varchar(100) | |
+| age_years | smallint | 0–40 |
+| size | varchar(10) | `small` / `medium` / `large` |
+| sex | varchar(10) | `male` / `female` |
+| city | varchar(100) | |
+| story | text | Min. 20 chars |
+| traits | varchar[] | Up to 4 values |
+| photo | file | Optional |
+| is_vaccinated | boolean | |
+| is_neutered | boolean | |
+| adopted_by_id | UUID | FK → accounts_user, nullable |
+| adopted_at | timestamptz | Nullable |
+| search_text | text | Denormalised for GIN trigram search |
+| created_at | timestamptz | |
+
+Indexes: `GIN(search_text)` (trigram ops), `(species, size, city)`, `(-created_at)`.
+
+### inquiries_inquiry
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | Primary key |
+| pet_id | UUID | FK → pets_pet |
+| adopter_id | UUID | FK → accounts_user |
+| stage | varchar(15) | `conversation` / `visit` / `decision` / `denied` |
+| last_message_at | timestamptz | Nullable |
+| created_at | timestamptz | |
+
+Constraint: `unique(pet, adopter)`.
+
+### inquiries_message
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | Primary key |
+| inquiry_id | UUID | FK → inquiries_inquiry |
+| sender_id | UUID | FK → accounts_user |
+| body | text | |
+| created_at | timestamptz | |
+
+### inquiries_attachment
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | Primary key |
+| message_id | UUID | FK → inquiries_message, nullable |
+| uploaded_by_id | UUID | FK → accounts_user |
+| file | file | |
+| original_name | varchar(255) | |
+| content_type | varchar(100) | |
+| size_bytes | integer | Max 5 MB |
+| kind | varchar(10) | `image` / `document` |
+| created_at | timestamptz | |
+
+### notifications_notification
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | Primary key |
+| recipient_id | UUID | FK → accounts_user |
+| kind | varchar(10) | `create` / `update` / `delete` / `info` |
+| title | varchar(200) | |
+| body | text | |
+| is_read | boolean | |
+| subject_type | varchar(50) | Optional — type of the related object |
+| subject_id | UUID | Optional — id of the related object |
+| created_at | timestamptz | |
+
+Indexes: `(recipient, -created_at)`; partial `(recipient) WHERE is_read = false`.
+
+### api_apikey
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | Primary key |
+| owner_id | UUID | FK → accounts_user |
+| label | varchar(100) | |
+| prefix | varchar(8) | Unique — first 8 chars of the key, used for lookup |
+| key_hash | varchar(64) | SHA-256 hex digest of the full key |
+| rate_per_minute | integer | Nullable — null means 60 req/min default |
+| created_at | timestamptz | |
+| last_used_at | timestamptz | Nullable |
+| revoked | boolean | |
+
+### analytics_event
+
+Owned by SQLAlchemy. Created via Django `RunSQL` migration.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | Primary key |
+| user_id | UUID | References accounts_user (no FK constraint) |
+| pet_id | UUID | Optional (no FK constraint) |
+| event_type | varchar(30) | e.g. `pet_viewed`, `application_sent`, `listing_published` |
+| occurred_at | timestamptz | Server default: `now()` |
+| metadata | JSONB | Additional event data |
+
+## Modules
+
+Total: **20 points** (7 Majors × 2 pts + 6 Minors × 1 pt). The subject requires 14 points to pass.
+
+| Module | Type | Pts | Implementation | Implementer(s) |
+|--------|------|-----|----------------|----------------|
+| Framework (Django + React) | Major | 2 | Django 5.2 + DRF for the REST API; React 19 + TypeScript + Vite for the frontend | sarherna, artkacp, faikhan, oostapen, iskaraag |
+| Standard User Management | Major | 2 | Registration, JWT auth (access token in-memory, refresh in httpOnly cookie), profile with avatar upload, account settings | sarherna (backend B1/B2), oostapen (F1 auth flow), sarherna (F7 profile) |
+| User Interaction | Major | 2 | Adoption inquiry chat over WebSocket; friend requests and acceptance; profile views for own and other users | sarherna (B5/B6 inquiries), faikhan (B8 chat routing), artkacp (B3/F6 friends), iskaraag (F8 notifications), sarherna (F7) |
+| Real-time Features | Major | 2 | Django Channels WebSocket; group-based broadcasting (user, pet, browse groups); first-frame JWT auth; graceful disconnect; live updates in Browse, Adoptions and Friends | faikhan (B8, F5 socket), iskaraag (F2/F4/F5 views), artkacp (F6) |
+| Public API | Major | 2 | API key management (SHA-256 hashed, shown once); 60 req/min throttle via LocMemCache; GET/POST/PUT/DELETE pets, GET users; OpenAPI schema + Swagger UI | faikhan |
+| Prometheus / Grafana | Major | 2 | django-prometheus (request rate, latency, status codes); node-exporter (host metrics); Grafana "Pawfect Match — Ops" dashboard with BackendDown firing alert | faikhan (D3/D4), artkacp (A3 instrumentation) |
+| Advanced Analytics Dashboard | Major | 2 | Platform-wide metrics from analytics_event via Django ORM; date range + pet type filters; Recharts frontend; CSV export | artkacp (A4 backend, F9 frontend) |
+| Notification system | Minor | 1 | Notification model; real-time delivery to user WebSocket group; badge count, notification center, mark-read | sarherna (B7 service), iskaraag (F8 notification center + toast) |
+| Custom Design System | Minor | 1 | 10+ components (Button, Card, Avatar, Toggle, Select, Chip, Progress, Modal, Toast, Tabs, Input, IconButton); OKLCH palette; semantic token layer; Tailwind v4 `@theme` | oostapen, iskaraag |
+| Advanced Search | Minor | 1 | Filters by species, breed, size, age bucket, city; GIN trigram full-text search on name/breed/traits; debounced input; paginated results | iskaraag (F2 frontend), sarherna (B4 backend) |
+| File Upload | Minor | 1 | Pet photos (JPEG/PNG/WebP), user avatars, message attachments (image + document); Pillow image handling; 5 MB limit; type allowlist | sarherna (B4 pets, B2 avatar), iskaraag (F4 publish modal) |
+| User Activity Analytics | Minor | 1 | SQLAlchemy write pipeline records events on every significant action; `/api/analytics/me/` returns seeker stats (views, applications, adoptions) + rehomer stats (listings, views received, inquiries, adoptions out) | artkacp (A2 pipeline, A5 endpoint) |
+| ORM (SQLAlchemy) | Minor | 1 | SQLAlchemy 2.1 with `mapped_column` declarative style; owns `analytics_event` exclusively; schema created by Django `RunSQL` migration, SQLAlchemy never emits DDL | artkacp (A1 schema, A2 mapping) |
+
+## Team Information
+
+| Login | Role | Area |
+|-------|------|------|
+| sarherna | Product Owner, Technical Lead | Backend: auth, user management, pets, inquiries, adoption stages, notifications service, profile view |
+| akacprzy | Project Manager | Database schema, analytics write pipeline, analytics endpoints, friends backend and view |
+| faikhan | Developer | DevOps, Docker, nginx, HTTPS, WebSocket backend, public API, Prometheus/Grafana |
+| oostapen | Developer | Frontend: auth flow, API client, routing, pet page, design system foundation |
+| iskaraag | Developer | Frontend: browse, rehome, adoptions view, notifications, design system components |
+
+All team members contributed as developers across the full stack.
+
+## Project Management
+
+Work is tracked in Notion (implementation plan and Kanban board). Each task has a scope definition, requirement references and acceptance criteria.
+
+Code review is handled through GitHub pull requests — all code is merged via PR, no direct pushes to main. Each PR goes through at least one review before merging.
+
+Team communication is via Slack. The team meets weekly or bi-weekly to sync on progress and decisions.
+
+## Public API
+
+Third-party clients can access pet and user data using an API key. Keys are tied to a user account and rate-limited to 60 requests per minute by default.
+
+### Getting a key
+
+Sign in to the app and create a key from your profile. Or use the REST endpoint directly:
+
+```sh
+# 1. Sign in and get an access token
+curl -k -s -X POST https://localhost:8443/api/auth/token/ \
+  -H 'Content-Type: application/json' \
+  -d '{"email": "user@example.com", "password": "yourpassword"}' | jq -r '.access'
+
+# 2. Create an API key
+curl -k -s -X POST https://localhost:8443/api/auth/apikeys/ \
+  -H "Authorization: Bearer <access_token>" \
+  -H 'Content-Type: application/json' \
+  -d '{"label": "my-key"}'
+```
+
+The response includes the full key once — it is not shown again. It is stored hashed (SHA-256).
+
+### Using the API
+
+```sh
+curl -k -s https://localhost:8443/api/public/v1/pets/ \
+  -H 'X-API-Key: <your-key>'
+```
+
+### Documentation
+
+- OpenAPI schema: `https://localhost:8443/api/public/v1/schema/`
+- Swagger UI: `https://localhost:8443/api/public/v1/docs/`
 
 ## Instructions
 
@@ -117,3 +341,43 @@ docker compose exec grafana grafana cli admin reset-admin-password <new-password
 ## Architecture: one backend process
 
 The backend runs as **exactly one Daphne process**: no extra workers, no `docker compose up --scale backend=…`, no Redis, and no Celery or other task queue. Real-time messaging (the Channels in-memory channel layer), the online-presence registry and the public API's rate-limit counters all live in that one process's memory, so a second process would silently split them instead of failing.
+
+## Individual Contributions
+
+| Login | Key contributions |
+|-------|------------------|
+| sarherna | Backend domain model (accounts, pets, inquiries, adoption stages, notifications service); profile view (F7); technical architecture and initial project setup |
+| akacprzy | Database schema design; SQLAlchemy analytics write pipeline (A2); django-prometheus instrumentation (A3); platform analytics endpoint (A4); per-user analytics endpoint (A5); friends backend (B3); friends view (F6); analytics dashboard frontend (F9) |
+| faikhan | Docker, nginx and HTTPS setup (D1/D2); Prometheus and node-exporter (D3); Grafana dashboard and alerts (D4); WebSocket backend — JWT auth, presence, chat routing, pet subscriptions (B8); public API — keys, throttle, CRUD, OpenAPI docs (B9); SocketProvider frontend |
+| oostapen | Frontend scaffold and API client (F0); auth flow frontend (F1); pet page (F3); animated logo, favicon and shell layout; design system components |
+| iskaraag | Browse with filters and live updates (F2); rehome and publish flow (F4); adoptions view (F5); notification center and toast (F8); Modal, Toast, Tabs, Select, Chip, Progress design system components |
+
+**Challenges**
+
+<!-- TODO(sarherna): describe your biggest technical challenge -->
+
+<!-- TODO(akacprzy): describe your biggest technical challenge -->
+
+<!-- TODO(faikhan): describe your biggest technical challenge -->
+
+<!-- TODO(oostapen): describe your biggest technical challenge -->
+
+<!-- TODO(iskaraag): describe your biggest technical challenge -->
+
+## Resources
+
+- [Django documentation](https://docs.djangoproject.com/en/5.2/)
+- [Django REST Framework](https://www.django-rest-framework.org/)
+- [Django Channels](https://channels.readthedocs.io/)
+- [SQLAlchemy 2.x](https://docs.sqlalchemy.org/en/20/)
+- [React documentation](https://react.dev/)
+- [Tailwind CSS v4](https://tailwindcss.com/docs)
+- [Prometheus](https://prometheus.io/docs/) / [Grafana](https://grafana.com/docs/)
+
+<!-- TODO(all): add references, tutorials or articles that shaped your implementation -->
+
+## AI Usage
+
+This project was developed with the assistance of AI tools.
+
+<!-- TODO(all): each team member to describe which tools they used, what they generated, and what they wrote themselves -->

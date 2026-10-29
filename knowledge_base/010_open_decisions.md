@@ -31,4 +31,4 @@ Reference: full detail on every decision and open question is in the TRD — htt
 | Q-23 | Dashboard metric definitions | **Active = any event; seeker = visit event; rehomer = listing_published event — all within the selected period.** A user can be counted as both seeker and rehomer on the same day (not mutually exclusive). See note 422. | 2026-10-17 |
 | 5, 6, 8 | Additional modules (OAuth, 2FA, Advanced permissions, i18n) | **Dropped.** ORM Minor and Real-time Features Major confirmed (both already implemented). OAuth, 2FA, Advanced permissions, and i18n will not be pursued. Confirmed module total: 20 pts. | 2026-10-29 |
 | 10 | Branch naming convention | **Adopted in practice.** Convention defined in note 022 and used consistently throughout the project. | 2026-10-29 |
-| Q-19 | Where friend requests surface in the UI | **Dedicated view** (`?view=friends`), linked from the user profile and the analytics page. | 2026-10-29 |
+| Q-19 | Where friend requests surface in the UI | **Requests tab in the Friends view** (`?view=friends`, PR #81) + **add/accept button on other users' profile pages** (PR #76, F7). | 2026-10-29 |

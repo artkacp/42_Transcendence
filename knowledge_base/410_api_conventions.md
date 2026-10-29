@@ -18,7 +18,7 @@ The API has two namespaces with different auth models:
 /api/pets/          ← listings, browse, adopt flow
 /api/inquiries/     ← threads, messages, attachments
 /api/notifications/ ← notification list + mark-read
-/api/analytics/     ← platform dashboard (PromQL proxy) + per-user rollups
+/api/analytics/     ← platform dashboard (Django ORM, reads analytics_event) + per-user rollups
 /api/cities/        ← static city list
 ```
 
