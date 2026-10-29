@@ -49,7 +49,7 @@ Use database constraints rather than (or in addition to) application-level valid
 class Meta:
     constraints = [
         models.CheckConstraint(
-            check=models.Q(age_years__gte=0) & models.Q(age_years__lte=40),
+            condition=models.Q(age_years__gte=0) & models.Q(age_years__lte=40),
             name="pet_age_valid_range",
         ),
     ]

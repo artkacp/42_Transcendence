@@ -1,9 +1,10 @@
 from django.conf import settings
+from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, mixins, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -47,6 +48,19 @@ def notify_both_friends(friendship, kind, title, body):
         (friendship.addressee, friendship.requester),
     ]:
         notify(user, kind, title, body.format(name=friend.full_name), subject=friend)
+
+
+def accept_friendship(friendship):
+    # The status check is part of the UPDATE, so when two accepts race only
+    # one of them matches the row and sends the notifications
+    updated = Friendship.objects.filter(
+        pk=friendship.pk,
+        status=Friendship.STATUS_PENDING,
+    ).update(status=Friendship.STATUS_ACCEPTED)
+    if not updated:
+        raise ValidationError({'detail': 'This request is not pending.'})
+    friendship.status = Friendship.STATUS_ACCEPTED
+    notify_both_friends(friendship, 'create', 'Friend added', 'You and {name} are now friends.')
 
 
 class RefreshCookieMixin:
@@ -162,31 +176,29 @@ class FriendshipViewSet(viewsets.GenericViewSet):
         addressee_id = input_ser.validated_data['addressee']
         me = request.user
 
-        # Check for a reverse pending request (B sending to A when A→B is pending)
-        reverse = Friendship.objects.filter(
-            requester_id=addressee_id,
-            addressee=me,
-            status=Friendship.STATUS_PENDING,
-        ).first()
-        if reverse:
-            reverse.status = Friendship.STATUS_ACCEPTED
-            reverse.save(update_fields=['status'])
-            notify_both_friends(reverse, 'create', 'Friend added', 'You and {name} are now friends.')
-            serializer = FriendshipSerializer(reverse, context={'request': request})
+        existing = self._find_pair(me, addressee_id)
+        if existing is None:
+            try:
+                with transaction.atomic():
+                    friendship = Friendship.objects.create(requester=me, addressee_id=addressee_id)
+            except IntegrityError:
+                # A concurrent request for the same pair inserted its row after
+                # our lookup; resolve against that row instead
+                existing = self._find_pair(me, addressee_id)
+                if existing is None:
+                    raise
+            else:
+                notify(friendship.addressee, 'create', 'Friend request', f'{me.full_name} sent you a friend request.', subject=me)
+                serializer = FriendshipSerializer(friendship, context={'request': request})
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        # They already asked me (B sending to A when A→B is pending): accept it
+        if existing.requester_id == addressee_id and existing.status == Friendship.STATUS_PENDING:
+            accept_friendship(existing)
+            serializer = FriendshipSerializer(existing, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
 
-        # Check if a row already exists in either direction
-        existing = Friendship.objects.filter(
-            Q(requester=me, addressee_id=addressee_id) |
-            Q(requester_id=addressee_id, addressee=me)
-        ).first()
-        if existing:
-            raise ValidationError({'detail': 'A friendship or pending request already exists.'})
-
-        friendship = Friendship.objects.create(requester=me, addressee_id=addressee_id)
-        notify(friendship.addressee, 'create', 'Friend request', f'{me.full_name} sent you a friend request.', subject=me)
-        serializer = FriendshipSerializer(friendship, context={'request': request})
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        raise ValidationError({'detail': 'A friendship or pending request already exists.'})
 
     # POST /friends/{id}/accept/
     @action(detail=True, methods=['post'])
@@ -194,11 +206,7 @@ class FriendshipViewSet(viewsets.GenericViewSet):
         friendship = self._get_friendship(pk)
         if friendship.addressee != request.user:
             raise PermissionDenied('Only the recipient can accept a friend request.')
-        if friendship.status != Friendship.STATUS_PENDING:
-            raise ValidationError({'detail': 'This request is not pending.'})
-        friendship.status = Friendship.STATUS_ACCEPTED
-        friendship.save(update_fields=['status'])
-        notify_both_friends(friendship, 'create', 'Friend added', 'You and {name} are now friends.')
+        accept_friendship(friendship)
         serializer = FriendshipSerializer(friendship, context={'request': request})
         return Response(serializer.data)
 
@@ -206,9 +214,15 @@ class FriendshipViewSet(viewsets.GenericViewSet):
     def destroy(self, request, pk=None):
         friendship = self._get_friendship(pk)
         self._assert_is_party(friendship, request.user)
-        if friendship.status == Friendship.STATUS_ACCEPTED:
+        # Lock the row so we notify based on the status we actually delete: a
+        # concurrent accept waits for us, a concurrent delete then finds no row
+        with transaction.atomic():
+            current = Friendship.objects.select_for_update().filter(pk=friendship.pk).first()
+            if current is None:
+                raise NotFound()
+            current.delete()
+        if current.status == Friendship.STATUS_ACCEPTED:
             notify_both_friends(friendship, 'delete', 'Friend removed', 'You and {name} are no longer friends.')
-        friendship.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     # GET /friends/incoming/
@@ -230,6 +244,13 @@ class FriendshipViewSet(viewsets.GenericViewSet):
         ).select_related('requester', 'addressee')
         serializer = FriendshipSerializer(qs, many=True, context={'request': request})
         return Response(serializer.data)
+
+    def _find_pair(self, me, other_id):
+        # The unordered-pair constraint allows at most one row per pair
+        return Friendship.objects.filter(
+            Q(requester=me, addressee_id=other_id) |
+            Q(requester_id=other_id, addressee=me)
+        ).select_related('requester', 'addressee').first()
 
     def _get_friendship(self, pk):
         return get_object_or_404(self.get_queryset(), pk=pk)
