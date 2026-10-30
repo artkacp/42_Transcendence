@@ -181,7 +181,7 @@ export function Rehome() {
     return (
       <div className="p-8">
         <EmptyState
-          emoji="🔒"
+          emoji="(︶ᴥ ...   ･ﾟ✧"
           title="Sign in to rehome a pet"
           hint="Your listings and the publish form live behind your account."
           action={<Button onClick={() => navigate('auth')}>Sign in</Button>}

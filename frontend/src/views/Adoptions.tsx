@@ -246,7 +246,10 @@ export function Adoptions() {
     return (
       <div className="p-8">
         <EmptyState
-          emoji="🔒"
+          emoji="```
+(︶ᴥ ....
+        ╰ᐢ◕ ◕ᐢ╮
+```"
           title="Sign in to see your adoptions"
           hint="Your conversations with pet owners live behind your account."
           action={<Button onClick={() => navigate('auth')}>Sign in</Button>}

@@ -229,7 +229,7 @@ export function Analytics() {
           <p className="py-16 text-center text-sm text-text-muted">Loading…</p>
         ) : (
           <EmptyState
-            emoji="🔒"
+            emoji="(︶ᴥ ...   ･ﾟ✧"
             title="Sign in to view analytics"
             hint="Platform analytics are for members only."
             action={<Button onClick={() => navigate('auth')}>Sign in</Button>}

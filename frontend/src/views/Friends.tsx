@@ -268,7 +268,7 @@ export function Friends() {
     return (
       <div className="p-8">
         <EmptyState
-          emoji="🔒"
+          emoji="(︶ᴥ ...   ･ﾟ✧"
           title="Sign in to see your friends"
           hint="Friends are visible to signed-in members only."
           action={<Button onClick={() => navigate('auth')}>Sign in</Button>}

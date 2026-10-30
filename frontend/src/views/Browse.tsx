@@ -123,7 +123,7 @@ export function Browse() {
           <p className="py-16 text-center text-sm text-text-muted">Loading…</p>
         ) : (
           <EmptyState
-            emoji="🔒"
+            emoji="(︶ᴥ ...   ･ﾟ✧"
             title="Sign in to meet the pals"
             hint="Browsing is for members — it only takes a minute."
             action={<Button onClick={() => navigate('auth')}>Sign in</Button>}

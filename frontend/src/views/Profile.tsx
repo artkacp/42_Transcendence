@@ -385,7 +385,7 @@ export function Profile() {
     return (
       <div className="p-8">
         <EmptyState
-          emoji="🔒"
+          emoji="(︶ᴥ ...   ･ﾟ✧"
           title="Sign in to see profiles"
           hint="Profiles are visible to signed-in members only."
           action={<Button onClick={() => navigate('auth')}>Sign in</Button>}
