@@ -42,18 +42,23 @@ export function PrivacyPolicy() {
         <p>Messages and attachments you exchange with other users about an adoption.</p>
       </Block>
       <Block title="How we use it">
-        <p>Only to run the service: signing you in, showing listings, delivering messages and notifications, and keeping adoption conversations working.</p>
+        <p>To run the service: signing you in, showing listings, delivering messages and notifications, and keeping adoption conversations working. Activity data is used only as described under Analytics.</p>
         <p>We do not sell your data, show ads or share it with third parties.</p>
+      </Block>
+      <Block title="Analytics">
+        <p>We record an activity event when you view a pet page, send an adoption inquiry, send a message, complete an adoption, publish a listing or register.</p>
+        <p>Events are stored in our own PostgreSQL database, tied to your account, and include a snapshot of the pet's features.</p>
+        <p>They feed the platform-wide dashboard, in aggregated form, and your own Activity page. They are not shared with third parties.</p>
       </Block>
       <Block title="Who can see what">
         <p>Your profile, avatar and pet listings are visible to other signed-in users.</p>
         <p>Messages and chat attachments are visible only to the people in that conversation.</p>
       </Block>
       <Block title="Cookies">
-        <p>We use a single secure, http-only cookie to keep you signed in. No tracking or advertising cookies.</p>
+        <p>We use a single secure, http-only cookie to keep you signed in. No advertising or third-party tracking cookies.</p>
       </Block>
       <Block title="Your rights">
-        <p>You can edit your profile at any time and delete your account; deleting it removes your profile, listings and uploaded files.</p>
+        <p>You can edit your profile at any time. To delete your account, contact the team through the project repository.</p>
         <p>Questions about your data: contact the team through the project repository.</p>
       </Block>
     </Page>

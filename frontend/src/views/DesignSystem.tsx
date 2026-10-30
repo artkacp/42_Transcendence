@@ -1,10 +1,23 @@
 import { useState, type ReactNode } from 'react'
-import { Heart, Plus, Trash2 } from 'lucide-react'
+import {
+  ArrowLeft, BarChart2, Bell, Camera, Check, CheckCheck, ChevronDown, ChevronLeft, ChevronRight, Download, Heart,
+  HeartHandshake, ImagePlus, Info, LogIn, LogOut, Minus, PawPrint, Pencil, Plus, Search, SlidersHorizontal, SwatchBook,
+  Trash2, TrendingDown, TrendingUp, UserMinus, UserPlus, UserRound, Users, X,
+} from 'lucide-react'
 import { TOKEN_NAMES } from '../palettes/tokens'
 import { Badge, Button, Card, IconButton, Progress, Select, Chip, Toggle, Avatar, EmptyState, Pagination, Input, Tabs, Modal, Toast, Textarea } from '../ds'
 import { useToast } from '../contexts/toast/ToastContext'
 import { AuthForm } from './AuthForm'
 import { AUTH_MOCKS } from './AuthForm.mocks'
+
+// Every lucide icon the app imports; keep in sync when one is added
+const ICONS = {
+  ArrowLeft, BarChart2, Bell, Camera, Check, CheckCheck, ChevronDown, ChevronLeft, ChevronRight, Download, Heart,
+  HeartHandshake, ImagePlus, Info, LogIn, LogOut, Minus, PawPrint, Pencil, Plus, Search, SlidersHorizontal, SwatchBook,
+  Trash2, TrendingDown, TrendingUp, UserMinus, UserPlus, UserRound, Users, X,
+}
+
+const ICON_SIZES = ['size-3', 'size-3.5', 'size-4', 'size-5']
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -339,6 +352,35 @@ export function DesignSystem() {
         <p className="font-sans text-base text-text mt-1">
           Outfit — body text. A calm senior cat looking for a reading corner.
         </p>
+      </Section>
+
+      <Section title="Icons">
+        <Row label="In use (lucide-react)">
+          <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {Object.entries(ICONS).map(([name, Icon]) => (
+              <div key={name} className="flex items-center gap-2 text-sm text-text-muted">
+                <Icon className="size-5 text-text" aria-hidden="true" />
+                {name}
+              </div>
+            ))}
+          </div>
+        </Row>
+        <Row label="Sizes">
+          {ICON_SIZES.map((size) => (
+            <div key={size} className="flex items-center gap-2 text-sm text-text-muted">
+              <PawPrint className={`${size} text-text`} aria-hidden="true" />
+              {size}
+            </div>
+          ))}
+        </Row>
+        <Row label="Stroke">
+          <p className="text-sm text-text-muted">Lucide default (2), no explicit strokeWidth on icons.</p>
+        </Row>
+        <Row label="IconButton">
+          <IconButton label="Add to favourites">
+            <Heart className="size-5" />
+          </IconButton>
+        </Row>
       </Section>
 
       <Section title="Button">

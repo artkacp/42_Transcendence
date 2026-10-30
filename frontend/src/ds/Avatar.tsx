@@ -1,12 +1,20 @@
 import type { HTMLAttributes } from "react";
+import { PawPrint } from "lucide-react";
 
 type AvatarSize = 'sm' | 'md' | 'lg' | 'xl'
 
 const sizes: Record<AvatarSize, string> = {
-	sm: 'size-8 text-xs',
-	md: 'size-10 text-sm',
-	lg: 'size-14 text-lg',
-	xl: 'size-24 text-3xl',
+	sm: 'size-8',
+	md: 'size-10',
+	lg: 'size-14',
+	xl: 'size-24',
+}
+
+const pawSizes: Record<AvatarSize, string> = {
+	sm: 'size-4',
+	md: 'size-5',
+	lg: 'size-7',
+	xl: 'size-12',
 }
 
 const dotSizes: Record<AvatarSize, string> = {
@@ -23,21 +31,13 @@ export interface AvatarProps extends HTMLAttributes<HTMLDivElement> {
 	online?: boolean
 }
 
-function initials(name: string): string {
-
-	const parts = name.trim().split(/\s+/);
-	const first = parts[0]?.[0] ?? '';
-	const last = parts.length > 1 ? parts[parts.length - 1]?.[0] ?? '' : '';
-	return (first.toUpperCase() + last.toUpperCase());
-}
-
 export function Avatar({ src, name, size = 'md', online, className='', ...rest}: AvatarProps) {
 	return (
 		<div className={`relative inline-block shrink-0 ${sizes[size]} ${className}`} {...rest} >
 			{src ? (
 				<img src={src} alt={name} className="size-full rounded-full object-cover" />) : (
-				<div className="flex size-full items-center justify-center rounded-full bg-sage-100 font-semibold text-sage-600">
-					{initials(name)}
+				<div role="img" aria-label={name} className="flex size-full items-center justify-center rounded-full bg-sage-100 text-sage-600">
+					<PawPrint className={pawSizes[size]} aria-hidden="true" />
 				</div>
 			)}
 			{online != null && (
