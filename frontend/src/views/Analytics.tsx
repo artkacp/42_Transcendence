@@ -284,7 +284,7 @@ export function Analytics() {
               All species
             </Chip>
             <Chip active={species === 'dog'} onClick={() => { setSpecies('dog'); setBreed('') }}>
-              🐶 Dogs
+              U・ᴥ・U Dogs
             </Chip>
             <Chip active={species === 'cat'} onClick={() => { setSpecies('cat'); setBreed('') }}>
               🐱 Cats

@@ -10,7 +10,7 @@ const MAX_TRAITS = 4
 const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const MAX_PHOTO_MB = 5
 
-const SPECIES_LABELS: Record<Species, string> = { dog: '🐶 Dog', cat: '🐱 Cat' }
+const SPECIES_LABELS: Record<Species, string> = { dog: 'U・ᴥ・U Dog', cat: '🐱 Cat' }
 
 const capitalize = (value: string) => value.charAt(0).toUpperCase() + value.slice(1)
 

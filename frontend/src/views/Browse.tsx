@@ -168,7 +168,7 @@ export function Browse() {
             All pals
           </Chip>
           <Chip active={species === 'dog'} onClick={() => handleSpeciesChange('dog')}>
-            🐶 Dogs
+            U・ᴥ・U Dogs
           </Chip>
           <Chip active={species === 'cat'} onClick={() => handleSpeciesChange('cat')}>
             🐱 Cats
