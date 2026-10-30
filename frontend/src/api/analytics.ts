@@ -106,3 +106,19 @@ export function getPlatformAnalytics(filters: AnalyticsFilters = {}) {
   const query = params.toString()
   return get<AnalyticsResponse>(query ? `/api/analytics/platform/?${query}` : '/api/analytics/platform/')
 }
+
+export interface UserAnalytics {
+  as_seeker: {
+    pets_viewed: number
+    applications_sent: number
+    adoptions_completed: number
+  }
+  as_rehomer: {
+    listings_published: number
+    views_received: number
+    inquiries_received: number
+    pets_adopted_out: number
+  }
+}
+
+export const getMyAnalytics = () => get<UserAnalytics>('/api/analytics/me/')

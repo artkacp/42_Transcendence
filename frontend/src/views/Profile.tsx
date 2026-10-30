@@ -194,7 +194,12 @@ function OwnProfile({ me }: { me: Me }) {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <h1 className="font-display text-4xl font-black tracking-tight">Your profile</h1>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <h1 className="font-display text-4xl font-black tracking-tight">Your profile</h1>
+        <Button size="sm" variant="secondary" onClick={() => navigate('activity')}>
+          Your activity
+        </Button>
+      </div>
       <Card className="p-6">
         <AvatarEditor me={me} />
         {error ? (
