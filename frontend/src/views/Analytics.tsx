@@ -287,7 +287,7 @@ export function Analytics() {
               U・ᴥ・U Dogs
             </Chip>
             <Chip active={species === 'cat'} onClick={() => { setSpecies('cat'); setBreed('') }}>
-              🐱 Cats
+              =^ ◗ ◗^= Cats
             </Chip>
           </div>
           <Button

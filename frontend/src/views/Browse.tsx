@@ -171,7 +171,7 @@ export function Browse() {
             U・ᴥ・U Dogs
           </Chip>
           <Chip active={species === 'cat'} onClick={() => handleSpeciesChange('cat')}>
-            🐱 Cats
+            =^ ◗ ◗^= Cats
           </Chip>
           <Button
             size="sm"
