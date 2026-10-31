@@ -8,15 +8,14 @@ A peer-to-peer adoption platform for dogs and cats: people rehoming a pet list i
 
 ## Features
 
-- **Browse and adopt** — search listings by species, breed, size, age and location; filter in real time; send an adoption application directly to the owner
-- **Rehome a pet** — publish a listing with photos, description and pet details
-- **Adoptions** — track the status of your applications as an adopter; manage incoming inquiries and move them through adoption stages as an owner
-- **Notifications** — in-app notifications for application status changes and adoption confirmations, delivered in real time
-- **Friends** — send and accept friend requests, see who is online, browse your friends list
-- **Analytics dashboard** — platform-wide adoption metrics and charts (visits, applications, adoptions, active users over time), filterable by pet type and date range, with CSV export
-
-<!-- TODO(oostapen): add chat once PR #87 is merged -->
-<!-- TODO(iskaraag): add personal stats once personal stats view lands -->
+- **Browse and adopt** — search listings by species, breed, size, age and location; filter in real time; send an adoption application directly to the owner *(iskaraag, sarherna)*
+- **Rehome a pet** — publish a listing with photos, description and pet details *(iskaraag, sarherna)*
+- **Chat** — real-time messaging between owner and applicant over WebSocket, scoped to each adoption inquiry *(oostapen, faikhan, sarherna)*
+- **Adoptions** — track the status of your applications as an adopter; manage incoming inquiries and move them through adoption stages as an owner *(iskaraag, faikhan, sarherna)*
+- **Notifications** — in-app notifications for application status changes and adoption confirmations, delivered in real time *(iskaraag, sarherna)*
+- **Friends** — send and accept friend requests, see who is online, browse your friends list and discover new people *(artkacp, sarherna)*
+- **Analytics dashboard** — platform-wide adoption metrics and charts (visits, applications, adoptions, active users over time), filterable by pet type and date range, with CSV export *(artkacp)*
+- **Personal stats** — per-user activity summary: pets viewed, applications sent, listings published, adoptions completed *(artkacp, iskaraag)*
 
 ## Tech Stack
 
@@ -183,7 +182,7 @@ Total: **20 points** (7 Majors × 2 pts + 6 Minors × 1 pt). The subject require
 |--------|------|-----|----------------|----------------|
 | Framework (Django + React) | Major | 2 | Django 5.2 + DRF for the REST API; React 19 + TypeScript + Vite for the frontend | sarherna, artkacp, faikhan, oostapen, iskaraag |
 | Standard User Management | Major | 2 | Registration, JWT auth (access token in-memory, refresh in httpOnly cookie), profile with avatar upload, account settings | sarherna (backend B1/B2), oostapen (F1 auth flow), sarherna (F7 profile) |
-| User Interaction | Major | 2 | Adoption inquiry chat over WebSocket; friend requests and acceptance; profile views for own and other users | sarherna (B5/B6 inquiries), faikhan (B8 chat routing), artkacp (B3/F6 friends), iskaraag (F8 notifications), sarherna (F7) |
+| User Interaction | Major | 2 | Adoption inquiry chat over WebSocket; friend requests and acceptance; profile views for own and other users | sarherna (B5/B6 inquiries), faikhan (B8 chat routing), oostapen (F3b chat UI), artkacp (B3/F6 friends), iskaraag (F8 notifications), sarherna (F7) |
 | Real-time Features | Major | 2 | Django Channels WebSocket; group-based broadcasting (user, pet, browse groups); first-frame JWT auth; graceful disconnect; live updates in Browse, Adoptions and Friends | faikhan (B8, F5 socket), iskaraag (F2/F4/F5 views), artkacp (F6) |
 | Public API | Major | 2 | API key management (SHA-256 hashed, shown once); 60 req/min throttle via LocMemCache; GET/POST/PUT/DELETE pets, GET users; OpenAPI schema + Swagger UI | faikhan |
 | Prometheus / Grafana | Major | 2 | django-prometheus (request rate, latency, status codes); node-exporter (host metrics); Grafana "Pawfect Match — Ops" dashboard with BackendDown firing alert | faikhan (D3/D4), artkacp (A3 instrumentation) |
@@ -354,9 +353,9 @@ The backend runs as **exactly one Daphne process**: no extra workers, no `docker
 
 **Challenges**
 
-<!-- TODO(sarherna): describe your biggest technical challenge -->
+**sarherna:** Planning: Bringing the project's requirements from the idea to an actual tangible system design and plan. And handling authentication: Got to read for a while and sit in focus to understand how does JWT authentication and cryptography work in this use case.
 
-<!-- TODO(akacprzy): describe your biggest technical challenge -->
+**akacprzy:** This project was the first time I wrote any frontend code. Before it, everything I'd done was backend or data. Learning it was like learning a whole new programming language.
 
 <!-- TODO(faikhan): describe your biggest technical challenge -->
 
@@ -381,3 +380,13 @@ The backend runs as **exactly one Daphne process**: no extra workers, no `docker
 This project was developed with the assistance of AI tools.
 
 <!-- TODO(all): each team member to describe which tools they used, what they generated, and what they wrote themselves -->
+
+<!-- TODO(sarherna): describe your biggest technical challenge -->
+
+**akacprzy:** Used AI tools throughout the project: to get up to speed on unfamiliar topics quickly, to review my own code before posting PRs and catch edge cases I might have missed, to draft documentation and KB notes which I then edited for accuracy and tone. Lastly, to get summaries of my teammates issued work to keep track of project proress and status and catch up quickly after breaks. 
+
+<!-- TODO(faikhan): describe your biggest technical challenge -->
+
+<!-- TODO(oostapen): describe your biggest technical challenge -->
+
+<!-- TODO(iskaraag): describe your biggest technical challenge -->
