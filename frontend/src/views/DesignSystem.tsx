@@ -427,7 +427,7 @@ export function DesignSystem() {
         <Row label="Variants">
           <div className="w-full space-y-4">
             <EmptyState
-              emoji="🔍"
+              emoji="⎇(◔ _◑)"
               title="No pals match those filters"
               hint="Try clearing the search — someone fluffy is out there."
               action={<Button variant="secondary" size="sm">Clear filters</Button>}

@@ -257,7 +257,7 @@ export function Browse() {
         <p className="py-16 text-center text-sm text-text-muted">Loading pals…</p>
       ) : count === 0 && hasFilters ? (
         <EmptyState
-          emoji="🔍"
+          emoji="⎇(◔ _◑)"
           title="No pals match those filters"
           hint="Try clearing the search — someone fluffy is out there."
           action={
