@@ -154,7 +154,7 @@ function YourListings() {
       </div>
 
       {error ? (
-        <EmptyState emoji="😿" title="Something went wrong" hint={error} />
+        <EmptyState emoji="≧◒_◒≦" title="Something went wrong" hint={error} />
       ) : pets === null ? (
         <p role="status" className="text-sm text-text-muted">Loading your listings…</p>
       ) : pets.length === 0 ? (

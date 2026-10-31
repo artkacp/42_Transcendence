@@ -302,7 +302,7 @@ export function Friends() {
           <>
             {friendsError ? (
               <EmptyState
-                emoji="😿"
+                emoji="≧◒_◒≦"
                 title="Couldn't load friends"
                 hint="Something went wrong. Try again in a moment."
                 action={<Button variant="secondary" onClick={load}>Retry</Button>}
@@ -319,7 +319,7 @@ export function Friends() {
           <>
             {requestsError ? (
               <EmptyState
-                emoji="😿"
+                emoji="≧◒_◒≦"
                 title="Couldn't load requests"
                 hint="Something went wrong. Try again in a moment."
                 action={<Button variant="secondary" onClick={load}>Retry</Button>}

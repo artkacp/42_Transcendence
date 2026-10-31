@@ -348,7 +348,7 @@ function OtherProfile({ userId }: { userId: string }) {
     }
   }, [userId, reload])
 
-  if (error) return <EmptyState emoji="😿" title="Profile not available" hint={error} />
+  if (error) return <EmptyState emoji="≧◒_◒≦" title="Profile not available" hint={error} />
   if (!user) return <p role="status" className="text-sm text-text-muted">Loading profile…</p>
 
   return (
