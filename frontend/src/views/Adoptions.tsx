@@ -225,7 +225,7 @@ function YourAdoptions({ meId }: { meId?: string }) {
         <p role="status" className="text-sm text-text-muted">Loading your adoptions…</p>
       ) : rows.length === 0 ? (
         <EmptyState
-          emoji="┐(︶▽︶)┌"
+          emoji="┐(︶▼︶)┌" className="[&>span]:font-black [&>span]:[-webkit-text-stroke:1px_currentColor]"
           title="No adoptions yet"
           hint="Find a pet in Browse and start a conversation with its owner."
           action={<Button onClick={() => navigate('browse')}>Browse pets</Button>}
