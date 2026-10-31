@@ -220,12 +220,12 @@ function YourAdoptions({ meId }: { meId?: string }) {
       </div>
 
       {error ? (
-        <EmptyState emoji="😿" title="Something went wrong" hint={error} />
+        <EmptyState emoji="≧◒_◒≦" title="Something went wrong" hint={error} />
       ) : rows === null ? (
         <p role="status" className="text-sm text-text-muted">Loading your adoptions…</p>
       ) : rows.length === 0 ? (
         <EmptyState
-          emoji="🐾"
+          emoji="┐(︶▽︶)┌"
           title="No adoptions yet"
           hint="Find a pet in Browse and start a conversation with its owner."
           action={<Button onClick={() => navigate('browse')}>Browse pets</Button>}
@@ -246,10 +246,7 @@ export function Adoptions() {
     return (
       <div className="p-8">
         <EmptyState
-          emoji="```
-(︶ᴥ ....
-        ╰ᐢ◕ ◕ᐢ╮
-```"
+          emoji="(︶ᴥ .  .   .   .     ╰ᐢ◕ ◕ᐢ╮"
           title="Sign in to see your adoptions"
           hint="Your conversations with pet owners live behind your account."
           action={<Button onClick={() => navigate('auth')}>Sign in</Button>}
