@@ -368,7 +368,7 @@ export function Analytics() {
               (ᐢᴥᐢ)✓ Vaccinated
             </Chip>
             <Chip active={neutered} onClick={() => setNeutered(!neutered)}>
-              ✂️ Neutered
+              ✂ Neutered
             </Chip>
           </div>
         )}

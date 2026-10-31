@@ -236,7 +236,7 @@ export function Browse() {
               (ᐢᴥᐢ)✓ Vaccinated
             </Chip>
             <Chip active={neuteredOnly} onClick={() => changeFilter(() => setNeuteredOnly(!neuteredOnly))}>
-              ✂️ Neutered
+              ✂ Neutered
             </Chip>
           </div>
         )}
@@ -268,7 +268,7 @@ export function Browse() {
         />
       ) : count === 0 ? (
         <EmptyState
-          emoji="🐾"
+          emoji="ᴥ..."
           title="No pals listed yet"
           hint="Be the first to find a pet a new home."
           action={
