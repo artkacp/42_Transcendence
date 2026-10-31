@@ -365,7 +365,7 @@ export function Analytics() {
               onChange={(e) => setTrait(e.target.value)}
             />
             <Chip active={vaccinated} onClick={() => setVaccinated(!vaccinated)}>
-              💉 Vaccinated
+              (ᐢᴥᐢ)✓ Vaccinated
             </Chip>
             <Chip active={neutered} onClick={() => setNeutered(!neutered)}>
               ✂️ Neutered

@@ -233,7 +233,7 @@ export function Browse() {
               onChange={(e) => changeFilter(() => setTrait(e.target.value))}
             />
             <Chip active={vaccinatedOnly} onClick={() => changeFilter(() => setVaccinatedOnly(!vaccinatedOnly))}>
-              💉 Vaccinated
+              (ᐢᴥᐢ)✓ Vaccinated
             </Chip>
             <Chip active={neuteredOnly} onClick={() => changeFilter(() => setNeuteredOnly(!neuteredOnly))}>
               ✂️ Neutered
