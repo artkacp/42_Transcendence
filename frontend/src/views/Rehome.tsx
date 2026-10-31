@@ -159,8 +159,8 @@ function YourListings() {
         <p role="status" className="text-sm text-text-muted">Loading your listings…</p>
       ) : pets.length === 0 ? (
         <EmptyState
-          emoji="🏡"
-          title="No listings yet"
+          emoji="︶ᴥ .. ･ﾟ✧"
+          title="№ listings yet"
           hint="Publish your first pet and adopters will find them in Browse."
           action={<Button onClick={openPublish}>Rehome a pet</Button>}
         />
