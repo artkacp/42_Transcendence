@@ -13,9 +13,10 @@ A peer-to-peer adoption platform for dogs and cats: people rehoming a pet list i
 - **Chat** — real-time messaging between owner and applicant over WebSocket, scoped to each adoption inquiry *(oostapen, faikhan, sarherna)*
 - **Adoptions** — track the status of your applications as an adopter; manage incoming inquiries and move them through adoption stages as an owner *(iskaraag, faikhan, sarherna)*
 - **Notifications** — in-app notifications for application status changes and adoption confirmations, delivered in real time *(iskaraag, sarherna)*
-- **Friends** — send and accept friend requests, see who is online, browse your friends list and discover new people *(artkacp, sarherna)*
-- **Analytics dashboard** — platform-wide adoption metrics and charts (visits, applications, adoptions, active users over time), filterable by pet type and date range, with CSV export *(artkacp)*
-- **Personal stats** — per-user activity summary: pets viewed, applications sent, listings published, adoptions completed *(artkacp, iskaraag)*
+- **Friends** — send and accept friend requests, see who is online, browse your friends list and discover new people *(akacprzy, sarherna)*
+- **Analytics dashboard** — platform-wide adoption metrics and charts (visits, applications, adoptions, active users over time), filterable by pet type and date range, with CSV export *(akacprzy)*
+- **Personal stats** — per-user activity summary: pets viewed, applications sent, listings published, adoptions completed *(akacprzy, iskaraag)*
+- **User profiles** — view your own profile and other users' profiles; edit bio, city and avatar *(sarherna, oostapen)*
 
 ## Tech Stack
 
@@ -32,7 +33,7 @@ A peer-to-peer adoption platform for dogs and cats: people rehoming a pet list i
 
 The backend is a single Django application served by Daphne, handling both REST requests and WebSocket connections in one process. Django Channels adds WebSocket support without a separate server or message broker. The in-memory channel layer keeps the setup simple — see [Architecture: one backend process](#architecture-one-backend-process).
 
-PostgreSQL is used for its native array and JSONB column types (pet traits, event metadata) and for GIN trigram indexes that power full-text search.
+PostgreSQL is used for its native array and JSONB column types (pet traits, event metadata) and for the GIN trigram index that speeds up text search on pets.
 
 SQLAlchemy 2.1 is used alongside Django ORM to satisfy the ORM module requirement. It owns the `analytics_event` table exclusively; Django ORM owns all other tables. The schema is created by a Django `RunSQL` migration; SQLAlchemy maps the existing table and never emits DDL.
 
@@ -180,19 +181,20 @@ Total: **20 points** (7 Majors × 2 pts + 6 Minors × 1 pt). The subject require
 
 | Module | Type | Pts | Implementation | Implementer(s) |
 |--------|------|-----|----------------|----------------|
-| Framework (Django + React) | Major | 2 | Django 5.2 + DRF for the REST API; React 19 + TypeScript + Vite for the frontend | sarherna, artkacp, faikhan, oostapen, iskaraag |
-| Standard User Management | Major | 2 | Registration, JWT auth (access token in-memory, refresh in httpOnly cookie), profile with avatar upload, account settings | sarherna (backend B1/B2), oostapen (F1 auth flow), sarherna (F7 profile) |
-| User Interaction | Major | 2 | Adoption inquiry chat over WebSocket; friend requests and acceptance; profile views for own and other users | sarherna (B5/B6 inquiries), faikhan (B8 chat routing), oostapen (F3b chat UI), artkacp (B3/F6 friends), iskaraag (F8 notifications), sarherna (F7) |
-| Real-time Features | Major | 2 | Django Channels WebSocket; group-based broadcasting (user, pet, browse groups); first-frame JWT auth; graceful disconnect; live updates in Browse, Adoptions and Friends | faikhan (B8, F5 socket), iskaraag (F2/F4/F5 views), artkacp (F6) |
-| Public API | Major | 2 | API key management (SHA-256 hashed, shown once); 60 req/min throttle via LocMemCache; GET/POST/PUT/DELETE pets, GET users; OpenAPI schema + Swagger UI | faikhan |
-| Prometheus / Grafana | Major | 2 | django-prometheus (request rate, latency, status codes); node-exporter (host metrics); Grafana "Pawfect Match — Ops" dashboard with BackendDown firing alert | faikhan (D3/D4), artkacp (A3 instrumentation) |
-| Advanced Analytics Dashboard | Major | 2 | Platform-wide metrics from analytics_event via Django ORM; date range + pet type filters; Recharts frontend; CSV export | artkacp (A4 backend, F9 frontend) |
-| Notification system | Minor | 1 | Notification model; real-time delivery to user WebSocket group; badge count, notification center, mark-read | sarherna (B7 service), iskaraag (F8 notification center + toast) |
-| Custom Design System | Minor | 1 | 10+ components (Button, Card, Avatar, Toggle, Select, Chip, Progress, Modal, Toast, Tabs, Input, IconButton); OKLCH palette; semantic token layer; Tailwind v4 `@theme` | oostapen, iskaraag |
-| Advanced Search | Minor | 1 | Filters by species, breed, size, age bucket, city; GIN trigram full-text search on name/breed/traits; debounced input; paginated results | iskaraag (F2 frontend), sarherna (B4 backend) |
-| File Upload | Minor | 1 | Pet photos (JPEG/PNG/WebP), user avatars, message attachments (image + document); Pillow image handling; 5 MB limit; type allowlist | sarherna (B4 pets, B2 avatar), iskaraag (F4 publish modal) |
-| User Activity Analytics | Minor | 1 | SQLAlchemy write pipeline records events on every significant action; `/api/analytics/me/` returns seeker stats (views, applications, adoptions) + rehomer stats (listings, views received, inquiries, adoptions out) | artkacp (A2 pipeline, A5 endpoint) |
-| ORM (SQLAlchemy) | Minor | 1 | SQLAlchemy 2.1 with `mapped_column` declarative style; owns `analytics_event` exclusively; schema created by Django `RunSQL` migration, SQLAlchemy never emits DDL | artkacp (A1 schema, A2 mapping) |
+| Framework (Django + React) | Major | 2 | Django 5.2 + DRF for the REST API; React 19 + TypeScript + Vite for the frontend | sarherna, akacprzy, faikhan, oostapen, iskaraag |
+| Standard User Management | Major | 2 | Registration and login with JWT (access token in memory, refresh token in an httpOnly cookie); profile page with editable info; avatar upload with a default avatar; friends with online status | sarherna, oostapen, akacprzy |
+| User Interaction | Major | 2 | Adoption chat between owner and adopter over WebSocket; friend requests, accept and remove, friends list; own and other users' profiles | sarherna, faikhan, oostapen, akacprzy |
+| Real-time Features | Major | 2 | Django Channels WebSocket with first-frame JWT auth; group-based broadcasting (user, pet, browse, analytics); reconnect handling; live chat, presence, notifications and list updates | faikhan |
+| Public API | Major | 2 | API keys stored hashed and shown once; 60 requests/min throttle per key; GET, POST, PUT and DELETE on pets plus GET options; OpenAPI schema and Swagger UI | faikhan |
+| Prometheus / Grafana | Major | 2 | django-prometheus (request rate, latency, status codes); node-exporter (host metrics); Grafana "Pawfect Match — Ops" dashboard with alert rules; Grafana behind login | faikhan |
+| Advanced Analytics Dashboard | Major | 2 | Platform-wide metrics from `analytics_event`; interactive Recharts charts; date range and pet filters; live updates over WebSocket; CSV export | akacprzy |
+| Notification system | Minor | 1 | Notifications on create, update and delete actions; real-time delivery over WebSocket; bell with unread count, notification center, toasts, mark as read | sarherna, iskaraag |
+| Custom Design System | Minor | 1 | 15+ reusable components (Button, IconButton, Card, Avatar, Badge, Chip, Input, Textarea, Select, Toggle, Tabs, Modal, Toast, Progress, Pagination, EmptyState); OKLCH color palette with semantic tokens; typography (Fraunces display, Outfit text); lucide icon set; showcased on the Design kit page | oostapen, iskaraag |
+| Advanced Search | Minor | 1 | Text search plus filters (species, sex, size, age, city, breed, traits, vaccinated, neutered); paginated results | iskaraag, sarherna |
+| File Upload | Minor | 1 | Avatars and pet photos (image types, size limits checked in the browser and on the server); chat attachments with images and documents; files served only to authorized users | sarherna, iskaraag, oostapen |
+| User Activity Analytics | Minor | 1 | Activity events recorded on every significant action; "Your activity" dashboard with personal stats as adopter and as rehomer | akacprzy, iskaraag |
+| ORM (SQLAlchemy) | Minor | 1 | SQLAlchemy 2.1 maps and writes the `analytics_event` table; Django ORM owns every other table | akacprzy |
+
 
 ## Team Information
 
@@ -216,20 +218,22 @@ Team communication is via Slack. The team meets weekly or bi-weekly to sync on p
 
 ## Public API
 
-Third-party clients can access pet and user data using an API key. Keys are tied to a user account and rate-limited to 60 requests per minute by default.
+Third-party clients can access pet data using an API key. Keys are tied to a user account and rate-limited to 60 requests per minute by default.
 
 ### Getting a key
 
-Sign in to the app and create a key from your profile. Or use the REST endpoint directly:
+
+
+Use the REST endpoint to create a key:
 
 ```sh
 # 1. Sign in and get an access token
-curl -k -s -X POST https://localhost:8443/api/auth/token/ \
+curl -k -s -X POST https://localhost:8443/api/auth/login/ \
   -H 'Content-Type: application/json' \
   -d '{"email": "user@example.com", "password": "yourpassword"}' | jq -r '.access'
 
 # 2. Create an API key
-curl -k -s -X POST https://localhost:8443/api/auth/apikeys/ \
+curl -k -s -X POST https://localhost:8443/api/keys/ \
   -H "Authorization: Bearer <access_token>" \
   -H 'Content-Type: application/json' \
   -d '{"label": "my-key"}'
@@ -381,12 +385,12 @@ This project was developed with the assistance of AI tools.
 
 <!-- TODO(all): each team member to describe which tools they used, what they generated, and what they wrote themselves -->
 
-<!-- TODO(sarherna): describe your biggest technical challenge -->
+<!-- TODO(sarherna): describe your AI usage -->
 
-**akacprzy:** Used AI tools throughout the project: to get up to speed on unfamiliar topics quickly, to review my own code before posting PRs and catch edge cases I might have missed, to draft documentation and KB notes which I then edited for accuracy and tone. Lastly, to get summaries of my teammates issued work to keep track of project proress and status and catch up quickly after breaks. 
+**akacprzy:** Used AI tools throughout the project: to get up to speed on unfamiliar topics quickly, to review my own code before posting PRs and catch edge cases I might have missed, to draft documentation and KB notes which I then edited for accuracy and tone. Lastly, to get summaries of my teammates issued work to keep track of project progress and status and catch up quickly after breaks. 
 
-<!-- TODO(faikhan): describe your biggest technical challenge -->
+<!-- TODO(faikhan): describe your AI usage -->
 
-<!-- TODO(oostapen): describe your biggest technical challenge -->
+<!-- TODO(oostapen): describe your AI usage -->
 
-<!-- TODO(iskaraag): describe your biggest technical challenge -->
+<!-- TODO(iskaraag): describe your AI usage -->

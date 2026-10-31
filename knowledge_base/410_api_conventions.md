@@ -25,7 +25,7 @@ The API has two namespaces with different auth models:
 ### Public API — API key authenticated
 
 ```
-/api/public/v1/     ← read-only, third-party access
+/api/public/v1/     ← third-party access: read pets + options; create, update and delete own pets
 ```
 
 Authenticated by a hashed `X-API-Key` header. Keys are long-lived, stored hashed (shown once at creation), and rate-limited at 60 requests/min per key via Django's `LocMemCache`-backed throttle. An OpenAPI schema and docs page are served alongside. This is a separate trust boundary from the SPA — keys are never mixed into the JWT session flow. See note 420 for the JWT side.
