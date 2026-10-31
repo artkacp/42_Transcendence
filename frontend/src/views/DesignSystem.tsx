@@ -397,10 +397,10 @@ export function DesignSystem() {
       <Section title="Chip">
         <Row label="Selectable">
           <Chip active={chipValue === 'dog'} onClick={() => setChipValue('dog')}>
-            U・ᴥ・U Dogs
+            Dogs <span className="ml-1 font-black [-webkit-text-stroke:0.5px_currentColor]" aria-hidden="true">U・ᴥ・U</span>
           </Chip>
           <Chip active={chipValue === 'cat'} onClick={() => setChipValue('cat')}>
-            =^ ◗ ◗^= Cats
+            Cats <span className="ml-1 font-black [-webkit-text-stroke:0.5px_currentColor]" aria-hidden="true">=^ ◗ ◗^=</span>
           </Chip>
         </Row>
       </Section>

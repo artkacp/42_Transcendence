@@ -168,10 +168,10 @@ export function Browse() {
             All pals
           </Chip>
           <Chip active={species === 'dog'} onClick={() => handleSpeciesChange('dog')}>
-            U・ᴥ・U Dogs
+            Dogs <span className="ml-1 font-black [-webkit-text-stroke:0.5px_currentColor]" aria-hidden="true">U・ᴥ・U</span>
           </Chip>
           <Chip active={species === 'cat'} onClick={() => handleSpeciesChange('cat')}>
-            =^ ◗ ◗^= Cats
+            Cats <span className="ml-1 font-black [-webkit-text-stroke:0.5px_currentColor]" aria-hidden="true">=^ ◗ ◗^=</span>
           </Chip>
           <Button
             size="sm"
@@ -244,7 +244,7 @@ export function Browse() {
 
       {error ? (
         <EmptyState
-          emoji="😿"
+          emoji="≧◒_◒≦"
           title="Couldn't load the pals"
           hint="Something went wrong on our side. Try again in a moment."
           action={
