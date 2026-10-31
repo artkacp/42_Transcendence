@@ -82,7 +82,7 @@ function FriendsList({
   if (records.length === 0) {
     return (
       <EmptyState
-        emoji="🐾"
+        emoji="ʕ •ᴥ• ...."
         title="No friends yet"
         hint="Go to someone's profile and add them as a friend."
       />
