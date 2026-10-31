@@ -328,7 +328,7 @@ export function Friends() {
               <p className="py-16 text-center text-sm text-text-muted">Loading…</p>
             ) : requests.length === 0 ? (
               <EmptyState
-                emoji="📭"
+                emoji="◣◥ ･ﾟ"
                 title="No pending requests"
                 hint="When someone adds you, their request will appear here."
               />
