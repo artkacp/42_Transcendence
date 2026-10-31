@@ -397,7 +397,7 @@ export function DesignSystem() {
       <Section title="Chip">
         <Row label="Selectable">
           <Chip active={chipValue === 'dog'} onClick={() => setChipValue('dog')}>
-            🐕 Dogs
+            U・ᴥ・U Dogs
           </Chip>
           <Chip active={chipValue === 'cat'} onClick={() => setChipValue('cat')}>
             🐈 Cats
