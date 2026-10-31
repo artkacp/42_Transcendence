@@ -1,7 +1,7 @@
 import type { HTMLAttributes, ReactNode } from 'react'
 
 export interface EmptyStateProps extends HTMLAttributes<HTMLDivElement> {
-  emoji?: string
+  emoji?: ReactNode
   title: string
   hint?: string
   action?: ReactNode
