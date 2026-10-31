@@ -287,7 +287,7 @@ export function Browse() {
                     <img src={p.photo} alt={p.name} className="absolute inset-0 size-full object-cover" />
                   ) : (
                     <span className="text-7xl" aria-hidden>
-                      {p.species === 'dog' ? 'U・ᴥ・U' : '🐈'}
+                      {p.species === 'dog' ? 'U・ᴥ・U' : '=^ ◗ ◗^='}
                     </span>
                   )}
                   {p.adopted_by && (

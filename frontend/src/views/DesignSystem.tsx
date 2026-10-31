@@ -400,7 +400,7 @@ export function DesignSystem() {
             U・ᴥ・U Dogs
           </Chip>
           <Chip active={chipValue === 'cat'} onClick={() => setChipValue('cat')}>
-            🐈 Cats
+            =^ ◗ ◗^= Cats
           </Chip>
         </Row>
       </Section>

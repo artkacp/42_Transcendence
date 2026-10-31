@@ -119,7 +119,7 @@ function PhotoPicker({ file, species, error, onChange }: PhotoPickerProps) {
             <img src={preview} alt="Selected photo" className="absolute inset-0 size-full object-cover" />
           ) : (
             <span className="text-5xl" aria-hidden>
-              {species === 'dog' ? 'U・ᴥ・U' : '🐈'}
+              {species === 'dog' ? 'U・ᴥ・U' : '=^ ◗ ◗^='}
             </span>
           )}
         </div>
