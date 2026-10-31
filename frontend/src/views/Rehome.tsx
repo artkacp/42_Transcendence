@@ -160,7 +160,7 @@ function YourListings() {
       ) : pets.length === 0 ? (
         <EmptyState
           emoji="︶ᴥ .. ･ﾟ✧"
-          title="№ listings yet"
+          title="N° ･ﾟistings yet"
           hint="Publish your first pet and adopters will find them in Browse."
           action={<Button onClick={openPublish}>Rehome a pet</Button>}
         />
