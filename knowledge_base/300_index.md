@@ -12,3 +12,7 @@ and frontend conventions.
 ## Tooling traps (320–329)
 
 - 320 — Tailwind v4: `@theme` Pruning
+
+## Real-time (330–339)
+
+- 330 — Live Chat: Frontend Side
