@@ -57,7 +57,7 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
    next touched. */
 
 type Triple = [number, number, number]
-type LabTone = 'primary' | 'success' | 'danger'
+type LabTone = 'primary' | 'success' | 'danger' | 'warning'
 
 /* Keep in sync with crayonStops in ds/Progress.tsx — the lab should always
    open on what actually ships. */
@@ -77,9 +77,14 @@ const LAB_DEFAULTS: Record<LabTone, [Triple, Triple, Triple]> = {
     [0.82, 0.145, 35],
     [0.385, 0.21, 35],
   ],
+  warning: [
+    [0.78, 0.14, 80],
+    [0.9, 0.08, 85],
+    [0.62, 0.15, 70],
+  ],
 }
 
-const LAB_TONES: LabTone[] = ['primary', 'success', 'danger']
+const LAB_TONES: LabTone[] = ['primary', 'success', 'danger', 'warning']
 
 const LAB_PRESETS: [string, Triple][] = [
   ['cream-50', [0.965, 0.035, 85]],
@@ -541,9 +546,7 @@ export function DesignSystem() {
               <Progress value={100} label="Crayon, primary" />
               <Progress value={100} tone="success" label="Crayon, success" />
               <Progress value={100} tone="danger" label="Crayon, danger" />
-              <p className="text-sm text-text-muted">
-                Warning is not available for crayon: not tuned in the lab yet.
-              </p>
+              <Progress value={100} tone="warning" label="Crayon, warning" />
             </div>
           )}
         </Row>
