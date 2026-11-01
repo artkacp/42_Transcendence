@@ -349,11 +349,11 @@ The backend runs as **exactly one Daphne process**: no extra workers, no `docker
 
 | Login | Key contributions |
 |-------|------------------|
-| sarherna | Backend domain model (accounts, pets, inquiries, adoption stages, notifications service); profile view (F7); technical architecture and initial project setup |
-| akacprzy | Database schema design; SQLAlchemy analytics write pipeline (A2); django-prometheus instrumentation (A3); platform analytics endpoint (A4); per-user analytics endpoint (A5); friends backend (B3); friends view (F6); analytics dashboard frontend (F9) |
-| faikhan | Docker, nginx and HTTPS setup (D1/D2); Prometheus and node-exporter (D3); Grafana dashboard and alerts (D4); WebSocket backend — JWT auth, presence, chat routing, pet subscriptions (B8); public API — keys, throttle, CRUD, OpenAPI docs (B9); SocketProvider frontend |
-| oostapen | Frontend scaffold and API client (F0); auth flow frontend (F1); pet page (F3a); live chat frontend, adopter Ask about + owner Inquiries over WebSocket (F3b, #87); WebSocket client hooks (frame handler, reconnect refetch); animated logo, favicon and shell layout; design tokens and palettes; Design kit page; design system components |
-| iskaraag | Browse with filters, live updates and sorting (F2, #96); rehome and publish flow (F4); rehome back in nav (#88); notification center and toast (F8); your activity view (#92); Input, Textarea, Select, Toggle, Chip, Avatar, EmptyState, Modal, Toast design system components |
+| sarherna | Backend domain model (accounts, pets, inquiries, adoption stages, notifications service); profile view; technical architecture and initial project setup |
+| akacprzy | Database schema design; SQLAlchemy analytics write pipeline; django-prometheus instrumentation; platform analytics endpoint; per-user analytics endpoint; friends backend; friends view; analytics dashboard frontend |
+| faikhan | Docker, nginx and HTTPS setup; Prometheus and node-exporter; Grafana dashboard and alerts; WebSocket backend — JWT auth, presence, chat routing, pet subscriptions; public API — keys, throttle, CRUD, OpenAPI docs; SocketProvider frontend |
+| oostapen | Frontend scaffold and API client; auth flow frontend; pet page; live chat frontend, adopter Ask about + owner Inquiries over WebSocket; WebSocket client hooks (frame handler, reconnect refetch); animated logo, favicon and shell layout; design tokens and palettes; Design kit page; design system components |
+| iskaraag | Browse with filters, live updates and sorting; rehome and publish flow; rehome back in nav; notification center and toast; your activity view; Input, Textarea, Select, Toggle, Chip, Avatar, EmptyState, Modal, Toast design system components |
 
 **Challenges**
 
