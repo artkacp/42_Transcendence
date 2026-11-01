@@ -13,8 +13,8 @@ export const startInquiry = (petId: string) => post<Inquiry>(`/api/pets/${petId}
 export const getMessages = (id: string) => get<InquiryMessage[]>(`/api/inquiries/${id}/messages/`)
 
 // REST fallback when the socket isn't ready (the server still pushes chat.message)
-export const sendMessageRest = (id: string, body: string) =>
-  post<InquiryMessage>(`/api/inquiries/${id}/messages/`, { body })
+export const sendMessageRest = (id: string, body: string, attachmentIds: string[] = []) =>
+  post<InquiryMessage>(`/api/inquiries/${id}/messages/`, { body, attachment_ids: attachmentIds })
 
 // Owner only; 403 once the pet is adopted
 export const changeStage = (id: string, stage: InquiryStage) =>

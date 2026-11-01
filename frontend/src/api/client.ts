@@ -48,7 +48,7 @@ const toText = (value: unknown): string =>
 // Backend (core/exceptions.py) sends:
 //   400 → { error: 'validation_failed', detail: 'Invalid input.', fields: { email: ['msg'], non_field_errors: [...] } }
 //   other → { error: 'no_active_account', detail: 'No active account ...' }
-function toApiError(status: number, body: unknown): ApiError {
+export function toApiError(status: number, body: unknown): ApiError {
   let message = `Request failed (${status})`;
   let code = 'unknown';
   const fieldErrors: FieldErrors = {};
@@ -91,12 +91,19 @@ export function refresh(): Promise<boolean> {
   return refreshing;
 }
 
+// The session is really over: forget the token and tell the app (also used by the upload XHR)
+export function endSession(): void {
+  setAccessToken(null);
+  onSessionExpired();
+}
+
 // ── the request itself ──────────────────────────────────────────────────
-export async function api<T>(
+// The raw Response, for callers that need a blob (downloads); api() below parses JSON.
+export async function authorizedFetch(
   path: string,
   options: RequestInit = {},
   retried = false,
-): Promise<T> {
+): Promise<Response> {
   const headers = new Headers(options.headers);
   if (accessToken) headers.set('Authorization', `Bearer ${accessToken}`);
   if (options.body && !(options.body instanceof FormData)) {
@@ -108,11 +115,14 @@ export async function api<T>(
 
   // 401 → try refresh once, then repeat the same request once
   if (res.status === 401 && !retried && !NO_REFRESH.includes(path)) {
-    if (await refresh()) return api<T>(path, options, true);
-    setAccessToken(null);
-    onSessionExpired();
+    if (await refresh()) return authorizedFetch(path, options, true);
+    endSession();
   }
+  return res;
+}
 
+export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const res = await authorizedFetch(path, options);
   const body: unknown = res.status === 204 ? null : await res.json().catch(() => null);
   if (!res.ok) throw toApiError(res.status, body);
   return body as T;
