@@ -48,7 +48,7 @@ export function PrivacyPolicy() {
       <Block title="Analytics">
         <p>We record an activity event when you view a pet page, send an adoption inquiry, send a message, complete an adoption, publish a listing or register.</p>
         <p>Events are stored in our own PostgreSQL database, tied to your account, and include a snapshot of the pet's features.</p>
-        <p>They feed the platform-wide dashboard, in aggregated form, and your own Activity page. They are not shared with third parties.</p>
+        <p>They feed the platform-wide dashboard, in aggregated form, and your own Activity page. If you view or ask about someone's pet, it also counts toward the totals on that owner's Activity page. Events are not shared with third parties.</p>
       </Block>
       <Block title="Who can see what">
         <p>Your profile, avatar and pet listings are visible to other signed-in users.</p>
