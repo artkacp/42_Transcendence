@@ -28,6 +28,7 @@ export function Browse() {
   const [trait, setTrait] = useState('all')
   const [vaccinatedOnly, setVaccinatedOnly] = useState(false)
   const [neuteredOnly, setNeuteredOnly] = useState(false)
+  const [ordering, setOrdering] = useState('-created_at')
   const [page, setPage] = useState(1)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [data, setData] = useState<Paginated<Pet> | null>(null)
@@ -49,14 +50,14 @@ export function Browse() {
     return () => clearTimeout(timer)
   }, [q, debouncedQ])
 
-  const requestKey = JSON.stringify([debouncedQ, species, sex, size, city, breed, ageBucket, trait, vaccinatedOnly, neuteredOnly, page, retry])
+  const requestKey = JSON.stringify([debouncedQ, species, sex, size, city, breed, ageBucket, trait, vaccinatedOnly, neuteredOnly, ordering, page, retry])
   const loading = settledKey !== requestKey
   const error = errorKey === requestKey
 
   useEffect(() => {
     if (status !== 'signed-in') return
     let ignore = false
-    getPets({ q: debouncedQ, species, sex, size, city, breed, ageBucket, trait, vaccinated: vaccinatedOnly, neutered: neuteredOnly, page })
+    getPets({ q: debouncedQ, species, sex, size, city, breed, ageBucket, trait, vaccinated: vaccinatedOnly, neutered: neuteredOnly, ordering, page })
       .then((res) => {
         if (ignore) return
         setData(res)
@@ -70,7 +71,7 @@ export function Browse() {
     return () => {
       ignore = true
     }
-  }, [status, requestKey, debouncedQ, species, sex, size, city, breed, ageBucket, trait, vaccinatedOnly, neuteredOnly, page, live])
+  }, [status, requestKey, debouncedQ, species, sex, size, city, breed, ageBucket, trait, vaccinatedOnly, neuteredOnly, ordering, page, live])
 
   const refresh = () => setLive((n) => n + 1)
   useSocketFrame('pet.published', refresh)
@@ -183,6 +184,19 @@ export function Browse() {
           >
             {activeFilterCount > 0 ? `Filters (${activeFilterCount})` : 'Filters'}
           </Button>
+          <Select
+            aria-label="Sort by"
+            className="ml-auto"
+            options={[
+              { value: '-created_at', label: 'Newest listings' },
+              { value: 'created_at', label: 'Oldest listings' },
+              { value: 'name', label: 'Name A–Z' },
+              { value: 'age_years', label: 'Youngest pets' },
+              { value: '-age_years', label: 'Oldest pets' },
+            ]}
+            value={ordering}
+            onChange={(e) => changeFilter(() => setOrdering(e.target.value))}
+          />
         </div>
 
         {filtersOpen && (

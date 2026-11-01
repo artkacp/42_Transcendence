@@ -3,7 +3,7 @@ from rest_framework import serializers
 from accounts.serializers import UserMinimalSerializer
 from core.validators import max_file_size
 
-from .models import AGE_BUCKETS, BREEDS, CITIES, SEX_CHOICES, SIZE_CHOICES, SPECIES_CHOICES, TRAITS, Pet
+from .models import AGE_BUCKETS, BREEDS, CITIES, ORDERINGS, SEX_CHOICES, SIZE_CHOICES, SPECIES_CHOICES, TRAITS, Pet
 
 ALL_BREEDS = [breed for breeds in BREEDS.values() for breed in breeds]
 
@@ -50,3 +50,4 @@ class PetFilterSerializer(serializers.Serializer):
     trait = serializers.ChoiceField(choices=TRAITS, required=False)
     vaccinated = serializers.BooleanField(required=False)
     neutered = serializers.BooleanField(required=False)
+    ordering = serializers.ChoiceField(choices=ORDERINGS, required=False)
