@@ -77,6 +77,30 @@ class FriendshipTests(APITestCase):
         self.bob = make_user('bob', 2)
         self.carol = make_user('carol', 3)
 
+    # --- discover ---
+
+    def test_user_list_excludes_me_and_carries_friend_state(self):
+        Friendship.objects.create(requester=self.alice, addressee=self.bob)
+        auth(self.client, self.alice)
+        r = self.client.get(reverse('user-list'))
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        by_handle = {user['handle']: user for user in r.data}
+        self.assertEqual(set(by_handle), {'bob', 'carol'})
+        self.assertEqual(by_handle['bob']['friendship']['status'], 'pending')
+        self.assertTrue(by_handle['bob']['friendship']['requested_by_me'])
+        self.assertIsNone(by_handle['carol']['friendship'])
+        self.assertNotIn('email', by_handle['bob'])
+
+    def test_user_list_hides_inactive_users(self):
+        User.objects.filter(pk=self.carol.pk).update(is_active=False)
+        auth(self.client, self.alice)
+        r = self.client.get(reverse('user-list'))
+        self.assertEqual([user['handle'] for user in r.data], ['bob'])
+
+    def test_user_list_requires_authentication(self):
+        r = self.client.get(reverse('user-list'))
+        self.assertEqual(r.status_code, status.HTTP_401_UNAUTHORIZED)
+
     # --- send request ---
 
     def test_send_request_creates_pending_row(self):
