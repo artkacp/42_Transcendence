@@ -445,10 +445,10 @@ export function DesignSystem() {
       <Section title="Chip">
         <Row label="Selectable">
           <Chip active={chipValue === 'dog'} onClick={() => setChipValue('dog')}>
-            🐕 Dogs
+            Dogs <span className="ml-1 font-black [-webkit-text-stroke:0.5px_currentColor]" aria-hidden="true">U・ᴥ・U</span>
           </Chip>
           <Chip active={chipValue === 'cat'} onClick={() => setChipValue('cat')}>
-            🐈 Cats
+            Cats <span className="ml-1 font-black [-webkit-text-stroke:0.5px_currentColor]" aria-hidden="true">=^ ◗ ◗^=</span>
           </Chip>
         </Row>
       </Section>
@@ -475,7 +475,7 @@ export function DesignSystem() {
         <Row label="Variants">
           <div className="w-full space-y-4">
             <EmptyState
-              emoji="🔍"
+              emoji="⎇(◔ _◑)"
               title="No pals match those filters"
               hint="Try clearing the search — someone fluffy is out there."
               action={<Button variant="secondary" size="sm">Clear filters</Button>}

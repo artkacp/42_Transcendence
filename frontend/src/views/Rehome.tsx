@@ -21,7 +21,7 @@ function PetThumb({ pet }: { pet: Pet }) {
         <img src={pet.photo} alt="" className="absolute inset-0 size-full object-cover" />
       ) : (
         <span className="text-2xl" aria-hidden>
-          {pet.species === 'dog' ? '🐕' : '🐈'}
+          {pet.species === 'dog' ? 'U・ᴥ・U' : '=^ ◗ ◗^='}
         </span>
       )}
     </div>
@@ -62,7 +62,7 @@ function ListingsTable({ pets, busy, onRemove }: ListingsTableProps) {
               <td className="px-5 py-3 text-text-muted">{formatDate(pet.created_at)}</td>
               <td className="px-5 py-3">
                 {pet.adopted_by ? (
-                  <Badge tone="success">adopted 🎉</Badge>
+                  <Badge tone="success">adopted <span className="ml-1" aria-hidden="true">(︶ᴥ₍^◒◒^₎･ﾟ✧)</span></Badge>
                 ) : (
                   <Badge>{inquiryLabel(pet.inquiry_count)}</Badge>
                 )}
@@ -154,13 +154,13 @@ function YourListings() {
       </div>
 
       {error ? (
-        <EmptyState emoji="😿" title="Something went wrong" hint={error} />
+        <EmptyState emoji="≧◒_◒≦" title="Something went wrong" hint={error} />
       ) : pets === null ? (
         <p role="status" className="text-sm text-text-muted">Loading your listings…</p>
       ) : pets.length === 0 ? (
         <EmptyState
-          emoji="🏡"
-          title="No listings yet"
+          emoji="︶ᴥ .. ･ﾟ✧"
+          title="N° ･ﾟistings yet"
           hint="Publish your first pet and adopters will find them in Browse."
           action={<Button onClick={openPublish}>Rehome a pet</Button>}
         />
@@ -181,7 +181,7 @@ export function Rehome() {
     return (
       <div className="p-8">
         <EmptyState
-          emoji="🔒"
+          emoji="(︶ᴥ ...   ･ﾟ✧"
           title="Sign in to rehome a pet"
           hint="Your listings and the publish form live behind your account."
           action={<Button onClick={() => navigate('auth')}>Sign in</Button>}

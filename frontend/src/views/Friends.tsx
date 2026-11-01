@@ -96,7 +96,7 @@ function FriendsList({
   if (records.length === 0) {
     return (
       <EmptyState
-        emoji="🐾"
+        emoji="ʕ •ᴥ• ...."
         title="No friends yet"
         hint="Head to Discover to find people on Pawfect."
       />
@@ -338,7 +338,7 @@ export function Friends() {
     return (
       <div className="p-8">
         <EmptyState
-          emoji="🔒"
+          emoji="(︶ᴥ ...   ･ﾟ✧"
           title="Sign in to see your friends"
           hint="Friends are visible to signed-in members only."
           action={<Button onClick={() => navigate('auth')}>Sign in</Button>}
@@ -373,7 +373,7 @@ export function Friends() {
           <>
             {friendsError ? (
               <EmptyState
-                emoji="😿"
+                emoji="≧◒_◒≦"
                 title="Couldn't load friends"
                 hint="Something went wrong. Try again in a moment."
                 action={<Button variant="secondary" onClick={load}>Retry</Button>}
@@ -390,7 +390,7 @@ export function Friends() {
           <>
             {requestsError ? (
               <EmptyState
-                emoji="😿"
+                emoji="≧◒_◒≦"
                 title="Couldn't load requests"
                 hint="Something went wrong. Try again in a moment."
                 action={<Button variant="secondary" onClick={load}>Retry</Button>}
@@ -399,7 +399,7 @@ export function Friends() {
               <p className="py-16 text-center text-sm text-text-muted">Loading…</p>
             ) : requests.length === 0 ? (
               <EmptyState
-                emoji="📭"
+                emoji="◣◥ ･ﾟ"
                 title="No pending requests"
                 hint="When someone adds you, their request will appear here."
               />

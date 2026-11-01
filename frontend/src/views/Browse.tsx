@@ -124,7 +124,7 @@ export function Browse() {
           <p className="py-16 text-center text-sm text-text-muted">Loading…</p>
         ) : (
           <EmptyState
-            emoji="🔒"
+            emoji="(︶ᴥ ...   ･ﾟ✧"
             title="Sign in to meet the pals"
             hint="Browsing is for members — it only takes a minute."
             action={<Button onClick={() => navigate('auth')}>Sign in</Button>}
@@ -169,10 +169,10 @@ export function Browse() {
             All pals
           </Chip>
           <Chip active={species === 'dog'} onClick={() => handleSpeciesChange('dog')}>
-            🐶 Dogs
+            Dogs <span className="ml-1 font-black [-webkit-text-stroke:0.5px_currentColor]" aria-hidden="true">U・ᴥ・U</span>
           </Chip>
           <Chip active={species === 'cat'} onClick={() => handleSpeciesChange('cat')}>
-            🐱 Cats
+            Cats <span className="ml-1 font-black [-webkit-text-stroke:0.5px_currentColor]" aria-hidden="true">=^ ◗ ◗^=</span>
           </Chip>
           <Button
             size="sm"
@@ -247,10 +247,10 @@ export function Browse() {
               onChange={(e) => changeFilter(() => setTrait(e.target.value))}
             />
             <Chip active={vaccinatedOnly} onClick={() => changeFilter(() => setVaccinatedOnly(!vaccinatedOnly))}>
-              💉 Vaccinated
+              (ᐢᴥᐢ)✓ Vaccinated
             </Chip>
             <Chip active={neuteredOnly} onClick={() => changeFilter(() => setNeuteredOnly(!neuteredOnly))}>
-              ✂️ Neutered
+              ✂ Neutered
             </Chip>
           </div>
         )}
@@ -258,7 +258,7 @@ export function Browse() {
 
       {error ? (
         <EmptyState
-          emoji="😿"
+          emoji="≧◒_◒≦"
           title="Couldn't load the pals"
           hint="Something went wrong on our side. Try again in a moment."
           action={
@@ -271,7 +271,7 @@ export function Browse() {
         <p className="py-16 text-center text-sm text-text-muted">Loading pals…</p>
       ) : count === 0 && hasFilters ? (
         <EmptyState
-          emoji="🔍"
+          emoji="⎇(◔ _◑)"
           title="No pals match those filters"
           hint="Try clearing the search — someone fluffy is out there."
           action={
@@ -282,7 +282,7 @@ export function Browse() {
         />
       ) : count === 0 ? (
         <EmptyState
-          emoji="🐾"
+          emoji="ᴥ..."
           title="No pals listed yet"
           hint="Be the first to find a pet a new home."
           action={
@@ -301,12 +301,12 @@ export function Browse() {
                     <img src={p.photo} alt={p.name} className="absolute inset-0 size-full object-cover" />
                   ) : (
                     <span className="text-7xl" aria-hidden>
-                      {p.species === 'dog' ? '🐕' : '🐈'}
+                      {p.species === 'dog' ? 'U・ᴥ・U' : '=^ ◗ ◗^='}
                     </span>
                   )}
                   {p.adopted_by && (
                     <Badge tone="success" className="absolute left-3 top-3">
-                      adopted 🎉
+                      adopted <span className="ml-1" aria-hidden="true">(︶ᴥ₍^◒◒^₎･ﾟ✧)</span>
                     </Badge>
                   )}
                   {user && p.owner.id === user.id && (

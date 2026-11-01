@@ -328,7 +328,7 @@ function RehomingPets({ pets }: { pets: Pet[] }) {
               <img src={pet.photo} alt="" className="size-8 rounded-xl object-cover" />
             ) : (
               <span className="text-2xl" aria-hidden>
-                {pet.species === 'dog' ? '🐕' : '🐈'}
+                {pet.species === 'dog' ? 'U・ᴥ・U' : '=^ ◗ ◗^='}
               </span>
             )}
             <span className="text-left">
@@ -365,7 +365,7 @@ function OtherProfile({ userId }: { userId: string }) {
     }
   }, [userId, reload])
 
-  if (error) return <EmptyState emoji="😿" title="Profile not available" hint={error} />
+  if (error) return <EmptyState emoji="≧◒_◒≦" title="Profile not available" hint={error} />
   if (!user) return <p role="status" className="text-sm text-text-muted">Loading profile…</p>
 
   return (
@@ -402,7 +402,7 @@ export function Profile() {
     return (
       <div className="p-8">
         <EmptyState
-          emoji="🔒"
+          emoji="(︶ᴥ ...   ･ﾟ✧"
           title="Sign in to see profiles"
           hint="Profiles are visible to signed-in members only."
           action={<Button onClick={() => navigate('auth')}>Sign in</Button>}

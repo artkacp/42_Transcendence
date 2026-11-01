@@ -39,7 +39,7 @@ function PetThumb({ pet }: { pet: Pet }) {
         <img src={pet.photo} alt="" className="absolute inset-0 size-full object-cover" />
       ) : (
         <span className="text-2xl" aria-hidden>
-          {pet.species === 'dog' ? '🐕' : '🐈'}
+          {pet.species === 'dog' ? 'U・ᴥ・U' : '=^ ◗ ◗^='}
         </span>
       )}
     </div>
@@ -50,7 +50,7 @@ function LastMessage({ message }: { message: InquiryMessage | null }) {
   if (!message) return <span className="text-text-subtle">No messages yet</span>
 
   // body is only empty when the message carries a file
-  const clip = message.attachments.length > 0 ? '📎 ' : ''
+  const clip = message.attachments.length > 0 ? '╰●╮ ≡◕◕) ' : ''
   const text = clip + (message.body || 'Attachment')
   return (
     <p className="max-w-64 truncate text-text-muted" title={text}>
@@ -220,12 +220,12 @@ function YourAdoptions({ meId }: { meId?: string }) {
       </div>
 
       {error ? (
-        <EmptyState emoji="😿" title="Something went wrong" hint={error} />
+        <EmptyState emoji="≧◒_◒≦" title="Something went wrong" hint={error} />
       ) : rows === null ? (
         <p role="status" className="text-sm text-text-muted">Loading your adoptions…</p>
       ) : rows.length === 0 ? (
         <EmptyState
-          emoji="🐾"
+          emoji="┐(︶▼︶)┌" className="[&>span]:font-black [&>span]:[-webkit-text-stroke:1px_currentColor]"
           title="No adoptions yet"
           hint="Find a pet in Browse and start a conversation with its owner."
           action={<Button onClick={() => navigate('browse')}>Browse pets</Button>}
@@ -246,7 +246,7 @@ export function Adoptions() {
     return (
       <div className="p-8">
         <EmptyState
-          emoji="🔒"
+          emoji="(︶ᴥ .  .   .   .     ╰ᐢ◕ ◕ᐢ╮"
           title="Sign in to see your adoptions"
           hint="Your conversations with pet owners live behind your account."
           action={<Button onClick={() => navigate('auth')}>Sign in</Button>}
