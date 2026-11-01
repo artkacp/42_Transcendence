@@ -29,6 +29,8 @@ const STAGE_OPTIONS = [
   { value: 'adopted', label: 'Adopted' },
 ]
 
+const MAX_MESSAGE_LENGTH = 2000
+
 const ASK_FOR_DOCUMENTS = 'Could you share the vet passport or other documents (PDF)?'
 
 // A file picked for the next message: uploading while attachment is null, staged once it is set
@@ -384,6 +386,7 @@ export function PetChat({ inquiry }: { inquiry: Inquiry }) {
           ref={inputRef}
           label="Your message"
           rows={2}
+          maxLength={MAX_MESSAGE_LENGTH}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={onKeyDown}

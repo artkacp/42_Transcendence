@@ -6,7 +6,7 @@ from accounts.serializers import UserMinimalSerializer
 from core.validators import max_file_size
 from pets.serializers import PetSerializer
 
-from .models import ALLOWED_TYPES, STAGE_CHOICES, Attachment, Inquiry, Message
+from .models import ALLOWED_TYPES, MAX_MESSAGE_LENGTH, STAGE_CHOICES, Attachment, Inquiry, Message
 
 
 class AttachmentSerializer(serializers.ModelSerializer):
@@ -44,7 +44,7 @@ class MessageSerializer(serializers.ModelSerializer):
 
 
 class MessageCreateSerializer(serializers.Serializer):
-    body = serializers.CharField(allow_blank=True, required=False, default='')
+    body = serializers.CharField(allow_blank=True, required=False, default='', max_length=MAX_MESSAGE_LENGTH)
     attachment_ids = serializers.ListField(child=serializers.UUIDField(), required=False, default=list)
 
 

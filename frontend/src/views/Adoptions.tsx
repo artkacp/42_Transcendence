@@ -83,7 +83,7 @@ interface AdoptionsTableProps {
 
 function AdoptionsTable({ rows, meId }: AdoptionsTableProps) {
   return (
-    <Card className="overflow-x-auto">
+    <Card className="relative overflow-x-auto">
       <table className="w-full min-w-[640px] text-left text-sm">
         <thead className="border-b border-border text-xs uppercase tracking-wide text-text-muted">
           <tr>

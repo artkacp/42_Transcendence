@@ -114,7 +114,8 @@ function ProfileForm({ me, cities }: { me: Me; cities: string[] }) {
 
   const saved = draftOf(me)
   const changed = (Object.keys(draft) as (keyof ProfileChanges)[]).some((key) => draft[key] !== saved[key])
-  const canSave = changed && draft.full_name.trim().length >= 2 && !saving
+  const nameTooShort = draft.full_name.trim().length < 2
+  const canSave = changed && !nameTooShort && !saving
 
   const update = <K extends keyof ProfileChanges>(key: K, value: ProfileChanges[K]) => {
     setDraft((prev) => ({ ...prev, [key]: value }))
@@ -152,7 +153,7 @@ function ProfileForm({ me, cities }: { me: Me; cities: string[] }) {
         maxLength={100}
         value={draft.full_name}
         onChange={(e) => update('full_name', e.target.value)}
-        error={errors.full_name}
+        error={errors.full_name || (nameTooShort ? 'Name needs at least 2 characters.' : undefined)}
       />
       <SelectField
         label="City"

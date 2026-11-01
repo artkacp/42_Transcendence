@@ -32,6 +32,7 @@ ALLOWED_TYPES = {
 }
 
 MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024
+MAX_MESSAGE_LENGTH = 2000
 
 
 class Inquiry(models.Model):

@@ -4,7 +4,7 @@ import { ApiError } from '../api/client'
 import { deletePet, getMyPets } from '../api/pets'
 import { useAuth } from '../auth/auth-context'
 import type { Pet } from '../data/types'
-import { Badge, Button, Card, EmptyState } from '../ds'
+import { Badge, Button, Card, EmptyState, Modal } from '../ds'
 import { useToast } from '../contexts/toast/ToastContext'
 import { navigate } from '../routing'
 import { PublishPetModal } from './PublishPetModal'
@@ -36,7 +36,7 @@ interface ListingsTableProps {
 
 function ListingsTable({ pets, busy, onRemove }: ListingsTableProps) {
   return (
-    <Card className="overflow-x-auto">
+    <Card className="relative overflow-x-auto">
       <table className="w-full min-w-[640px] text-left text-sm">
         <thead className="border-b border-border text-xs uppercase tracking-wide text-text-muted">
           <tr>
@@ -61,11 +61,7 @@ function ListingsTable({ pets, busy, onRemove }: ListingsTableProps) {
               <td className="px-5 py-3 text-text-muted">{pet.breed}</td>
               <td className="px-5 py-3 text-text-muted">{formatDate(pet.created_at)}</td>
               <td className="px-5 py-3">
-                {pet.adopted_by ? (
-                  <Badge tone="success">adopted <span className="ml-1" aria-hidden="true">(︶ᴥ₍^◒◒^₎･ﾟ✧)</span></Badge>
-                ) : (
-                  <Badge>{inquiryLabel(pet.inquiry_count)}</Badge>
-                )}
+                <Badge>{inquiryLabel(pet.inquiry_count)}</Badge>
               </td>
               <td className="px-5 py-3">
                 <div className="flex justify-end gap-2">
@@ -97,6 +93,7 @@ function YourListings() {
   const [pets, setPets] = useState<Pet[] | null>(null)
   const [error, setError] = useState('')
   const [removing, setRemoving] = useState(false)
+  const [confirming, setConfirming] = useState<Pet | null>(null)
   const [publishOpen, setPublishOpen] = useState(false)
 
   useEffect(() => {
@@ -130,6 +127,7 @@ function YourListings() {
       }
     } finally {
       setRemoving(false)
+      setConfirming(null)
     }
   }
 
@@ -165,7 +163,25 @@ function YourListings() {
           action={<Button onClick={openPublish}>Rehome a pet</Button>}
         />
       ) : (
-        <ListingsTable pets={pets} busy={removing} onRemove={removePet} />
+        <ListingsTable pets={pets} busy={removing} onRemove={setConfirming} />
+      )}
+      {confirming && (
+        <Modal
+          open
+          onClose={() => !removing && setConfirming(null)}
+          title={`Remove ${confirming.name}?`}
+          description="This permanently deletes the listing, its photo and every conversation about this pet, including messages and attachments. Anyone who asked about them will be notified. This can't be undone."
+          footer={
+            <>
+              <Button variant="secondary" disabled={removing} onClick={() => setConfirming(null)}>
+                Cancel
+              </Button>
+              <Button variant="danger" disabled={removing} onClick={() => void removePet(confirming)}>
+                Remove listing
+              </Button>
+            </>
+          }
+        />
       )}
       <PublishPetModal open={publishOpen} onClose={() => setPublishOpen(false)} onPublished={handlePublished} />
     </div>

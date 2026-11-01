@@ -88,7 +88,7 @@ function Logo({ small = false }: { small?: boolean }) {
       glow
       className="flex items-center gap-1 rounded-2xl px-3 py-1.5 [--focus-color:var(--color-terra-100)] [--focus-inner:var(--color-terra-100)] [--focus-edge:0px]"
     >
-      <span aria-hidden="true" className={`font-logo font-bold whitespace-nowrap text-primary ${small ? 'text-lg' : 'text-xl'}`}>
+      <span aria-hidden="true" className={`font-logo font-bold whitespace-nowrap text-primary ${small ? 'text-lg max-[359px]:hidden' : 'text-xl'}`}>
         {frame}
       </span>
       <span className={`font-display font-bold tracking-tight text-text ${small ? 'text-lg' : 'text-xl'}`}>
@@ -123,9 +123,14 @@ function Me({ compact = false }: { compact?: boolean }) {
   return (
     <div className="flex flex-col gap-1">
       {!compact && <span className="truncate px-3.5 text-sm text-text">{user?.full_name}</span>}
-      <button type="button" onClick={() => void handleSignOut()} className={item}>
+      <button
+        type="button"
+        aria-label={compact ? 'Sign out' : undefined}
+        onClick={() => void handleSignOut()}
+        className={item}
+      >
         <LogOut className="size-5" />
-        Sign out
+        {!compact && 'Sign out'}
       </button>
     </div>
   )
@@ -257,7 +262,7 @@ export function Shell({ view, children }: { view: View; children: ReactNode }) {
               view={n.view}
               aria-label={n.label}
               aria-current={view === n.view ? 'page' : undefined}
-              className={`flex flex-col items-center gap-0.5 rounded-xl px-3 py-1.5 text-[10px] font-medium transition-all ${
+              className={`flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-xl py-1.5 text-[10px] font-medium transition-all ${
                 view === n.view ? 'text-primary' : 'text-text-subtle'
               }`}
             >

@@ -146,7 +146,7 @@ export function Browse() {
         <div className="flex items-center gap-3">
           {data && (
             <p className="text-sm text-text-subtle">
-              <span className="font-semibold text-text">{count}</span> {count === 1 ? 'pal' : 'pals'} available
+              <span className="font-semibold text-text">{count}</span> {count === 1 ? 'pal' : 'pals'} listed
             </p>
           )}
           <Button size="sm" variant="secondary" onClick={() => navigate('rehome')}>
@@ -303,11 +303,6 @@ export function Browse() {
                     <span className="text-7xl" aria-hidden>
                       {p.species === 'dog' ? 'U・ᴥ・U' : '=^ ◗ ◗^='}
                     </span>
-                  )}
-                  {p.adopted_by && (
-                    <Badge tone="success" className="absolute left-3 top-3">
-                      adopted <span className="ml-1" aria-hidden="true">(︶ᴥ₍^◒◒^₎･ﾟ✧)</span>
-                    </Badge>
                   )}
                   {user && p.owner.id === user.id && (
                     <Badge className="absolute right-3 top-3">your listing</Badge>
