@@ -42,14 +42,8 @@ PEOPLE = [
 ]
 # One pet per photo in seed_images/<species>/
 PET_NAMES = {
-    'cat': [
-        'Miso', 'Pumpkin', 'Luna', 'Nala', 'Mochi', 'Bella', 'Figa', 'Zuzia', 'Olive', 'Pepper', 'Saba', 'Kropka',
-        'Mruczek', 'Tosia', 'Filemon', 'Puszek', 'Lila', 'Gaja', 'Sisi', 'Tygrys', 'Fela', 'Klara', 'Oreo', 'Masza', 'Bonifacy',
-    ],
-    'dog': [
-        'Cookie', 'Bruno', 'Rex', 'Kobi', 'Tofik', 'Bazyl', 'Hugo', 'Azor', 'Burek', 'Maks', 'Lola', 'Nero', 'Fafik',
-        'Reksio', 'Dino', 'Sara',
-    ],
+    'cat': ['Miso', 'Pumpkin', 'Luna', 'Nala', 'Mochi', 'Bella', 'Figa', 'Zuzia', 'Olive', 'Pepper'],
+    'dog': ['Cookie', 'Bruno', 'Rex', 'Kobi', 'Tofik', 'Bazyl', 'Hugo', 'Azor', 'Burek', 'Maks'],
 }
 ADOPTER_LINES = [
     'Hi! Is the pet still looking for a home?',
@@ -65,9 +59,8 @@ OWNER_LINES = [
 ]
 
 
-# @email.com is a real domain, so seed accounts are matched by exact address, never by domain
 def seed_email(name):
-    return f'{name.split()[0].lower()}@email.com'
+    return f'{name.split()[0].lower()}@example.com'
 
 
 SEED_EMAILS = [seed_email(name) for name, _ in PEOPLE]

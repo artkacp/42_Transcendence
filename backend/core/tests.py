@@ -509,7 +509,7 @@ class SeedDemoTests(TransactionTestCase):
     def test_second_run_does_not_duplicate(self):
         before = self.counts()
         self.assertEqual(before['users'], len(SEED_EMAILS))
-        self.assertEqual(before['pets'], 41)
+        self.assertEqual(before['pets'], 20)
         self.seed()
         self.assertEqual(self.counts(), before)
 

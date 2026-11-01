@@ -82,9 +82,11 @@ A fresh stack has empty analytics. To fill it with demo users, pets, conversatio
 docker compose exec -T backend python manage.py seed_demo
 ```
 
-Sign in as `sara@email.com`, or as any other seed user such as `maya@email.com`. They all share one password: set `SEED_DEMO_PASSWORD` in `.env`, or leave it empty and the command generates one and prints it.
+Sign in as `sara@example.com`, or as any other seed user such as `maya@example.com`. They all share one password: set `SEED_DEMO_PASSWORD` in `.env`, or leave it empty and the command generates one and prints it.
 
 Running it again changes nothing. `seed_demo --flush` deletes the seed accounts and everything they own, then seeds again; other accounts are left alone. The compose stack has no source bind mount, so rebuild first if the code changed: `docker compose up --build -d backend`.
+
+Seed avatars are [Open Peeps](https://www.openpeeps.com/) by Pablo Stanley (CC0 1.0), generated with [DiceBear](https://www.dicebear.com/styles/open-peeps/).
 
 ### Trusting the certificate
 
