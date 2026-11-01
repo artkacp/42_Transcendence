@@ -11,7 +11,7 @@ A peer-to-peer adoption platform for dogs and cats: people rehoming a pet list i
 - **Browse and adopt** — search listings by species, breed, size, age and location; filter in real time; send an adoption application directly to the owner *(iskaraag, sarherna)*
 - **Rehome a pet** — publish a listing with photos, description and pet details *(iskaraag, sarherna)*
 - **Chat** — real-time messaging between owner and applicant over WebSocket, scoped to each adoption inquiry *(oostapen, faikhan, sarherna)*
-- **Adoptions** — track the status of your applications as an adopter; manage incoming inquiries and move them through adoption stages as an owner *(iskaraag, faikhan, sarherna)*
+- **Adoptions** — track the status of your applications as an adopter; manage incoming inquiries and move them through adoption stages as an owner *(faikhan, sarherna)*
 - **Notifications** — in-app notifications for application status changes and adoption confirmations, delivered in real time *(iskaraag, sarherna)*
 - **Friends** — send and accept friend requests, see who is online, browse your friends list and discover new people *(akacprzy, sarherna)*
 - **Analytics dashboard** — platform-wide adoption metrics and charts (visits, applications, adoptions, active users over time), filterable by pet type and date range, with CSV export *(akacprzy)*
@@ -203,7 +203,7 @@ Total: **20 points** (7 Majors × 2 pts + 6 Minors × 1 pt). The subject require
 | sarherna | Product Owner, Technical Lead | Backend: auth, user management, pets, inquiries, adoption stages, notifications service, profile view |
 | akacprzy | Project Manager | Database schema, analytics write pipeline, analytics endpoints, friends backend and view |
 | faikhan | Developer | DevOps, Docker, nginx, HTTPS, WebSocket backend, public API, Prometheus/Grafana |
-| oostapen | Developer | Frontend: auth flow, API client, routing, pet page, design system foundation |
+| oostapen | Developer | Frontend: auth flow, API client, routing, pet page, live chat UI (adopter + owner), design system foundation |
 | iskaraag | Developer | Frontend: browse, rehome, adoptions view, notifications, design system components |
 
 All team members contributed as developers across the full stack.
@@ -352,8 +352,8 @@ The backend runs as **exactly one Daphne process**: no extra workers, no `docker
 | sarherna | Backend domain model (accounts, pets, inquiries, adoption stages, notifications service); profile view (F7); technical architecture and initial project setup |
 | akacprzy | Database schema design; SQLAlchemy analytics write pipeline (A2); django-prometheus instrumentation (A3); platform analytics endpoint (A4); per-user analytics endpoint (A5); friends backend (B3); friends view (F6); analytics dashboard frontend (F9) |
 | faikhan | Docker, nginx and HTTPS setup (D1/D2); Prometheus and node-exporter (D3); Grafana dashboard and alerts (D4); WebSocket backend — JWT auth, presence, chat routing, pet subscriptions (B8); public API — keys, throttle, CRUD, OpenAPI docs (B9); SocketProvider frontend |
-| oostapen | Frontend scaffold and API client (F0); auth flow frontend (F1); pet page (F3); animated logo, favicon and shell layout; design system components |
-| iskaraag | Browse with filters and live updates (F2); rehome and publish flow (F4); adoptions view (F5); notification center and toast (F8); Modal, Toast, Tabs, Select, Chip, Progress design system components |
+| oostapen | Frontend scaffold and API client (F0); auth flow frontend (F1); pet page (F3a); live chat frontend, adopter Ask about + owner Inquiries over WebSocket (F3b, #87); WebSocket client hooks (frame handler, reconnect refetch); animated logo, favicon and shell layout; design tokens and palettes; Design kit page; design system components |
+| iskaraag | Browse with filters, live updates and sorting (F2, #96); rehome and publish flow (F4); rehome back in nav (#88); notification center and toast (F8); your activity view (#92); Input, Textarea, Select, Toggle, Chip, Avatar, EmptyState, Modal, Toast design system components |
 
 **Challenges**
 
@@ -372,13 +372,20 @@ A second challenge was serving HTTPS without a public domain or root access: I s
 
 - [Django documentation](https://docs.djangoproject.com/en/5.2/)
 - [Django REST Framework](https://www.django-rest-framework.org/)
-- [Django Channels](https://channels.readthedocs.io/)
+- [Django Channels](https://channels.readthedocs.io/) / [Daphne](https://github.com/django/daphne)
 - [SQLAlchemy 2.x](https://docs.sqlalchemy.org/en/20/)
 - [React documentation](https://react.dev/)
+- [TypeScript handbook](https://www.typescriptlang.org/docs/handbook/intro.html)
 - [Tailwind CSS v4](https://tailwindcss.com/docs)
+- [Lucide icons](https://lucide.dev/)
 - [Prometheus](https://prometheus.io/docs/) / [Grafana](https://grafana.com/docs/)
+- [nginx documentation](https://nginx.org/en/docs/) (reverse proxy, WebSocket upgrade headers)
+- [OpenSSL documentation](https://www.openssl.org/docs/) (local CA and certificate signing)
+- [Docker Compose documentation](https://docs.docker.com/compose/)
+- [W3Schools](https://www.w3schools.com/) — HTML, CSS and JavaScript basics
+- [React Beginner Course 2025 — Vite, Tailwind CSS, TypeScript](https://www.youtube.com/watch?v=siTUv1L9ymM)
 
-<!-- TODO(all): add references, tutorials or articles that shaped your implementation -->
+Thanks to all of Alex's friends, who kindly shared the photos of their pets used in the demo data.
 
 ## AI Usage
 
