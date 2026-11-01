@@ -21,12 +21,18 @@ export function StageProgress({ stage, viewer }: { stage: Stage; viewer: Viewer 
     stage === 'denied' ? shown : stage === 'adopted' ? 'Step 4 of 4: Adopted' : `Step ${step} of 4: ${shown}`
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col gap-1">
+    <div className="flex w-full min-w-0 basis-full flex-col gap-1">
       {/* the bar's aria-valuetext carries the same words */}
       <span aria-hidden="true" className="text-xs font-medium text-text-muted">
         {shown}
       </span>
-      <Progress size="sm" value={step * 25} tone={tone} label="Adoption progress" aria-valuetext={valueText} />
+      <Progress
+        value={step * 25}
+        tone={tone}
+        label="Adoption progress"
+        aria-valuetext={valueText}
+        className="max-w-sm"
+      />
     </div>
   )
 }

@@ -220,13 +220,6 @@ export function PetChat({ inquiry }: { inquiry: Inquiry }) {
     <Card className="flex flex-col gap-4 p-5">
       <div className="flex flex-wrap items-center gap-3">
         <h2 className="font-display text-lg font-bold text-text">Messages</h2>
-        {adopted && !adoptedHere ? (
-          <p className="text-sm text-text-muted">Adopted by someone else</p>
-        ) : adoptedHere && owner ? (
-          <p className="text-sm text-text-muted">Adopted by {adopter.full_name}</p>
-        ) : (
-          <StageProgress stage={adoptedHere ? 'adopted' : stage} viewer={owner ? 'owner' : 'adopter'} />
-        )}
         {owner && !adopted && (
           <Select
             aria-label="Adoption stage"
@@ -236,6 +229,13 @@ export function PetChat({ inquiry }: { inquiry: Inquiry }) {
             disabled={saving}
             className="w-auto"
           />
+        )}
+        {adopted && !adoptedHere ? (
+          <p className="text-sm text-text-muted">Adopted by someone else</p>
+        ) : adoptedHere && owner ? (
+          <p className="text-sm text-text-muted">Adopted by {adopter.full_name}</p>
+        ) : (
+          <StageProgress stage={adoptedHere ? 'adopted' : stage} viewer={owner ? 'owner' : 'adopter'} />
         )}
       </div>
       {stageError && (
