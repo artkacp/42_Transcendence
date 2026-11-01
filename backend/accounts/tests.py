@@ -472,6 +472,11 @@ class ProfileTests(APITestCase):
         self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('avatar', r.data['fields'])
 
+    def test_upload_rejects_disallowed_content_type(self):
+        r = self.upload(image_file('small.bmp', format='BMP'))
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('avatar', r.data['fields'])
+
     def test_upload_rejects_file_over_2mb(self):
         r = self.upload(image_file('big.bmp', size=(1024, 1024), format='BMP'))
         self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)

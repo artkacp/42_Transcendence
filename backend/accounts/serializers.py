@@ -6,7 +6,7 @@ from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.exceptions import InvalidToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 
-from core.validators import max_file_size
+from core.validators import allowed_content_type, max_file_size
 from pets.models import CITIES
 
 from .models import Friendship, User
@@ -112,7 +112,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
 
 class AvatarSerializer(serializers.ModelSerializer):
-    avatar = serializers.ImageField(validators=[max_file_size(2)])
+    avatar = serializers.ImageField(validators=[max_file_size(2), allowed_content_type('avatar')])
 
     class Meta:
         model = User
