@@ -50,7 +50,7 @@ function LastMessage({ message }: { message: InquiryMessage | null }) {
   if (!message) return <span className="text-text-subtle">No messages yet</span>
 
   // body is only empty when the message carries a file
-  const clip = message.attachments.length > 0 ? '📎 ' : ''
+  const clip = message.attachments.length > 0 ? '╰●╮ ≡◕◕) ' : ''
   const text = clip + (message.body || 'Attachment')
   return (
     <p className="max-w-64 truncate text-text-muted" title={text}>
