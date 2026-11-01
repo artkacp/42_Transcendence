@@ -1,4 +1,4 @@
-import { useId, useMemo, type HTMLAttributes } from 'react'
+import { useId, useLayoutEffect, useMemo, useRef, useState, type HTMLAttributes } from 'react'
 
 // (◕_◕) Progress is crayon-only. The plain bar lives under the git tag
 // ds-progress-plain-v1.
@@ -45,7 +45,12 @@ type BaseProps = Omit<HTMLAttributes<HTMLDivElement>, OwnedAria> & {
 export type ProgressProps = BaseProps & {
   tone?: Tone
   size?: CrayonSize
+  // opt-in: the drawing takes the measured width, so a wider bar gets more strokes, not stretched ones
+  fluid?: boolean
 }
+
+// (◕_◕) FLUID — the shortest drawing a fluid bar gets, so groove, cap and outline never overlap
+const MIN_FLUID_LEN = 100
 
 const SKEW = -11.63
 
@@ -242,14 +247,16 @@ function roll(
 }
 
 // (◕_◕) CHANGED — stroke count and ramp follow the bar length
-function rollHatching(len: number, weight: number, spread: number): Hatching {
+function rollHatching(len: number, weight: number, spread: number, fluid = false): Hatching {
   const bg: Stroke[] = []
   const fg: Stroke[] = []
 
   const step = STEP * spread
   const strokes = Math.round((len - 14) / step)
   // ramp covers the same share of the bar in every size (12 of 34 in md)
-  const rampStrokes = Math.round((strokes * RAMP_STROKES) / STROKES)
+  const shareRamp = Math.round((strokes * RAMP_STROKES) / STROKES)
+  // (◕_◕) FLUID — a wide bar keeps md's 12-stroke soft start; a narrow one keeps its share
+  const rampStrokes = fluid ? Math.min(RAMP_STROKES, shareRamp) : shareRamp
 
   for (let i = 0; i < strokes; i++) {
     const ramp = Math.min(1, (i + 1) / (rampStrokes + 1))
@@ -349,6 +356,7 @@ export function Progress({
   label,
   size = 'md',
   crayonStopsOverride,
+  fluid = false,
   className = '',
   ...rest
 }: ProgressProps) {
@@ -356,11 +364,35 @@ export function Progress({
   const uid = useId().replace(/:/g, '')
 
   // (◕_◕) CHANGED — geometry depends on size, so hatching re-rolls with it
-  const { len, className: heightClass, weight, spread } = CRAYON_SIZES[size]
+  const { len: sizeLen, className: heightClass, weight, spread } = CRAYON_SIZES[size]
+
+  // (◕_◕) FLUID — measure the drawn box and turn its width into viewBox units at the same 34-unit
+  // height, snapped to whole stroke steps so a resize only re-rolls when a stroke is added or removed.
+  // Until the first measurement (and always without fluid) the size table's length is used.
+  const svgRef = useRef<SVGSVGElement>(null)
+  const [measuredLen, setMeasuredLen] = useState<number | null>(null)
+  const step = STEP * spread
+
+  useLayoutEffect(() => {
+    const svg = svgRef.current
+    if (!fluid || !svg || typeof ResizeObserver === 'undefined') return
+    const measure = () => {
+      const { width, height } = svg.getBoundingClientRect()
+      if (width <= 0 || height <= 0) return // hidden: keep the last length
+      const units = Math.round((width * 34) / height / step) * step
+      setMeasuredLen(Math.max(MIN_FLUID_LEN, units))
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(svg)
+    return () => observer.disconnect()
+  }, [fluid, step])
+
+  const len = fluid && measuredLen ? measuredLen : sizeLen
 
   const hatching = useMemo(
-    () => rollHatching(len, weight, spread),
-    [len, weight, spread]
+    () => rollHatching(len, weight, spread, fluid),
+    [len, weight, spread, fluid]
   )
 
   const [a, b, c] = crayonStopsOverride ?? crayonStops[tone]
@@ -380,6 +412,7 @@ export function Progress({
       {...rest}
     >
       <svg
+        ref={svgRef}
         viewBox={`0 0 ${len} 34`}
         preserveAspectRatio="none"
         className={`block ${heightClass} w-full`}

@@ -550,6 +550,11 @@ export function DesignSystem() {
             </div>
           )}
         </Row>
+        <Row label="Crayon — fluid">
+          <div className="w-full">
+            <Progress fluid value={100} label="Crayon, fluid" />
+          </div>
+        </Row>
         <Row label="Crayon — edge values">
           <div className="w-full max-w-sm space-y-3">
             <Progress value={0} label="Crayon, empty" />
