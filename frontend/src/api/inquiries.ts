@@ -1,5 +1,5 @@
-import { get, post } from './client'
-import type { Inquiry, InquiryMessage } from '../data/types'
+import { get, patch, post } from './client'
+import type { Inquiry, InquiryMessage, InquiryStage } from '../data/types'
 
 export const getMyInquiries = () => get<Inquiry[]>('/api/inquiries/')
 
@@ -15,3 +15,7 @@ export const getMessages = (id: string) => get<InquiryMessage[]>(`/api/inquiries
 // REST fallback when the socket isn't ready (the server still pushes chat.message)
 export const sendMessageRest = (id: string, body: string) =>
   post<InquiryMessage>(`/api/inquiries/${id}/messages/`, { body })
+
+// Owner only; 403 once the pet is adopted
+export const changeStage = (id: string, stage: InquiryStage) =>
+  patch<Inquiry>(`/api/inquiries/${id}/stage/`, { stage })

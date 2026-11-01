@@ -3,6 +3,7 @@ import { Heart, Plus, Trash2 } from 'lucide-react'
 import { TOKEN_NAMES } from '../palettes/tokens'
 import { Badge, Button, Card, IconButton, Progress, Select, Chip, Toggle, Avatar, EmptyState, Pagination, Input, Tabs, Modal, Toast, Textarea } from '../ds'
 import { useToast } from '../contexts/toast/ToastContext'
+import { StageProgress } from '../components/StageProgress'
 import { AuthForm } from './AuthForm'
 import { AUTH_MOCKS } from './AuthForm.mocks'
 
@@ -560,6 +561,21 @@ export function DesignSystem() {
             <Progress value={0} size="sm" label="Crayon sm, empty" />
           </div>
         </Row>
+      </Section>
+
+      <Section title="Stage progress">
+        <div className="grid w-full max-w-xl grid-cols-2 gap-4 mb-2 text-sm text-text-muted">
+          <span>viewer="adopter"</span>
+          <span>viewer="owner"</span>
+        </div>
+        {(['conversation', 'visit', 'decision', 'adopted', 'denied'] as const).map((stage) => (
+          <Row key={stage} label={stage}>
+            <div className="grid w-full max-w-xl grid-cols-2 gap-4">
+              <StageProgress stage={stage} viewer="adopter" />
+              <StageProgress stage={stage} viewer="owner" />
+            </div>
+          </Row>
+        ))}
       </Section>
 
       <Section title="Badge">
