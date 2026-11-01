@@ -31,7 +31,7 @@ export function StageProgress({ stage, viewer }: { stage: Stage; viewer: Viewer 
         tone={tone}
         label="Adoption progress"
         aria-valuetext={valueText}
-        className="max-w-sm"
+        fluid
       />
     </div>
   )
