@@ -114,7 +114,7 @@ class Attachment(models.Model):
     class Meta:
         constraints = [
             models.CheckConstraint(
-                check=models.Q(size_bytes__lte=MAX_ATTACHMENT_BYTES),
+                condition=models.Q(size_bytes__lte=MAX_ATTACHMENT_BYTES),
                 name='attachment_max_size',
             ),
         ]

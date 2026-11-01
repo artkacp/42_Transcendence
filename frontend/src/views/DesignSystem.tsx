@@ -1,10 +1,24 @@
 import { useState, type ReactNode } from 'react'
-import { Heart, Plus, Trash2 } from 'lucide-react'
+import {
+  ArrowLeft, BarChart2, Bell, Camera, Check, CheckCheck, ChevronDown, ChevronLeft, ChevronRight, Download, Heart,
+  HeartHandshake, ImagePlus, Info, LogIn, LogOut, Minus, PawPrint, Pencil, Plus, Search, SlidersHorizontal, SwatchBook,
+  Trash2, TrendingDown, TrendingUp, UserMinus, UserPlus, UserRound, Users, X,
+} from 'lucide-react'
 import { TOKEN_NAMES } from '../palettes/tokens'
 import { Badge, Button, Card, IconButton, Progress, Select, Chip, Toggle, Avatar, EmptyState, Pagination, Input, Tabs, Modal, Toast, Textarea } from '../ds'
 import { useToast } from '../contexts/toast/ToastContext'
+import { StageProgress } from '../components/StageProgress'
 import { AuthForm } from './AuthForm'
 import { AUTH_MOCKS } from './AuthForm.mocks'
+
+// Every lucide icon the app imports; keep in sync when one is added
+const ICONS = {
+  ArrowLeft, BarChart2, Bell, Camera, Check, CheckCheck, ChevronDown, ChevronLeft, ChevronRight, Download, Heart,
+  HeartHandshake, ImagePlus, Info, LogIn, LogOut, Minus, PawPrint, Pencil, Plus, Search, SlidersHorizontal, SwatchBook,
+  Trash2, TrendingDown, TrendingUp, UserMinus, UserPlus, UserRound, Users, X,
+}
+
+const ICON_SIZES = ['size-3', 'size-3.5', 'size-4', 'size-5']
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -56,7 +70,7 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
    next touched. */
 
 type Triple = [number, number, number]
-type LabTone = 'primary' | 'success' | 'danger'
+type LabTone = 'primary' | 'success' | 'danger' | 'warning'
 
 /* Keep in sync with crayonStops in ds/Progress.tsx — the lab should always
    open on what actually ships. */
@@ -76,9 +90,14 @@ const LAB_DEFAULTS: Record<LabTone, [Triple, Triple, Triple]> = {
     [0.82, 0.145, 35],
     [0.385, 0.21, 35],
   ],
+  warning: [
+    [0.78, 0.14, 80],
+    [0.9, 0.08, 85],
+    [0.62, 0.15, 70],
+  ],
 }
 
-const LAB_TONES: LabTone[] = ['primary', 'success', 'danger']
+const LAB_TONES: LabTone[] = ['primary', 'success', 'danger', 'warning']
 
 const LAB_PRESETS: [string, Triple][] = [
   ['cream-50', [0.965, 0.035, 85]],
@@ -341,6 +360,35 @@ export function DesignSystem() {
         </p>
       </Section>
 
+      <Section title="Icons">
+        <Row label="In use (lucide-react)">
+          <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {Object.entries(ICONS).map(([name, Icon]) => (
+              <div key={name} className="flex items-center gap-2 text-sm text-text-muted">
+                <Icon className="size-5 text-text" aria-hidden="true" />
+                {name}
+              </div>
+            ))}
+          </div>
+        </Row>
+        <Row label="Sizes">
+          {ICON_SIZES.map((size) => (
+            <div key={size} className="flex items-center gap-2 text-sm text-text-muted">
+              <PawPrint className={`${size} text-text`} aria-hidden="true" />
+              {size}
+            </div>
+          ))}
+        </Row>
+        <Row label="Stroke">
+          <p className="text-sm text-text-muted">Lucide default (2), no explicit strokeWidth on icons.</p>
+        </Row>
+        <Row label="IconButton">
+          <IconButton label="Add to favourites">
+            <Heart className="size-5" />
+          </IconButton>
+        </Row>
+      </Section>
+
       <Section title="Button">
         <Row label="Variants">
           <Button variant="primary">Primary</Button>
@@ -541,11 +589,14 @@ export function DesignSystem() {
               <Progress value={100} label="Crayon, primary" />
               <Progress value={100} tone="success" label="Crayon, success" />
               <Progress value={100} tone="danger" label="Crayon, danger" />
-              <p className="text-sm text-text-muted">
-                Warning is not available for crayon: not tuned in the lab yet.
-              </p>
+              <Progress value={100} tone="warning" label="Crayon, warning" />
             </div>
           )}
+        </Row>
+        <Row label="Crayon — fluid">
+          <div className="w-full">
+            <Progress fluid value={100} label="Crayon, fluid" />
+          </div>
         </Row>
         <Row label="Crayon — edge values">
           <div className="w-full max-w-sm space-y-3">
@@ -561,6 +612,21 @@ export function DesignSystem() {
             <Progress value={0} size="sm" label="Crayon sm, empty" />
           </div>
         </Row>
+      </Section>
+
+      <Section title="Stage progress">
+        <div className="grid w-full max-w-xl grid-cols-2 gap-4 mb-2 text-sm text-text-muted">
+          <span>viewer="adopter"</span>
+          <span>viewer="owner"</span>
+        </div>
+        {(['conversation', 'visit', 'decision', 'adopted', 'denied'] as const).map((stage) => (
+          <Row key={stage} label={stage}>
+            <div className="grid w-full max-w-xl grid-cols-2 gap-4">
+              <StageProgress stage={stage} viewer="adopter" />
+              <StageProgress stage={stage} viewer="owner" />
+            </div>
+          </Row>
+        ))}
       </Section>
 
       <Section title="Badge">

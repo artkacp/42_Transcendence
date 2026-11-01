@@ -10,6 +10,7 @@ import { Rehome } from './views/Rehome'
 import { Profile } from './views/Profile'
 import { DesignSystem } from './views/DesignSystem'
 import { Notifications } from './views/Notifications'
+import { Activity } from './views/Activity'
 import { PrivacyPolicy, TermsOfService } from './views/Legal'
 const Analytics = lazy(() => import('./views/Analytics').then((m) => ({ default: m.Analytics })))
 
@@ -30,6 +31,7 @@ const PAGES: Record<View, ComponentType> = {
   design: DesignSystem,
   privacy: PrivacyPolicy,
   terms: TermsOfService,
+  activity: Activity,
 }
 
 function App() {

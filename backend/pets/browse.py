@@ -24,10 +24,14 @@ def filter_pets(queryset, query_params):
     # .dict() because DRF treats booleans missing from a QueryDict as False
     filters = PetFilterSerializer(data=query_params.dict())
     filters.is_valid(raise_exception=True)
-    for name, value in filters.validated_data.items():
+    params = dict(filters.validated_data)
+    ordering = params.pop('ordering', None)
+    for name, value in params.items():
         if name == 'age_bucket':
             value = AGE_BUCKETS[value]
         elif name == 'trait':
             value = [value]
         queryset = queryset.filter(**{LOOKUPS.get(name, name): value})
+    if ordering:
+        queryset = queryset.order_by(ordering, '-created_at', 'id')
     return queryset

@@ -2,7 +2,7 @@ from drf_spectacular.extensions import OpenApiAuthenticationExtension
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse
 from rest_framework import serializers
 
-from pets.models import AGE_BUCKETS, BREEDS, CITIES, SEX_CHOICES, SIZE_CHOICES, SPECIES_CHOICES, TRAITS
+from pets.models import AGE_BUCKETS, BREEDS, CITIES, ORDERINGS, SEX_CHOICES, SIZE_CHOICES, SPECIES_CHOICES, TRAITS
 
 PUBLIC_PREFIX = '/api/public/v1/'
 ALL_BREEDS = [breed for breeds in BREEDS.values() for breed in breeds]
@@ -39,8 +39,10 @@ PET_FILTERS = [
     OpenApiParameter('trait', str, enum=TRAITS, description='Only pets that have this trait.'),
     OpenApiParameter('vaccinated', bool, description='true: vaccinated pets only; false: unvaccinated pets only.'),
     OpenApiParameter('neutered', bool, description='true: neutered pets only; false: pets not neutered only.'),
+    OpenApiParameter('ordering', str, enum=ORDERINGS,
+                     description='Sort order: -created_at (newest first, the default), created_at, name, '
+                                 'age_years (youngest first), -age_years (oldest first).'),
 ]
-
 
 # POST and PUT bodies, for the docs only: pets.services validates every write with the app's
 # PetSerializer. These repeat its rules; api/tests/test_public_pets_write.py fails if they drift apart.

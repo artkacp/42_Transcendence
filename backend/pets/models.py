@@ -17,6 +17,7 @@ BREEDS = {
 }
 TRAITS = ['friendly', 'playful', 'calm', 'shy', 'energetic', 'wild', 'cuddly', 'loyal', 'protective']
 AGE_BUCKETS = {'under_1': (0, 0), '1_3': (1, 3), '4_7': (4, 7), '8_plus': (8, 20)}
+ORDERINGS = ['-created_at', 'created_at', 'name', 'age_years', '-age_years']
 
 
 class Pet(models.Model):
@@ -56,11 +57,11 @@ class Pet(models.Model):
     class Meta:
         constraints = [
             models.CheckConstraint(
-                check=models.Q(age_years__gte=0) & models.Q(age_years__lte=40),
+                condition=models.Q(age_years__gte=0) & models.Q(age_years__lte=40),
                 name='pet_age_valid_range',
             ),
             models.CheckConstraint(
-                check=models.Q(story__regex=r'[\s\S]{20}'),
+                condition=models.Q(story__regex=r'[\s\S]{20}'),
                 name='pet_story_min_length',
             ),
         ]

@@ -58,8 +58,8 @@ class SocketConsumer(AsyncJsonWebsocketConsumer):
     frames = {
         'pet.subscribe': 'subscribe',
         'pet.unsubscribe': 'unsubscribe',
-        'analytics.subscribe': 'subscribe',
-        'analytics.unsubscribe': 'unsubscribe',
+        'analytics.subscribe': 'subscribe_analytics',
+        'analytics.unsubscribe': 'unsubscribe_analytics',
         'chat.send': 'send_chat',
     }
 
@@ -122,6 +122,17 @@ class SocketConsumer(AsyncJsonWebsocketConsumer):
             self.groups.remove(group)
             await self.channel_layer.group_discard(group, self.channel_name)
 
+    # Opt-in, so only an open dashboard refetches on analytics.ping; the frames carry no fields
+    async def subscribe_analytics(self, content):
+        if 'analytics' not in self.groups:
+            self.groups.append('analytics')
+            await self.channel_layer.group_add('analytics', self.channel_name)
+
+    async def unsubscribe_analytics(self, content):
+        if 'analytics' in self.groups:
+            self.groups.remove('analytics')
+            await self.channel_layer.group_discard('analytics', self.channel_name)
+
     # Same input check and service as the REST fallback, POST /api/inquiries/{id}/messages/.
     # send_message also checks the sender is a party to the thread, binds the attachments and
     # pushes chat.message to both parties' user groups, so success needs no reply here.
@@ -148,7 +159,7 @@ class SocketConsumer(AsyncJsonWebsocketConsumer):
         # auth.ok then only goes out once is_online is already written
         if presence.join(self.user.pk):
             await presence.announce(self.user.pk)
-        # Channels leaves self.groups on disconnect, pet.<id> groups added later included
+        # Channels leaves self.groups on disconnect, pet.<id> and analytics groups added later included
         self.groups = [f'user.{self.user.pk}', 'browse']
         for group in self.groups:
             await self.channel_layer.group_add(group, self.channel_name)

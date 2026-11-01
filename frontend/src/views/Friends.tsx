@@ -1,5 +1,5 @@
 import { Check, UserMinus, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import {
   acceptFriendRequest,
   deleteFriendship,
@@ -9,16 +9,41 @@ import {
   type FriendRequestRecord,
 } from '../api/friends'
 import { ApiError } from '../api/client'
+import { getUsers } from '../api/users'
 import { useAuth } from '../auth/auth-context'
-import { Avatar, Button, EmptyState, Tabs, type TabItem } from '../ds'
+import type { User, UserProfile } from '../data/types'
+import { Avatar, Button, EmptyState, Input, Tabs, type TabItem } from '../ds'
 import { useToast } from '../contexts/toast/ToastContext'
 import { navigate } from '../routing'
 import { useSocketFrame, useSocketReconnect } from '../socket/SocketContext'
+import { FriendAction } from './Profile'
 
 //  helpers 
 
 const errorText = (err: unknown, fallback: string) =>
   err instanceof ApiError ? err.message : fallback
+
+// flex-wrap: on a narrow card the buttons drop to their own line instead of overflowing
+function PersonCard({ user, children }: { user: User; children: ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-surface p-3">
+      <div className="flex min-w-48 flex-1 items-center gap-3">
+        <Avatar name={user.full_name} src={user.avatar} size="md" online={user.is_online} />
+        <div className="min-w-0 flex-1">
+          <button
+            type="button"
+            className="block max-w-full truncate text-left font-semibold hover:text-primary focus-visible:outline-none focus-visible:underline"
+            onClick={() => navigate('profile', { user: user.id })}
+          >
+            {user.full_name}
+          </button>
+          <p className="truncate text-xs text-text-muted">@{user.handle}</p>
+        </div>
+      </div>
+      <div className="ml-auto flex shrink-0 gap-1.5">{children}</div>
+    </div>
+  )
+}
 
 //  Friends tab
 
@@ -46,18 +71,7 @@ function FriendCard({
   }
 
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-3">
-      <Avatar name={other_user.full_name} src={other_user.avatar} size="md" online={other_user.is_online} />
-      <div className="min-w-0 flex-1">
-        <button
-          type="button"
-          className="block truncate text-left font-semibold hover:text-primary focus-visible:outline-none focus-visible:underline"
-          onClick={() => navigate('profile', { user: other_user.id })}
-        >
-          {other_user.full_name}
-        </button>
-        <p className="truncate text-xs text-text-muted">@{other_user.handle}</p>
-      </div>
+    <PersonCard user={other_user}>
       <Button
         size="sm"
         variant="ghost"
@@ -68,7 +82,7 @@ function FriendCard({
       >
         Remove
       </Button>
-    </div>
+    </PersonCard>
   )
 }
 
@@ -84,7 +98,7 @@ function FriendsList({
       <EmptyState
         emoji="ʕ •ᴥ• ...."
         title="No friends yet"
-        hint="Go to someone's profile and add them as a friend."
+        hint="Head to Discover to find people on Pawfect."
       />
     )
   }
@@ -156,73 +170,111 @@ function RequestCard({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-surface p-3">
-      <Avatar name={other_user.full_name} src={other_user.avatar} size="md" online={other_user.is_online} />
-      <div className="min-w-0 flex-1">
-        <button
-          type="button"
-          className="block truncate text-left font-semibold hover:text-primary focus-visible:outline-none focus-visible:underline"
-          onClick={() => navigate('profile', { user: other_user.id })}
-        >
-          {other_user.full_name}
-        </button>
-        <p className="truncate text-xs text-text-muted">@{other_user.handle}</p>
-      </div>
-      <div className="flex w-full shrink-0 justify-end gap-1.5 sm:w-auto">
-        <Button
-          size="sm"
-          icon={<Check className="size-3.5" />}
-          disabled={busy}
-          aria-label={`Accept ${other_user.full_name}`}
-          onClick={() =>
-            void run(
-              () => acceptFriendRequest(record.id),
-              'Friend added',
-              `You and ${other_user.full_name.split(' ')[0]} are now friends.`,
-              true,
-            )
-          }
-        >
-          Accept
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          icon={<X className="size-3.5" />}
-          disabled={busy}
-          aria-label={`Decline ${other_user.full_name}`}
-          onClick={() =>
-            void run(
-              () => deleteFriendship(record.id),
-              'Request declined',
-              `You declined ${other_user.full_name.split(' ')[0]}'s request.`,
-              false,
-            )
-          }
-        >
-          Decline
-        </Button>
-      </div>
+    <PersonCard user={other_user}>
+      <Button
+        size="sm"
+        icon={<Check className="size-3.5" />}
+        disabled={busy}
+        aria-label={`Accept ${other_user.full_name}`}
+        onClick={() =>
+          void run(
+            () => acceptFriendRequest(record.id),
+            'Friend added',
+            `You and ${other_user.full_name.split(' ')[0]} are now friends.`,
+            true,
+          )
+        }
+      >
+        Accept
+      </Button>
+      <Button
+        size="sm"
+        variant="ghost"
+        icon={<X className="size-3.5" />}
+        disabled={busy}
+        aria-label={`Decline ${other_user.full_name}`}
+        onClick={() =>
+          void run(
+            () => deleteFriendship(record.id),
+            'Request declined',
+            `You declined ${other_user.full_name.split(' ')[0]}'s request.`,
+            false,
+          )
+        }
+      >
+        Decline
+      </Button>
+    </PersonCard>
+  )
+}
+
+//  Discover tab
+
+// Accent-insensitive, so "hernandez" finds "Hernández"
+const normalize = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+
+function DiscoverList({ users, onChanged }: { users: UserProfile[]; onChanged: () => void }) {
+  const [query, setQuery] = useState('')
+
+  if (users.length === 0) {
+    return (
+      <EmptyState
+        emoji="🌟"
+        title="Nobody else here yet"
+        hint="New members will show up here."
+      />
+    )
+  }
+
+  const term = normalize(query.trim())
+  const matches = users.filter((u) => normalize(`${u.full_name} ${u.handle}`).includes(term))
+
+  return (
+    <div className="space-y-4">
+      <Input
+        aria-label="Search people"
+        placeholder="Search by name or handle…"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+      />
+      {matches.length === 0 ? (
+        <EmptyState
+          emoji="🔍"
+          title="No one matches that search"
+          hint="Try a different name or handle."
+        />
+      ) : (
+        <div className="grid gap-2 sm:grid-cols-2">
+          {matches.map((u) => (
+            <PersonCard key={u.id} user={u}>
+              <FriendAction user={u} onChanged={onChanged} size="sm" />
+            </PersonCard>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
 
 //  root view 
 
-type Tab = 'friends' | 'requests'
+type Tab = 'friends' | 'requests' | 'discover'
 
 export function Friends() {
   const { status, user } = useAuth()
   const [friends, setFriends] = useState<FriendRecord[] | null>(null)
   const [requests, setRequests] = useState<FriendRequestRecord[] | null>(null)
   const [tab, setTab] = useState<Tab>('friends')
+  const [users, setUsers] = useState<UserProfile[] | null>(null)
   const [friendsError, setFriendsError] = useState(false)
   const [requestsError, setRequestsError] = useState(false)
+  const [usersError, setUsersError] = useState(false)
   const [reload, setReload] = useState(0)
 
   const load = () => {
     setFriendsError(false)
     setRequestsError(false)
+    setUsersError(false)
     setReload((n) => n + 1)
   }
 
@@ -241,6 +293,21 @@ export function Friends() {
     return () => { ignore = true }
   }, [status, reload])
 
+  useEffect(() => {
+    if (status !== 'signed-in' || tab !== 'discover') return
+    let ignore = false
+
+    getUsers()
+      .then((res) => {
+        if (ignore) return
+        setUsers(res)
+        setUsersError(false)
+      })
+      .catch(() => { if (!ignore) setUsersError(true) })
+
+    return () => { ignore = true }
+  }, [status, reload, tab])
+
   // Live incoming requests
   useSocketFrame('notification.created', (frame) => {
     if (frame.notification.subject_type === 'user') load()
@@ -256,6 +323,9 @@ export function Friends() {
               : r,
           )
         : prev,
+    )
+    setUsers((prev) =>
+      prev?.map((u) => (u.id === frame.user_id ? { ...u, is_online: frame.online } : u)) ?? prev,
     )
   })
 
@@ -282,6 +352,7 @@ export function Friends() {
   const tabs: readonly TabItem<Tab>[] = [
     { id: 'friends', label: friends ? `Friends (${friends.length})` : 'Friends' },
     { id: 'requests', label: pendingCount > 0 ? `Requests (${pendingCount})` : 'Requests' },
+    { id: 'discover', label: 'Discover' },
   ]
 
   const removeFromFriends = (id: string) =>
@@ -343,6 +414,23 @@ export function Friends() {
                   />
                 ))}
               </div>
+            )}
+          </>
+        )}
+
+        {tab === 'discover' && (
+          <>
+            {usersError ? (
+              <EmptyState
+                emoji="😿"
+                title="Couldn't load people"
+                hint="Something went wrong. Try again in a moment."
+                action={<Button variant="secondary" onClick={load}>Retry</Button>}
+              />
+            ) : users === null ? (
+              <p className="py-16 text-center text-sm text-text-muted">Loading…</p>
+            ) : (
+              <DiscoverList users={users} onChanged={load} />
             )}
           </>
         )}

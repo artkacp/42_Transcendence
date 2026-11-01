@@ -1,5 +1,6 @@
 import io
 import tempfile
+import uuid
 from datetime import timedelta
 from unittest.mock import patch
 
@@ -15,15 +16,19 @@ from rest_framework import status
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
 
-from accounts.models import User
+from accounts.models import Friendship, User
 from accounts.tests import image_file, make_pet, make_user
 from analytics.db.engine import engine
+from analytics.models import AnalyticsEvent
 from config.asgi import application
 from inquiries.models import Attachment, Inquiry, Message
 from inquiries.services import change_stage
+from notifications.models import Notification
+from pets.models import Pet
 from pets.tests import PET_PAYLOAD
 
 from . import presence
+from .management.commands.seed_demo import SEED_EMAILS
 from .realtime import push
 
 # The test runner adds testserver to ALLOWED_HOSTS
@@ -282,6 +287,11 @@ class FrameTests(SocketTestCase):
         # No reply on success; the wait gives the consumer time to join or leave the group
         self.assertTrue(await communicator.receive_nothing())
 
+    async def analytics_frame(self, communicator, kind):
+        await communicator.send_json_to({'type': kind})
+        # Same as pet_frame: an error frame would show up here instead of nothing
+        self.assertTrue(await communicator.receive_nothing())
+
     async def assert_both_got_chat(self, owner, adopter, sender, body, attachment_ids=()):
         frames = [await owner.receive_json_from(), await adopter.receive_json_from()]
         message = await Message.objects.aget()
@@ -306,6 +316,49 @@ class FrameTests(SocketTestCase):
         await self.pet_frame(tab, 'pet.unsubscribe', self.pet)
         await sync_to_async(push)(f'pet.{self.pet.pk}', 'pet.adopted', **adopted)
         self.assertTrue(await tab.receive_nothing())
+
+        await tab.disconnect()
+
+    async def test_signed_in_socket_gets_no_analytics_pings_without_subscribing(self):
+        tab = await self.signed_in(self.carol)
+
+        await sync_to_async(push)('analytics', 'analytics.ping')
+        self.assertTrue(await tab.receive_nothing())
+
+        await tab.disconnect()
+
+    async def test_subscribed_socket_gets_analytics_pings_until_it_unsubscribes(self):
+        tab = await self.signed_in(self.carol)
+
+        await self.analytics_frame(tab, 'analytics.subscribe')
+        await sync_to_async(push)('analytics', 'analytics.ping')
+        self.assertEqual(await tab.receive_json_from(), {'type': 'analytics.ping'})
+
+        await self.analytics_frame(tab, 'analytics.unsubscribe')
+        await sync_to_async(push)('analytics', 'analytics.ping')
+        self.assertTrue(await tab.receive_nothing())
+
+        await tab.disconnect()
+
+    async def test_subscribing_to_analytics_twice_gets_one_ping_per_push(self):
+        tab = await self.signed_in(self.carol)
+
+        await self.analytics_frame(tab, 'analytics.subscribe')
+        await self.analytics_frame(tab, 'analytics.subscribe')
+        await sync_to_async(push)('analytics', 'analytics.ping')
+        self.assertEqual(await tab.receive_json_from(), {'type': 'analytics.ping'})
+        self.assertTrue(await tab.receive_nothing())
+
+        await tab.disconnect()
+        self.assertFalse(get_channel_layer().groups.get('analytics'))
+
+    async def test_opening_a_pet_page_pings_analytics_subscribers(self):
+        tab = await self.signed_in(self.carol)
+        await self.analytics_frame(tab, 'analytics.subscribe')
+
+        shown = await sync_to_async(self.client_for(self.adopter).get)(reverse('pet-detail', args=[self.pet.pk]))
+        self.assertEqual(shown.status_code, status.HTTP_200_OK)
+        self.assertEqual(await tab.receive_json_from(), {'type': 'analytics.ping'})
 
         await tab.disconnect()
 
@@ -424,3 +477,70 @@ class FrameTests(SocketTestCase):
         await tab.disconnect()
         for group in groups:
             self.assertFalse(layer.groups.get(group))
+
+
+# TransactionTestCase: the command commits through SQLAlchemy too, and delete_pet unlinks files on commit
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp())
+class SeedDemoTests(TransactionTestCase):
+
+    # analytics_event has an FK to pets_pet but is unmanaged, so a plain TRUNCATE is rejected
+    def _fixture_teardown(self):
+        call_command('flush', verbosity=0, interactive=False, allow_cascade=True, inhibit_post_migrate=True)
+
+    def setUp(self):
+        engine.dispose()
+        self.seed()
+
+    def seed(self, *args):
+        call_command('seed_demo', *args, stdout=io.StringIO())
+
+    def counts(self):
+        users = User.objects.filter(email__in=SEED_EMAILS)
+        return {
+            'users': users.count(),
+            'pets': Pet.objects.filter(owner__in=users).count(),
+            'inquiries': Inquiry.objects.filter(adopter__in=users).count(),
+            'messages': Message.objects.filter(sender__in=users).count(),
+            'friendships': Friendship.objects.filter(requester__in=users).count(),
+            'notifications': Notification.objects.filter(recipient__in=users).count(),
+            'events': AnalyticsEvent.objects.filter(user_id__in=users.values('id')).count(),
+        }
+
+    def test_second_run_does_not_duplicate(self):
+        before = self.counts()
+        self.assertEqual(before['users'], len(SEED_EMAILS))
+        self.assertEqual(before['pets'], 20)
+        self.seed()
+        self.assertEqual(self.counts(), before)
+
+    def test_flush_resets_to_the_same_counts_and_removes_old_files(self):
+        before = self.counts()
+        old_photo = Pet.objects.first().photo
+        name, storage = old_photo.name, old_photo.storage
+        self.seed('--flush')
+        self.assertEqual(self.counts(), before)
+        self.assertFalse(storage.exists(name))
+
+    def test_events_cover_every_type_within_the_last_30_days(self):
+        events = AnalyticsEvent.objects.all()
+        self.assertEqual(
+            set(events.values_list('event_type', flat=True)),
+            {'visit', 'application', 'message', 'adoption', 'listing_published', 'registered'},
+        )
+        now = timezone.now()
+        for occurred_at in events.values_list('occurred_at', flat=True):
+            self.assertGreaterEqual(occurred_at, now - timedelta(days=30))
+            self.assertLessEqual(occurred_at, now)
+
+    def test_flush_leaves_other_users_alone(self):
+        outsider = make_user('outsider', 99)
+        pet = make_pet(outsider)
+        event_id = uuid.uuid4()
+        AnalyticsEvent.objects.create(
+            id=event_id, user_id=outsider.pk, pet_id=pet.pk, event_type='visit',
+            occurred_at=timezone.now(), metadata={},
+        )
+        self.seed('--flush')
+        self.assertTrue(User.objects.filter(pk=outsider.pk).exists())
+        self.assertTrue(Pet.objects.filter(pk=pet.pk).exists())
+        self.assertTrue(AnalyticsEvent.objects.filter(pk=event_id).exists())

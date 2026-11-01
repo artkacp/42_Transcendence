@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ComponentProps } from 'react'
 import { ArrowLeft, Camera, Check, PawPrint, Trash2, UserMinus, UserPlus, X } from 'lucide-react'
 import { ApiError } from '../api/client'
 import { acceptFriendRequest, deleteFriendship, sendFriendRequest } from '../api/friends'
@@ -194,7 +194,12 @@ function OwnProfile({ me }: { me: Me }) {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <h1 className="font-display text-4xl font-black tracking-tight">Your profile</h1>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <h1 className="font-display text-4xl font-black tracking-tight">Your profile</h1>
+        <Button size="sm" variant="secondary" onClick={() => navigate('activity')}>
+          Your activity
+        </Button>
+      </div>
       <Card className="p-6">
         <AvatarEditor me={me} />
         {error ? (
@@ -216,19 +221,27 @@ function OwnProfile({ me }: { me: Me }) {
 interface FriendActionProps {
   user: UserProfile
   onChanged: () => void
+  size?: ComponentProps<typeof Button>['size']
 }
 
-function FriendAction({ user, onChanged }: FriendActionProps) {
+export function FriendAction({ user, onChanged, size }: FriendActionProps) {
   const toast = useToast()
   const [busy, setBusy] = useState(false)
-  const [localFriendship, setLocalFriendship] = useState<typeof user.friendship>(null)
-  const friendship = localFriendship ?? user.friendship
+  const [local, setLocal] = useState<{ from: typeof user.friendship; to: typeof user.friendship } | null>(null)
+  // The result of an action applies only until the refetched friendship arrives
+  const friendship = local?.from === user.friendship ? local.to : user.friendship
   const firstName = user.full_name.split(' ')[0]
 
-  const run = async (request: () => Promise<unknown>, title: string, message: string) => {
+  const run = async (
+    request: () => Promise<unknown>,
+    next: typeof user.friendship,
+    title: string,
+    message: string,
+  ) => {
     setBusy(true)
     try {
       await request()
+      setLocal({ from: user.friendship, to: next })
       toast({ kind: 'update', title, message })
     } catch (err) {
       toast({ title: 'Could not update friendship', message: errorText(err, 'Please try again.') })
@@ -243,7 +256,7 @@ function FriendAction({ user, onChanged }: FriendActionProps) {
       setBusy(true)
       try {
         const result = await sendFriendRequest(user.id)
-        setLocalFriendship({ id: result.id, status: result.status, requested_by_me: true })
+        setLocal({ from: user.friendship, to: { id: result.id, status: result.status, requested_by_me: true } })
         toast({ kind: 'update', title: 'Friend request sent', message: `${firstName} will see your request.` })
         onChanged()
       } catch (err) {
@@ -254,8 +267,10 @@ function FriendAction({ user, onChanged }: FriendActionProps) {
     }
     return (
       <Button
+        size={size}
         icon={<UserPlus className="size-4" />}
         disabled={busy}
+        aria-label={`Add friend ${user.full_name}`}
         onClick={() => void addFriend()}
       >
         Add friend
@@ -263,11 +278,11 @@ function FriendAction({ user, onChanged }: FriendActionProps) {
     )
   }
 
-  const remove = (title: string, message: string) => () => void run(() => deleteFriendship(friendship.id), title, message)
+  const remove = (title: string, message: string) => () => void run(() => deleteFriendship(friendship.id), null, title, message)
 
   if (friendship.status === 'accepted') {
     return (
-      <Button variant="ghost" icon={<UserMinus className="size-4" />} disabled={busy} onClick={remove('Friend removed', `${firstName} is no longer your friend.`)}>
+      <Button size={size} variant="ghost" icon={<UserMinus className="size-4" />} disabled={busy} aria-label={`Remove friend ${user.full_name}`} onClick={remove('Friend removed', `${firstName} is no longer your friend.`)}>
         Remove friend
       </Button>
     )
@@ -275,7 +290,7 @@ function FriendAction({ user, onChanged }: FriendActionProps) {
 
   if (friendship.requested_by_me) {
     return (
-      <Button variant="ghost" icon={<X className="size-4" />} disabled={busy} onClick={remove('Request cancelled', `Your request to ${firstName} was withdrawn.`)}>
+      <Button size={size} variant="ghost" icon={<X className="size-4" />} disabled={busy} aria-label={`Cancel request to ${user.full_name}`} onClick={remove('Request cancelled', `Your request to ${firstName} was withdrawn.`)}>
         Cancel request
       </Button>
     )
@@ -284,13 +299,15 @@ function FriendAction({ user, onChanged }: FriendActionProps) {
   return (
     <>
       <Button
+        size={size}
         icon={<Check className="size-4" />}
         disabled={busy}
-        onClick={() => void run(() => acceptFriendRequest(friendship.id), 'Friend added', `You and ${firstName} are now friends.`)}
+        aria-label={`Accept request from ${user.full_name}`}
+        onClick={() => void run(() => acceptFriendRequest(friendship.id), { ...friendship, status: 'accepted' }, 'Friend added', `You and ${firstName} are now friends.`)}
       >
         Accept request
       </Button>
-      <Button variant="ghost" icon={<X className="size-4" />} disabled={busy} onClick={remove('Request declined', `You declined ${firstName}'s request.`)}>
+      <Button size={size} variant="ghost" icon={<X className="size-4" />} disabled={busy} aria-label={`Decline ${user.full_name}`} onClick={remove('Request declined', `You declined ${firstName}'s request.`)}>
         Decline
       </Button>
     </>

@@ -1,9 +1,11 @@
 import io
 import tempfile
+from unittest import mock
 
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import IntegrityError, transaction
 from django.test import override_settings
 from django.urls import reverse
 from PIL import Image
@@ -15,6 +17,7 @@ from notifications.models import Notification
 from pets.models import Pet
 
 from .models import Friendship, User
+from .views import FriendshipViewSet
 
 
 def make_user(handle, n):
@@ -53,12 +56,50 @@ def make_pet(owner, **overrides):
     })
 
 
+def pair_lookup_misses_once():
+    # Concurrent requests can't be run in a TestCase, so fake the losing side of
+    # the race: its pre-insert lookup finds nothing, then the insert hits the
+    # row the other request already created
+    original = FriendshipViewSet._find_pair
+    calls = []
+
+    def find_pair(view, me, other_id):
+        calls.append(other_id)
+        return None if len(calls) == 1 else original(view, me, other_id)
+
+    return mock.patch.object(FriendshipViewSet, '_find_pair', find_pair)
+
+
 class FriendshipTests(APITestCase):
 
     def setUp(self):
         self.alice = make_user('alice', 1)
         self.bob = make_user('bob', 2)
         self.carol = make_user('carol', 3)
+
+    # --- discover ---
+
+    def test_user_list_excludes_me_and_carries_friend_state(self):
+        Friendship.objects.create(requester=self.alice, addressee=self.bob)
+        auth(self.client, self.alice)
+        r = self.client.get(reverse('user-list'))
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        by_handle = {user['handle']: user for user in r.data}
+        self.assertEqual(set(by_handle), {'bob', 'carol'})
+        self.assertEqual(by_handle['bob']['friendship']['status'], 'pending')
+        self.assertTrue(by_handle['bob']['friendship']['requested_by_me'])
+        self.assertIsNone(by_handle['carol']['friendship'])
+        self.assertNotIn('email', by_handle['bob'])
+
+    def test_user_list_hides_inactive_users(self):
+        User.objects.filter(pk=self.carol.pk).update(is_active=False)
+        auth(self.client, self.alice)
+        r = self.client.get(reverse('user-list'))
+        self.assertEqual([user['handle'] for user in r.data], ['bob'])
+
+    def test_user_list_requires_authentication(self):
+        r = self.client.get(reverse('user-list'))
+        self.assertEqual(r.status_code, status.HTTP_401_UNAUTHORIZED)
 
     # --- send request ---
 
@@ -92,6 +133,31 @@ class FriendshipTests(APITestCase):
         self.assertEqual(r.status_code, status.HTTP_200_OK)
         self.assertEqual(r.data['status'], 'accepted')
 
+    def test_reverse_row_violates_unordered_pair_constraint(self):
+        Friendship.objects.create(requester=self.alice, addressee=self.bob)
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            Friendship.objects.create(requester=self.bob, addressee=self.alice)
+
+    def test_racing_duplicate_request_rejected_not_500(self):
+        Friendship.objects.create(requester=self.alice, addressee=self.bob)
+        auth(self.client, self.alice)
+        with pair_lookup_misses_once():
+            r = self.client.post(reverse('friendship-list'), {'addressee': str(self.bob.pk)})
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(Friendship.objects.count(), 1)
+
+    def test_racing_reverse_request_accepts_pending(self):
+        f = Friendship.objects.create(requester=self.alice, addressee=self.bob)
+        auth(self.client, self.bob)
+        with pair_lookup_misses_once():
+            r = self.client.post(reverse('friendship-list'), {'addressee': str(self.alice.pk)})
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertEqual(r.data['status'], 'accepted')
+        self.assertEqual(Friendship.objects.get().pk, f.pk)
+        self.assertEqual(Friendship.objects.get().status, Friendship.STATUS_ACCEPTED)
+        self.assertEqual(Notification.objects.filter(title='Friend added').count(), 2)
+        self.assertFalse(Notification.objects.filter(title='Friend request').exists())
+
     # --- accept ---
 
     def test_addressee_can_accept(self):
@@ -121,6 +187,19 @@ class FriendshipTests(APITestCase):
         r = self.client.post(reverse('friendship-accept', args=[f.pk]))
         self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_second_accept_rejected_without_notifying_again(self):
+        f = Friendship.objects.create(requester=self.alice, addressee=self.bob)
+        auth(self.client, self.bob)
+        first = self.client.post(reverse('friendship-accept', args=[f.pk]))
+        # A request that loaded the row while it was still pending
+        stale = Friendship.objects.select_related('requester', 'addressee').get(pk=f.pk)
+        stale.status = Friendship.STATUS_PENDING
+        with mock.patch.object(FriendshipViewSet, '_get_friendship', return_value=stale):
+            second = self.client.post(reverse('friendship-accept', args=[f.pk]))
+        self.assertEqual(first.status_code, status.HTTP_200_OK)
+        self.assertEqual(second.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(Notification.objects.filter(title='Friend added').count(), 2)
+
     # --- destroy (reject / cancel / unfriend) ---
 
     def test_addressee_can_reject_pending(self):
@@ -149,6 +228,32 @@ class FriendshipTests(APITestCase):
         auth(self.client, self.carol)
         r = self.client.delete(reverse('friendship-detail', args=[f.pk]))
         self.assertEqual(r.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_second_unfriend_not_found_without_notifying_again(self):
+        f = Friendship.objects.create(
+            requester=self.alice, addressee=self.bob, status=Friendship.STATUS_ACCEPTED
+        )
+        # A request that loaded the row before the first delete removed it
+        stale = Friendship.objects.select_related('requester', 'addressee').get(pk=f.pk)
+        auth(self.client, self.bob)
+        first = self.client.delete(reverse('friendship-detail', args=[f.pk]))
+        with mock.patch.object(FriendshipViewSet, '_get_friendship', return_value=stale):
+            second = self.client.delete(reverse('friendship-detail', args=[f.pk]))
+        self.assertEqual(first.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(second.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(Notification.objects.filter(title='Friend removed').count(), 2)
+
+    def test_cancel_racing_accept_notifies_removal(self):
+        f = Friendship.objects.create(requester=self.alice, addressee=self.bob)
+        # Loaded while pending, then accepted before the delete ran
+        stale = Friendship.objects.select_related('requester', 'addressee').get(pk=f.pk)
+        Friendship.objects.filter(pk=f.pk).update(status=Friendship.STATUS_ACCEPTED)
+        auth(self.client, self.alice)
+        with mock.patch.object(FriendshipViewSet, '_get_friendship', return_value=stale):
+            r = self.client.delete(reverse('friendship-detail', args=[f.pk]))
+        self.assertEqual(r.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Friendship.objects.exists())
+        self.assertEqual(Notification.objects.filter(title='Friend removed').count(), 2)
 
     # --- list / incoming / outgoing ---
 

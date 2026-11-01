@@ -132,17 +132,24 @@ When two FKs point at the same model, distinct `related_name` values are require
 class Meta:
     constraints = [
         models.UniqueConstraint(
-            fields=['requester', 'addressee'],
-            name='unique_friendship_pair',
+            Least('requester', 'addressee'),
+            Greatest('requester', 'addressee'),
+            name='unique_friendship_unordered_pair',
         ),
         models.CheckConstraint(
-            check=~Q(requester=F('addressee')),
+            condition=~Q(requester=F('addressee')),
             name='no_self_friendship',
         ),
     ]
 ```
 
-`UniqueConstraint` on `(requester, addressee)` generates a unique index on `(requester_id, addressee_id)` in PostgreSQL. This prevents duplicate rows: a user cannot send two requests to the same person. It is directional — `(A, B)` and `(B, A)` are different pairs, which is correct because A sending a request to B and B sending one to A are separate events.
+`unique_friendship_unordered_pair` allows one row per pair of users, whichever direction the request went. A friendship belongs to the pair, so A→B and B→A must not exist side by side: with two rows, accepting one leaves the other pending, and the profile endpoint cannot tell which row describes the relationship.
+
+Instead of a list of fields, the constraint takes two expressions. `Least` and `Greatest` (from `django.db.models.functions`) map to PostgreSQL's `LEAST()` and `GREATEST()`, which also work on UUIDs. For a given pair they return the same two values in the same order no matter who the requester is, so A→B and B→A produce the same key and the second insert fails. PostgreSQL implements an expression constraint as a unique index on those expressions (`CREATE UNIQUE INDEX ... (LEAST(requester_id, addressee_id), GREATEST(requester_id, addressee_id))`). It also blocks same-direction duplicates, so no separate `fields=['requester', 'addressee']` constraint is needed.
+
+The constraint is what keeps this correct under concurrency. The view looks for an existing row first so it can return a clear 400, but two requests arriving at the same moment can both pass that check. The database then rejects the second insert with `IntegrityError`, and the view resolves it against the row that won: it accepts it if it is the other user's pending request, otherwise it returns 400.
+
+The first version of the model used a directional `UniqueConstraint(fields=['requester', 'addressee'])`, which treated A→B and B→A as different pairs. Migration `accounts/0005_friendship_unordered_pair` replaced it. Before adding the new constraint, it deletes reverse duplicates that already exist (per pair it keeps the accepted row, otherwise the oldest), because PostgreSQL refuses to create a unique index over rows that already violate it.
 
 `CheckConstraint` adds a `CHECK(...)` clause to the table definition. The condition `~Q(requester=F('addressee'))` translates to `CHECK (NOT (requester_id = addressee_id))`.
 

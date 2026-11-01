@@ -190,6 +190,24 @@ class BrowseTests(APITestCase):
         r = self.browse(species='bird', age_bucket='old', vaccinated='maybe')
         self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(set(r.data['fields']), {'species', 'age_bucket', 'vaccinated'})
+    
+    def test_ordering(self):
+        make_pet(self.alice, name='Ada', age_years=5)
+        cases = {
+            '-created_at': ['Ada', 'Max', 'Kobi', 'Karo'],
+            'created_at': ['Karo', 'Kobi', 'Max', 'Ada'],
+            'name': ['Ada', 'Karo', 'Kobi', 'Max'],
+            'age_years': ['Karo', 'Kobi', 'Ada', 'Max'],
+            '-age_years': ['Max', 'Ada', 'Kobi', 'Karo'],
+        }
+        for ordering, expected in cases.items():
+            with self.subTest(ordering=ordering):
+                self.assertEqual(self.names(self.browse(ordering=ordering)), expected)
+
+    def test_unknown_ordering_rejected(self):
+        r = self.browse(ordering='price')
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(set(r.data['fields']), {'ordering'})
 
 
 class MineAndDetailTests(APITestCase):

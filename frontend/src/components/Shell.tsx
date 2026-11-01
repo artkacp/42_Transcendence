@@ -1,5 +1,5 @@
 import { useEffect, useState, type MouseEvent, type ReactNode } from 'react'
-import { BarChart2, Bell, LogIn, LogOut, PawPrint, Search, SwatchBook, UserRound, Users } from 'lucide-react'
+import { BarChart2, Bell, HeartHandshake, LogIn, LogOut, PawPrint, Search, SwatchBook, UserRound, Users } from 'lucide-react'
 import { navigate, viewHref, type View } from '../routing'
 import { useFaviconAnimation } from '../hooks/useFaviconAnimation'
 import { get } from '../api/client'
@@ -19,12 +19,13 @@ import { useSocketFrame, useSocketReconnect } from '../socket/SocketContext'
  */
 
 const NAV: { view: View; label: string; icon: ReactNode }[] = [
-  { view: 'browse', label: 'Browse', icon: <Search className="size-[18px]" /> },
-  { view: 'analytics', label: 'Analytics', icon: <BarChart2 className="size-[18px]" /> },
-  { view: 'adoptions', label: 'Adoptions', icon: <PawPrint className="size-[18px]" /> },
-  { view: 'friends', label: 'Friends', icon: <Users className="size-[18px]" /> },
-  { view: 'profile', label: 'Profile', icon: <UserRound className="size-[18px]" /> },
-  { view: 'design', label: 'Design kit', icon: <SwatchBook className="size-[18px]" /> },
+  { view: 'browse', label: 'Browse', icon: <Search className="size-5" /> },
+  { view: 'analytics', label: 'Analytics', icon: <BarChart2 className="size-5" /> },
+  { view: 'rehome', label: 'Rehome', icon: <HeartHandshake className="size-5" /> },
+  { view: 'adoptions', label: 'Adoptions', icon: <PawPrint className="size-5" /> },
+  { view: 'friends', label: 'Friends', icon: <Users className="size-5" /> },
+  { view: 'profile', label: 'Profile', icon: <UserRound className="size-5" /> },
+  { view: 'design', label: 'Design kit', icon: <SwatchBook className="size-5" /> },
 ]
 // A real <a href> keeps middle-click / open-in-new-tab working;
 // a plain left click switches the view without a page reload.
@@ -112,7 +113,7 @@ function Me({ compact = false }: { compact?: boolean }) {
   if (status === 'signed-out') {
     return (
       <Link view="auth" className={item}>
-        <LogIn className="size-[18px]" />
+        <LogIn className="size-5" />
         Sign in
       </Link>
     )
@@ -259,7 +260,7 @@ export function Shell({ view, children }: { view: View; children: ReactNode }) {
           aria-label="Main"
           className="fixed inset-x-0 bottom-0 z-40 flex justify-around border-t border-border bg-surface/95 px-2 py-2 backdrop-blur lg:hidden"
         >
-          {NAV.slice(0, 5).map((n) => (
+          {NAV.slice(0, 6).map((n) => (
             <Link
               key={n.view}
               view={n.view}
