@@ -224,7 +224,7 @@ export function Analytics() {
 
   if (status !== 'signed-in') {
     return (
-      <div className="p-8">
+      <div className="sm:p-8">
         {status === 'loading' ? (
           <p className="py-16 text-center text-sm text-text-muted">Loading…</p>
         ) : (
@@ -243,7 +243,7 @@ export function Analytics() {
   const kpis = data?.kpis
 
   return (
-    <div className="space-y-6 p-8">
+    <div className="space-y-6 sm:p-8">
       {/* ── header ── */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -268,7 +268,7 @@ export function Analytics() {
             max={end || undefined}
             onChange={(e) => setStart(e.target.value)}
             aria-label="Start date"
-            className="w-auto text-sm"
+            className="w-auto min-w-0 flex-1 text-sm sm:flex-none"
           />
           <span className="text-xs text-text-muted">to</span>
           <Input
@@ -277,7 +277,7 @@ export function Analytics() {
             min={start || undefined}
             onChange={(e) => setEnd(e.target.value)}
             aria-label="End date"
-            className="w-auto text-sm"
+            className="w-auto min-w-0 flex-1 text-sm sm:flex-none"
           />
           <div className="flex flex-wrap items-center gap-2 ml-1">
             <Chip active={species === ''} onClick={() => { setSpecies(''); setBreed('') }}>

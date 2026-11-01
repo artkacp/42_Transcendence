@@ -81,9 +81,47 @@ interface AdoptionsTableProps {
   meId?: string
 }
 
+// below sm: one card per conversation instead of a sideways-scrolling table
+function AdoptionsCards({ rows, meId }: AdoptionsTableProps) {
+  return (
+    <ul className="space-y-3 sm:hidden">
+      {rows.map(({ id, pet, stage, last_message, adoptedById }) => (
+        <li key={id}>
+          <Card className="space-y-3 p-4">
+            <div className="flex items-center gap-3">
+              <PetThumb pet={pet} />
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold text-text">{pet.name}</p>
+                <div className="flex min-w-0 items-center gap-2 text-sm">
+                  <Avatar src={pet.owner.avatar} name={pet.owner.full_name} size="sm" online={pet.owner.is_online} />
+                  <span className="truncate text-text">{pet.owner.full_name}</span>
+                </div>
+              </div>
+            </div>
+            <div className="text-sm [&>p]:max-w-full">
+              <LastMessage message={last_message} />
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <StatusBadge adoptedById={adoptedById} stage={stage} meId={meId} />
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => navigate('pet', { id: pet.id })}
+                aria-label={`Open ${pet.name}`}
+              >
+                Open
+              </Button>
+            </div>
+          </Card>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 function AdoptionsTable({ rows, meId }: AdoptionsTableProps) {
   return (
-    <Card className="overflow-x-auto">
+    <Card className="hidden overflow-x-auto sm:block">
       <table className="w-full min-w-[640px] text-left text-sm">
         <thead className="border-b border-border text-xs uppercase tracking-wide text-text-muted">
           <tr>
@@ -213,7 +251,7 @@ function YourAdoptions({ meId }: { meId?: string }) {
   )
 
   return (
-    <div className="space-y-6 p-8">
+    <div className="space-y-6 sm:p-8">
       <div>
         <h1 className="font-display text-4xl font-black tracking-tight">Your adoptions</h1>
         <p className="mt-1 text-sm text-text-muted">Pets you asked about, latest conversation first.</p>
@@ -231,7 +269,10 @@ function YourAdoptions({ meId }: { meId?: string }) {
           action={<Button onClick={() => navigate('browse')}>Browse pets</Button>}
         />
       ) : (
-        <AdoptionsTable rows={rows} meId={meId} />
+        <>
+          <AdoptionsCards rows={rows} meId={meId} />
+          <AdoptionsTable rows={rows} meId={meId} />
+        </>
       )}
     </div>
   )
@@ -244,7 +285,7 @@ export function Adoptions() {
 
   if (status === 'signed-out') {
     return (
-      <div className="p-8">
+      <div className="sm:p-8">
         <EmptyState
           emoji="(︶ᴥ .  .   .   .     ╰ᐢ◕ ◕ᐢ╮"
           title="Sign in to see your adoptions"

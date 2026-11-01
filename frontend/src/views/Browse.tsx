@@ -118,7 +118,7 @@ export function Browse() {
 
   if (status !== 'signed-in') {
     return (
-      <div className="p-8">
+      <div className="sm:p-8">
         {status === 'loading' ? (
           <p className="py-16 text-center text-sm text-text-muted">Loading…</p>
         ) : (
@@ -134,7 +134,7 @@ export function Browse() {
   }
 
   return (
-    <div className="space-y-6 p-8">
+    <div className="space-y-6 sm:p-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-4xl font-black tracking-tight">
@@ -142,7 +142,7 @@ export function Browse() {
           </h1>
           <p className="mt-1 text-sm text-text-muted">They just happen to have four legs. Or wings.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {data && (
             <p className="text-sm text-text-subtle">
               <span className="font-semibold text-text">{count}</span> {count === 1 ? 'pal' : 'pals'} available
@@ -316,7 +316,7 @@ export function Browse() {
                   <p className="text-sm text-text-muted">
                     {p.breed} · {p.age_years === 0 ? 'under 1 yr' : `${p.age_years} ${p.age_years === 1 ? 'yr' : 'yrs'}`} · {p.sex}
                   </p>
-                  <div className="mt-3 flex items-center justify-between">
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                     <div className="flex gap-1.5">
                       {p.traits.slice(0, 2).map((t) => (
                         <Badge key={t}>{t}</Badge>

@@ -156,7 +156,7 @@ function RequestCard({
   }
 
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-3">
+    <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-surface p-3">
       <Avatar name={other_user.full_name} src={other_user.avatar} size="md" online={other_user.is_online} />
       <div className="min-w-0 flex-1">
         <button
@@ -168,7 +168,7 @@ function RequestCard({
         </button>
         <p className="truncate text-xs text-text-muted">@{other_user.handle}</p>
       </div>
-      <div className="flex shrink-0 gap-1.5">
+      <div className="flex w-full shrink-0 justify-end gap-1.5 sm:w-auto">
         <Button
           size="sm"
           icon={<Check className="size-3.5" />}
@@ -266,7 +266,7 @@ export function Friends() {
 
   if (status === 'signed-out' || !user) {
     return (
-      <div className="p-8">
+      <div className="sm:p-8">
         <EmptyState
           emoji="(︶ᴥ ...   ･ﾟ✧"
           title="Sign in to see your friends"
@@ -291,7 +291,7 @@ export function Friends() {
     setRequests((prev) => prev?.filter((r) => r.id !== id) ?? prev)
 
   return (
-    <div className="space-y-6 p-8">
+    <div className="space-y-6 sm:p-8">
       <div>
         <h1 className="font-display text-4xl font-black tracking-tight">Friends</h1>
         <p className="mt-1 text-sm text-text-muted">People you know on Pawfect.</p>

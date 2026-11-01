@@ -34,9 +34,64 @@ interface ListingsTableProps {
   onRemove: (pet: Pet) => void
 }
 
+function StatusBadge({ pet }: { pet: Pet }) {
+  return pet.adopted_by ? (
+    <Badge tone="success" className="whitespace-nowrap">adopted <span className="ml-1" aria-hidden="true">(︶ᴥ₍^◒◒^₎･ﾟ✧)</span></Badge>
+  ) : (
+    <Badge>{inquiryLabel(pet.inquiry_count)}</Badge>
+  )
+}
+
+function RowActions({ pet, busy, onRemove }: { pet: Pet; busy: boolean; onRemove: (pet: Pet) => void }) {
+  return (
+    <>
+      <Button size="sm" variant="secondary" onClick={() => navigate('pet', { id: pet.id })}>
+        View & reply
+      </Button>
+      <Button
+        size="sm"
+        variant="danger"
+        icon={<Trash2 className="size-3.5" />}
+        disabled={busy}
+        onClick={() => onRemove(pet)}
+        aria-label={`Remove ${pet.name}`}
+      >
+        Remove
+      </Button>
+    </>
+  )
+}
+
+// below sm: one card per listing instead of a sideways-scrolling table
+function ListingsCards({ pets, busy, onRemove }: ListingsTableProps) {
+  return (
+    <ul className="space-y-3 sm:hidden">
+      {pets.map((pet) => (
+        <li key={pet.id}>
+          <Card className="space-y-3 p-4">
+            <div className="flex items-center gap-3">
+              <PetThumb pet={pet} />
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold text-text">{pet.name}</p>
+                <p className="truncate text-xs text-text-muted">
+                  {pet.breed} · {formatDate(pet.created_at)}
+                </p>
+              </div>
+            </div>
+            <StatusBadge pet={pet} />
+            <div className="flex flex-wrap justify-end gap-2">
+              <RowActions pet={pet} busy={busy} onRemove={onRemove} />
+            </div>
+          </Card>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 function ListingsTable({ pets, busy, onRemove }: ListingsTableProps) {
   return (
-    <Card className="overflow-x-auto">
+    <Card className="hidden overflow-x-auto sm:block">
       <table className="w-full min-w-[640px] text-left text-sm">
         <thead className="border-b border-border text-xs uppercase tracking-wide text-text-muted">
           <tr>
@@ -61,27 +116,11 @@ function ListingsTable({ pets, busy, onRemove }: ListingsTableProps) {
               <td className="px-5 py-3 text-text-muted">{pet.breed}</td>
               <td className="px-5 py-3 text-text-muted">{formatDate(pet.created_at)}</td>
               <td className="px-5 py-3">
-                {pet.adopted_by ? (
-                  <Badge tone="success" className="whitespace-nowrap">adopted <span className="ml-1" aria-hidden="true">(︶ᴥ₍^◒◒^₎･ﾟ✧)</span></Badge>
-                ) : (
-                  <Badge>{inquiryLabel(pet.inquiry_count)}</Badge>
-                )}
+                <StatusBadge pet={pet} />
               </td>
               <td className="px-5 py-3">
                 <div className="flex justify-end gap-2">
-                  <Button size="sm" variant="secondary" onClick={() => navigate('pet', { id: pet.id })}>
-                    View & reply
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    icon={<Trash2 className="size-3.5" />}
-                    disabled={busy}
-                    onClick={() => onRemove(pet)}
-                    aria-label={`Remove ${pet.name}`}
-                  >
-                    Remove
-                  </Button>
+                  <RowActions pet={pet} busy={busy} onRemove={onRemove} />
                 </div>
               </td>
             </tr>
@@ -142,7 +181,7 @@ function YourListings() {
   }
 
   return (
-    <div className="space-y-6 p-8">
+    <div className="space-y-6 sm:p-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-4xl font-black tracking-tight">Your listings</h1>
@@ -165,7 +204,10 @@ function YourListings() {
           action={<Button onClick={openPublish}>Rehome a pet</Button>}
         />
       ) : (
-        <ListingsTable pets={pets} busy={removing} onRemove={removePet} />
+        <>
+          <ListingsCards pets={pets} busy={removing} onRemove={removePet} />
+          <ListingsTable pets={pets} busy={removing} onRemove={removePet} />
+        </>
       )}
       <PublishPetModal open={publishOpen} onClose={() => setPublishOpen(false)} onPublished={handlePublished} />
     </div>
@@ -179,7 +221,7 @@ export function Rehome() {
 
   if (status === 'signed-out') {
     return (
-      <div className="p-8">
+      <div className="sm:p-8">
         <EmptyState
           emoji="(︶ᴥ ...   ･ﾟ✧"
           title="Sign in to rehome a pet"
