@@ -11,7 +11,7 @@ A peer-to-peer adoption platform for dogs and cats: people rehoming a pet list i
 - **Browse and adopt** — search listings by species, breed, size, age and location; filter in real time; send an adoption application directly to the owner *(iskaraag, sarherna)*
 - **Rehome a pet** — publish a listing with photos, description and pet details *(iskaraag, sarherna)*
 - **Chat** — real-time messaging between owner and applicant over WebSocket, scoped to each adoption inquiry *(oostapen, faikhan, sarherna)*
-- **Adoptions** — track the status of your applications as an adopter; manage incoming inquiries and move them through adoption stages as an owner *(faikhan, sarherna)*
+- **Adoptions** — track the status of your applications as an adopter; manage incoming inquiries and move them through adoption stages as an owner *(faikhan, oostapen, sarherna)*
 - **Notifications** — in-app notifications for application status changes and adoption confirmations, delivered in real time *(iskaraag, sarherna)*
 - **Friends** — send and accept friend requests, see who is online, browse your friends list and discover new people *(akacprzy, sarherna)*
 - **Analytics dashboard** — platform-wide adoption metrics and charts (visits, applications, adoptions, active users over time), filterable by pet type and date range, with CSV export *(akacprzy)*
@@ -222,15 +222,13 @@ Third-party clients can access pet data using an API key. Keys are tied to a use
 
 ### Getting a key
 
-
-
 Use the REST endpoint to create a key:
 
 ```sh
-# 1. Sign in and get an access token
+# 1. Sign in and copy "access" from the response
 curl -k -s -X POST https://localhost:8443/api/auth/login/ \
   -H 'Content-Type: application/json' \
-  -d '{"email": "user@example.com", "password": "yourpassword"}' | jq -r '.access'
+  -d '{"email": "user@example.com", "password": "yourpassword"}'
 
 # 2. Create an API key
 curl -k -s -X POST https://localhost:8443/api/keys/ \
@@ -385,14 +383,12 @@ A second challenge was serving HTTPS without a public domain or root access: I s
 - [W3Schools](https://www.w3schools.com/) — HTML, CSS and JavaScript basics
 - [React Beginner Course 2025 — Vite, Tailwind CSS, TypeScript](https://www.youtube.com/watch?v=siTUv1L9ymM)
 
-Thanks to all of Alex's friends, who kindly shared the photos of their pets used in the demo data.
-
 ## AI Usage
 
 This project was developed with the assistance of AI tools.
 
 **sarherna:** I used AI as a support tool, following the subject's AI guidelines. I stayed responsible for every decision and for anything that went into the project.
-For the prototype, I created a set of custom AI skills that helped me define the app's features, applying my own UX knowledge to decide what to build and how it should work. I then used that work to shape the design system. The final colors were selected by Alex.
+For the prototype, I created a set of custom AI skills that helped me define the app's features, applying my own UX knowledge to decide what to build and how it should work. I then used that work to shape the design system. The final colors were selected by oostapen.
 For development, I used AI to help implement features, fix bugs, write tests, and handle repetitive tasks. I thought through each problem before prompting, gave the tool the project context and code style to follow, and rejected or corrected results that were wrong or too generic.
 During validation, I reviewed and tested AI-assisted work before submitting it, both with automated tests and by hand in the running app. My teammates then reviewed the changes through pull requests, and I only kept code that I understand and can explain.
 
