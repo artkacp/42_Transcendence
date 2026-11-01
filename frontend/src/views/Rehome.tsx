@@ -62,7 +62,7 @@ function ListingsTable({ pets, busy, onRemove }: ListingsTableProps) {
               <td className="px-5 py-3 text-text-muted">{formatDate(pet.created_at)}</td>
               <td className="px-5 py-3">
                 {pet.adopted_by ? (
-                  <Badge tone="success">adopted <span className="ml-1" aria-hidden="true">(︶ᴥ₍^◒◒^₎･ﾟ✧)</span></Badge>
+                  <Badge tone="success" className="whitespace-nowrap">adopted <span className="ml-1" aria-hidden="true">(︶ᴥ₍^◒◒^₎･ﾟ✧)</span></Badge>
                 ) : (
                   <Badge>{inquiryLabel(pet.inquiry_count)}</Badge>
                 )}

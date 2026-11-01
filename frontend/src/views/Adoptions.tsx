@@ -67,7 +67,7 @@ interface StatusBadgeProps {
 
 function StatusBadge({ adoptedById, stage, meId }: StatusBadgeProps) {
   if (adoptedById && adoptedById === meId) {
-    return <Badge tone="success">adopted ︶ᴥ₍^◕◕^₎･ﾟ✧ by You</Badge>
+    return <Badge tone="success" className="whitespace-nowrap">adopted ︶ᴥ₍^◕◕^₎･ﾟ✧ by You</Badge>
   }
   if (adoptedById) {
     return <Badge tone="neutral">already adopted ︶ᴥ－－).｡O</Badge>
@@ -225,7 +225,7 @@ function YourAdoptions({ meId }: { meId?: string }) {
         <p role="status" className="text-sm text-text-muted">Loading your adoptions…</p>
       ) : rows.length === 0 ? (
         <EmptyState
-          emoji="┐(︶▼︶)┌" className="[&>span]:font-black [&>span]:[-webkit-text-stroke:1px_currentColor]"
+          emoji="┐(︶▼︶)┌" className="[&>span]:font-black [&>span]:[-webkit-text-stroke:1.5px_currentColor]"
           title="No adoptions yet"
           hint="Find a pet in Browse and start a conversation with its owner."
           action={<Button onClick={() => navigate('browse')}>Browse pets</Button>}

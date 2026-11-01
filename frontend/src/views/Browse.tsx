@@ -167,10 +167,10 @@ export function Browse() {
           <Chip active={species === 'all'} onClick={() => handleSpeciesChange('all')}>
             All pals
           </Chip>
-          <Chip active={species === 'dog'} onClick={() => handleSpeciesChange('dog')}>
+          <Chip active={species === 'dog'} onClick={() => handleSpeciesChange('dog')} className="whitespace-nowrap">
             Dogs <span className="ml-1 font-black [-webkit-text-stroke:0.5px_currentColor]" aria-hidden="true">U・ᴥ・U</span>
           </Chip>
-          <Chip active={species === 'cat'} onClick={() => handleSpeciesChange('cat')}>
+          <Chip active={species === 'cat'} onClick={() => handleSpeciesChange('cat')} className="whitespace-nowrap">
             Cats <span className="ml-1 font-black [-webkit-text-stroke:0.5px_currentColor]" aria-hidden="true">=^ ◗ ◗^=</span>
           </Chip>
           <Button
@@ -258,6 +258,7 @@ export function Browse() {
       ) : count === 0 && hasFilters ? (
         <EmptyState
           emoji="⎇(◔ _◑)"
+          className="[&>span]:font-black [&>span]:[-webkit-text-stroke:1.5px_currentColor]"
           title="No pals match those filters"
           hint="Try clearing the search — someone fluffy is out there."
           action={
@@ -291,7 +292,7 @@ export function Browse() {
                     </span>
                   )}
                   {p.adopted_by && (
-                    <Badge tone="success" className="absolute left-3 top-3">
+                    <Badge tone="success" className="absolute left-3 top-3 whitespace-nowrap">
                       adopted <span className="ml-1" aria-hidden="true">(︶ᴥ₍^◒◒^₎･ﾟ✧)</span>
                     </Badge>
                   )}

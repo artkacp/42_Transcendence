@@ -279,14 +279,14 @@ export function Analytics() {
             aria-label="End date"
             className="w-auto text-sm"
           />
-          <div className="flex items-center gap-2 ml-1">
+          <div className="flex flex-wrap items-center gap-2 ml-1">
             <Chip active={species === ''} onClick={() => { setSpecies(''); setBreed('') }}>
               All species
             </Chip>
-            <Chip active={species === 'dog'} onClick={() => { setSpecies('dog'); setBreed('') }}>
+            <Chip active={species === 'dog'} onClick={() => { setSpecies('dog'); setBreed('') }} className="whitespace-nowrap">
               Dogs <span className="ml-1 font-black [-webkit-text-stroke:0.5px_currentColor]" aria-hidden="true">U・ᴥ・U</span>
             </Chip>
-            <Chip active={species === 'cat'} onClick={() => { setSpecies('cat'); setBreed('') }}>
+            <Chip active={species === 'cat'} onClick={() => { setSpecies('cat'); setBreed('') }} className="whitespace-nowrap">
               Cats <span className="ml-1 font-black [-webkit-text-stroke:0.5px_currentColor]" aria-hidden="true">=^ ◗ ◗^=</span>
             </Chip>
           </div>
