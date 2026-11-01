@@ -6,10 +6,10 @@ import { Progress } from '../ds'
 type Stage = InquiryStage | 'adopted'
 type Viewer = 'owner' | 'adopter'
 
-const STEPS: Record<Stage, { step: number; tone: 'primary' | 'success' | 'danger'; text: Record<Viewer, string> }> = {
+const STEPS: Record<Stage, { step: number; tone: 'primary' | 'success' | 'danger' | 'warning'; text: Record<Viewer, string> }> = {
   conversation: { step: 1, tone: 'primary', text: { owner: 'Talking', adopter: 'Talking' } },
   visit: { step: 2, tone: 'primary', text: { owner: 'Visit planned', adopter: 'Visit planned' } },
-  decision: { step: 3, tone: 'primary', text: { owner: 'Decision', adopter: 'Owner deciding' } },
+  decision: { step: 3, tone: 'warning', text: { owner: 'Decision', adopter: 'Owner deciding' } },
   adopted: { step: 4, tone: 'success', text: { owner: 'Adopted ✓', adopter: 'Adopted ✓' } },
   denied: { step: 4, tone: 'danger', text: { owner: 'Declined', adopter: 'Not this time' } },
 }
