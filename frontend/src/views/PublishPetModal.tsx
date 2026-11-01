@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState, type ComponentProps } from 'react'
 import { ImagePlus, X } from 'lucide-react'
 import { ApiError } from '../api/client'
-import { createPet, getPetOptions, type PetOptions } from '../api/pets'
+import { createPet, getPetOptions, updatePet, type PetOptions } from '../api/pets'
 import type { NewPet, Pet, PetSex, PetSize, Species } from '../data/types'
 import { Button, Chip, Input, Modal, Select, Textarea, Toggle } from '../ds'
 
@@ -36,6 +36,20 @@ const emptyDraft = (petOptions: PetOptions): NewPet => ({
   traits: [],
   is_vaccinated: false,
   is_neutered: false,
+})
+
+const draftOf = (pet: Pet): NewPet => ({
+  name: pet.name,
+  species: pet.species,
+  breed: pet.breed,
+  age_years: pet.age_years,
+  size: pet.size,
+  sex: pet.sex,
+  city: pet.city,
+  story: pet.story,
+  traits: pet.traits,
+  is_vaccinated: pet.is_vaccinated,
+  is_neutered: pet.is_neutered,
 })
 
 function validate(draft: NewPet): FieldErrors {
@@ -79,12 +93,13 @@ export function SelectField({ label, error, ...rest }: ComponentProps<typeof Sel
 
 interface PhotoPickerProps {
   file: File | null
+  current: string | null
   species: Species
   error?: string
   onChange: (file: File | null) => void
 }
 
-function PhotoPicker({ file, species, error, onChange }: PhotoPickerProps) {
+function PhotoPicker({ file, current, species, error, onChange }: PhotoPickerProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [rejected, setRejected] = useState('')
@@ -106,6 +121,8 @@ function PhotoPicker({ file, species, error, onChange }: PhotoPickerProps) {
     setRejected('')
   }
 
+  const shown = preview ?? current
+  const hasPhoto = Boolean(file || current)
   const message = rejected || error
 
   return (
@@ -115,8 +132,8 @@ function PhotoPicker({ file, species, error, onChange }: PhotoPickerProps) {
       </p>
       <div className="flex items-center gap-4">
         <div className="relative flex size-28 shrink-0 items-center justify-center overflow-hidden rounded-3xl bg-secondary">
-          {preview ? (
-            <img src={preview} alt="Selected photo" className="absolute inset-0 size-full object-cover" />
+          {shown ? (
+            <img src={shown} alt={preview ? 'Selected photo' : 'Current photo'} className="absolute inset-0 size-full object-cover" />
           ) : (
             <span className="text-5xl" aria-hidden>
               {species === 'dog' ? '🐕' : '🐈'}
@@ -131,15 +148,17 @@ function PhotoPicker({ file, species, error, onChange }: PhotoPickerProps) {
               icon={<ImagePlus className="size-4" />}
               onClick={() => inputRef.current?.click()}
             >
-              {file ? 'Change photo' : 'Choose photo'}
+              {hasPhoto ? 'Change photo' : 'Choose photo'}
             </Button>
-            {file && (
+            {hasPhoto && (
               <Button size="sm" variant="ghost" icon={<X className="size-4" />} onClick={remove}>
                 Remove
               </Button>
             )}
           </div>
-          <p className="truncate text-xs text-text-muted">{file ? file.name : 'JPG, PNG, WebP or GIF, up to 5 MB.'}</p>
+          <p className="truncate text-xs text-text-muted">
+            {file ? file.name : current ? 'Current photo' : 'JPG, PNG, WebP or GIF, up to 5 MB.'}
+          </p>
         </div>
       </div>
       <input
@@ -167,13 +186,15 @@ function PhotoPicker({ file, species, error, onChange }: PhotoPickerProps) {
 
 interface PublishFormProps {
   petOptions: PetOptions
+  pet?: Pet | null
   onPublished: (pet: Pet) => void
   onSubmittingChange: (submitting: boolean) => void
 }
 
-function PublishForm({ petOptions, onPublished, onSubmittingChange }: PublishFormProps) {
-  const [draft, setDraft] = useState<NewPet>(() => emptyDraft(petOptions))
+function PublishForm({ petOptions, pet, onPublished, onSubmittingChange }: PublishFormProps) {
+  const [draft, setDraft] = useState<NewPet>(() => (pet ? draftOf(pet) : emptyDraft(petOptions)))
   const [photo, setPhoto] = useState<File | null>(null)
+  const [removePhoto, setRemovePhoto] = useState(false)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [formError, setFormError] = useState('')
 
@@ -189,6 +210,7 @@ function PublishForm({ petOptions, onPublished, onSubmittingChange }: PublishFor
 
   const changePhoto = (file: File | null) => {
     setPhoto(file)
+    setRemovePhoto(file === null)
     setErrors((prev) => ({ ...prev, photo: undefined }))
   }
 
@@ -203,10 +225,10 @@ function PublishForm({ petOptions, onPublished, onSubmittingChange }: PublishFor
 
     onSubmittingChange(true)
     try {
-      onPublished(await createPet(draft, photo))
+      onPublished(await (pet ? updatePet(pet.id, draft, photo, removePhoto) : createPet(draft, photo)))
     } catch (err) {
       if (err instanceof ApiError && Object.keys(err.fieldErrors).length > 0) setErrors(err.fieldErrors as FieldErrors)
-      else setFormError(err instanceof ApiError ? err.message : 'Could not publish. Please try again.')
+      else setFormError(err instanceof ApiError ? err.message : pet ? 'Could not save. Please try again.' : 'Could not publish. Please try again.')
     } finally {
       onSubmittingChange(false)
     }
@@ -233,7 +255,13 @@ function PublishForm({ petOptions, onPublished, onSubmittingChange }: PublishFor
         </p>
       )}
 
-      <PhotoPicker file={photo} species={draft.species} error={errors.photo} onChange={changePhoto} />
+      <PhotoPicker
+        file={photo}
+        current={pet && !removePhoto ? pet.photo : null}
+        species={draft.species}
+        error={errors.photo}
+        onChange={changePhoto}
+      />
 
       <Input
         label="Name"
@@ -371,32 +399,34 @@ function PublishFormLoader(props: Omit<PublishFormProps, 'petOptions'>) {
 
 interface PublishPetModalProps {
   open: boolean
+  pet?: Pet | null
   onClose: () => void
   onPublished: (pet: Pet) => void
 }
 
-export function PublishPetModal({ open, onClose, onPublished }: PublishPetModalProps) {
+export function PublishPetModal({ open, pet, onClose, onPublished }: PublishPetModalProps) {
   const [submitting, setSubmitting] = useState(false)
+  const label = pet ? (submitting ? 'Saving…' : 'Save changes') : submitting ? 'Publishing…' : 'Publish'
 
   return (
     <Modal
       open={open}
       onClose={onClose}
       size="lg"
-      title="Rehome a pet"
-      description="Adopters will see this in Browse and on the pet's page."
+      title={pet ? `Edit ${pet.name}` : 'Rehome a pet'}
+      description={pet ? "Changes show up in Browse and on the pet's page." : "Adopters will see this in Browse and on the pet's page."}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
           <Button type="submit" form={FORM_ID} disabled={submitting}>
-            {submitting ? 'Publishing…' : 'Publish'}
+            {label}
           </Button>
         </>
       }
     >
-      {open && <PublishFormLoader onPublished={onPublished} onSubmittingChange={setSubmitting} />}
+      {open && <PublishFormLoader pet={pet} onPublished={onPublished} onSubmittingChange={setSubmitting} />}
     </Modal>
   )
 }

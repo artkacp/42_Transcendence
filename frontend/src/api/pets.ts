@@ -1,4 +1,4 @@
-import { api, del, get } from './client'
+import { api, del, get, patch } from './client'
 import type { NewPet, Pet, PetSex, PetSize, Species } from '../data/types'
 
 export const getMyPets = () => get<Pet[]>('/api/pets/mine/')
@@ -13,6 +13,14 @@ export function createPet(pet: NewPet, photo: File | null) {
   }
   if (photo) form.append('photo', photo)
   return api<Pet>('/api/pets/', { method: 'POST', body: form })
+}
+
+export async function updatePet(id: string, pet: NewPet, photo: File | null, removePhoto: boolean) {
+  const updated = await patch<Pet>(`/api/pets/${id}/`, removePhoto ? { ...pet, photo: null } : pet)
+  if (!photo) return updated
+  const form = new FormData()
+  form.append('photo', photo)
+  return api<Pet>(`/api/pets/${id}/`, { method: 'PATCH', body: form })
 }
 
 export interface PetOptions {
