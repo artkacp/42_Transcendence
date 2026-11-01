@@ -26,7 +26,7 @@ const crayonStops: Record<Tone, [string, string, string]> = {
   primary: ['oklch(0.6 0.12 218)', 'oklch(0.855 0.06 218)', 'oklch(0.48 0.135 218)'],
   success: ['oklch(0.875 0.065 122)', 'oklch(0.6 0.12 218)', 'oklch(0.595 0.105 122)'],
   danger: ['oklch(0.82 0.145 35)', 'oklch(0.82 0.145 35)', 'oklch(0.385 0.21 35)'],
-  warning: ['oklch(0.48 0.135 218)', 'oklch(0.945 0.092 90)', 'oklch(0.945 0.092 90)'],
+  warning: ['oklch(0.6 0.12 218)', 'oklch(0.935 0.038 190)', 'oklch(0.945 0.092 90)'],
 }
 
 type OwnedAria =
