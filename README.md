@@ -190,7 +190,7 @@ Total: **20 points** (7 Majors × 2 pts + 6 Minors × 1 pt). The subject require
 | Advanced Analytics Dashboard | Major | 2 | Platform-wide metrics from `analytics_event`; interactive Recharts charts; date range and pet filters; live updates over WebSocket; CSV export | akacprzy |
 | Notification system | Minor | 1 | Notifications on create, update and delete actions; real-time delivery over WebSocket; bell with unread count, notification center, toasts, mark as read | sarherna, iskaraag |
 | Custom Design System | Minor | 1 | 15+ reusable components (Button, IconButton, Card, Avatar, Badge, Chip, Input, Textarea, Select, Toggle, Tabs, Modal, Toast, Progress, Pagination, EmptyState); OKLCH color palette with semantic tokens; typography (Fraunces display, Outfit text); lucide icon set; showcased on the Design kit page | oostapen, iskaraag |
-| Advanced Search | Minor | 1 | Text search plus filters (species, sex, size, age, city, breed, traits, vaccinated, neutered); paginated results | iskaraag, sarherna |
+| Advanced Search | Minor | 1 | Text search plus filters (species, sex, size, age, city, breed, traits, vaccinated, neutered); sort by newest, oldest, name or age; paginated results | iskaraag, sarherna |
 | File Upload | Minor | 1 | Avatars and pet photos (image types, size limits checked in the browser and on the server); chat attachments with images and documents; files served only to authorized users | sarherna, iskaraag, oostapen |
 | User Activity Analytics | Minor | 1 | Activity events recorded on every significant action; "Your activity" dashboard with personal stats as adopter and as rehomer | akacprzy, iskaraag |
 | ORM (SQLAlchemy) | Minor | 1 | SQLAlchemy 2.1 maps and writes the `analytics_event` table; Django ORM owns every other table | akacprzy |
@@ -204,7 +204,7 @@ Total: **20 points** (7 Majors × 2 pts + 6 Minors × 1 pt). The subject require
 | akacprzy | Project Manager | Database schema, analytics write pipeline, analytics endpoints, friends backend and view |
 | faikhan | Developer | DevOps, Docker, nginx, HTTPS, WebSocket backend, public API, Prometheus/Grafana |
 | oostapen | Developer | Frontend: auth flow, API client, routing, pet page, live chat UI (adopter + owner), design system foundation |
-| iskaraag | Developer | Frontend: browse, rehome, adoptions view, notifications, design system components |
+| iskaraag | Developer | Frontend: browse, rehome, notifications, design system components |
 
 All team members contributed as developers across the full stack.
 
@@ -400,6 +400,6 @@ During validation, I reviewed and tested AI-assisted work before submitting it, 
 
 **faikhan:** I used Claude in two ways. A planning assistant helped me break down my tasks, decide between architecture options and diagnose deployment problems. Claude Code generated much of the implementation (Docker/Compose config, nginx config, the public API) from prompts I wrote. I reviewed, tested and integrated the output myself, and every change went through PR review by teammates.
 
-**oostapen:** Claude (chat) as a planning partner: reading the backend contract, splitting work into small PRs, reviewing plans and diffs, explaining React and browser details I didn't know yet. Claude Code for reviewwing and debugging code and helping with Git. Chat GPT for cumulative notes. Design decisions (palettes, tokens, the kaomoji UI language, UX checks) are mine.
+**oostapen:** Claude (chat) as a planning partner: reading the backend contract, splitting work into small PRs, reviewing plans and diffs, explaining React and browser details I didn't know yet. Claude Code for reviewing and debugging code and helping with Git. Chat GPT for cumulative notes. Design decisions (palettes, tokens, the kaomoji UI language, UX checks) are mine.
 
 **iskaraag:** I used Claude as a step-by-step guide while learning the stack: it explained concepts, suggested how to structure a feature, helped me read the backend code I depended on and pointed out problems during my own reviews. I wrote and integrated the code myself, checked every step with tsc, oxlint and browser tests.
