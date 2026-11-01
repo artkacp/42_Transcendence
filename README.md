@@ -88,6 +88,8 @@ Running it again changes nothing. `seed_demo --flush` deletes the seed accounts 
 
 Seed avatars are [Open Peeps](https://www.openpeeps.com/) by Pablo Stanley (CC0 1.0), generated with [DiceBear](https://www.dicebear.com/styles/open-peeps/).
 
+Thanks to all of Alex's friends, who kindly shared the photos of their pets used in the demo data.
+
 ### Trusting the certificate
 
 On the first start, a one-shot `certgen` container creates a local certificate authority (CA) and a certificate for `localhost` signed by it. Trust the CA once in Chrome, and the site loads with a clean padlock and no warnings:
