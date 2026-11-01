@@ -292,7 +292,7 @@ export function Browse() {
                   )}
                   {p.adopted_by && (
                     <Badge tone="success" className="absolute left-3 top-3">
-                      adopted 🎉
+                      adopted <span className="ml-1" aria-hidden="true">(︶ᴥ₍^◒◒^₎･ﾟ✧)</span>
                     </Badge>
                   )}
                   {user && p.owner.id === user.id && (
