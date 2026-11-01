@@ -361,11 +361,12 @@ The backend runs as **exactly one Daphne process**: no extra workers, no `docker
 
 **akacprzy:** This project was the first time I wrote any frontend code. Before it, everything I'd done was backend or data. Learning it was like learning a whole new programming language.
 
-<!-- TODO(faikhan): describe your biggest technical challenge -->
+**faikhan:** My biggest challenge was making the whole backend work inside a single Daphne ASGI process. We deliberately had no Redis, no Celery and no multiple workers, so the WebSocket channel layer, user presence tracking and the public API throttle all keep their state in the memory of one process. That made the deployment simple, with one container behind nginx.
+A second challenge was serving HTTPS without a public domain or root access: I set up a local certificate authority with nginx on port 8443, and kept the CA’s private key out of the repository.
 
-<!-- TODO(oostapen): describe your biggest technical challenge -->
+**oostapen:** Live chat was my hardest part. Messages arrive from two sources: the WebSocket (chat.message, echoed to the sender too) and the REST history (newest first, paged). I had to merge them without duplicates, keep socket handlers from reading stale React state (handler kept in a ref), and refetch after a reconnect, because the server keeps no history of frames sent while a client was offline. Building it as one flow for both sides, adopter "Ask about" and owner "Inquiries", meant testing every change with two users in two browsers at the same time.
 
-<!-- TODO(iskaraag): describe your biggest technical challenge -->
+**iskaraag:** My biggest challenge was starting this project without knowing React, TypeScript or Tailwind. Learning a new stack while building real features for a team, with deadlines and reviews. On top of that I was working full time, so finding time to code was hard and most of my work happened late at night. Going from copying examples to understanding why my code works took most of the effort.
 
 ## Resources
 
@@ -383,14 +384,15 @@ The backend runs as **exactly one Daphne process**: no extra workers, no `docker
 
 This project was developed with the assistance of AI tools.
 
-<!-- TODO(all): each team member to describe which tools they used, what they generated, and what they wrote themselves -->
+**sarherna:** I used AI as a support tool, following the subject's AI guidelines. I stayed responsible for every decision and for anything that went into the project.
+For the prototype, I created a set of custom AI skills that helped me define the app's features, applying my own UX knowledge to decide what to build and how it should work. I then used that work to shape the design system. The final colors were selected by Alex.
+For development, I used AI to help implement features, fix bugs, write tests, and handle repetitive tasks. I thought through each problem before prompting, gave the tool the project context and code style to follow, and rejected or corrected results that were wrong or too generic.
+During validation, I reviewed and tested AI-assisted work before submitting it, both with automated tests and by hand in the running app. My teammates then reviewed the changes through pull requests, and I only kept code that I understand and can explain.
 
-<!-- TODO(sarherna): describe your AI usage -->
+**akacprzy:** Used AI tools throughout the project: to get up to speed on unfamiliar topics quickly, to review my own code before posting PRs and catch edge cases I might have missed, to draft documentation and KB notes which I then edited for accuracy and tone. Lastly, to get summaries of my teammates issued work to keep track of project progress and status and catch up quickly after breaks. Mostly used Claude and Gemini.
 
-**akacprzy:** Used AI tools throughout the project: to get up to speed on unfamiliar topics quickly, to review my own code before posting PRs and catch edge cases I might have missed, to draft documentation and KB notes which I then edited for accuracy and tone. Lastly, to get summaries of my teammates issued work to keep track of project progress and status and catch up quickly after breaks. 
+**faikhan:** I used Claude in two ways. A planning assistant helped me break down my tasks, decide between architecture options and diagnose deployment problems. Claude Code generated much of the implementation (Docker/Compose config, nginx config, the public API) from prompts I wrote. I reviewed, tested and integrated the output myself, and every change went through PR review by teammates.
 
-<!-- TODO(faikhan): describe your AI usage -->
+**oostapen:** Claude (chat) as a planning partner: reading the backend contract, splitting work into small PRs, reviewing plans and diffs, explaining React and browser details I didn't know yet. Claude Code for reviewwing and debugging code and helping with Git. Chat GPT for cumulative notes. Design decisions (palettes, tokens, the kaomoji UI language, UX checks) are mine.
 
-<!-- TODO(oostapen): describe your AI usage -->
-
-<!-- TODO(iskaraag): describe your AI usage -->
+**iskaraag:** I used Claude as a step-by-step guide while learning the stack: it explained concepts, suggested how to structure a feature, helped me read the backend code I depended on and pointed out problems during my own reviews. I wrote and integrated the code myself, checked every step with tsc, oxlint and browser tests.
