@@ -1,5 +1,6 @@
 import io
 import tempfile
+import uuid
 from datetime import timedelta
 from unittest.mock import patch
 
@@ -15,15 +16,19 @@ from rest_framework import status
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
 
-from accounts.models import User
+from accounts.models import Friendship, User
 from accounts.tests import image_file, make_pet, make_user
 from analytics.db.engine import engine
+from analytics.models import AnalyticsEvent
 from config.asgi import application
 from inquiries.models import Attachment, Inquiry, Message
 from inquiries.services import change_stage
+from notifications.models import Notification
+from pets.models import Pet
 from pets.tests import PET_PAYLOAD
 
 from . import presence
+from .management.commands.seed_demo import SEED_EMAILS
 from .realtime import push
 
 # The test runner adds testserver to ALLOWED_HOSTS
@@ -472,3 +477,70 @@ class FrameTests(SocketTestCase):
         await tab.disconnect()
         for group in groups:
             self.assertFalse(layer.groups.get(group))
+
+
+# TransactionTestCase: the command commits through SQLAlchemy too, and delete_pet unlinks files on commit
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp())
+class SeedDemoTests(TransactionTestCase):
+
+    # analytics_event has an FK to pets_pet but is unmanaged, so a plain TRUNCATE is rejected
+    def _fixture_teardown(self):
+        call_command('flush', verbosity=0, interactive=False, allow_cascade=True, inhibit_post_migrate=True)
+
+    def setUp(self):
+        engine.dispose()
+        self.seed()
+
+    def seed(self, *args):
+        call_command('seed_demo', *args, stdout=io.StringIO())
+
+    def counts(self):
+        users = User.objects.filter(email__in=SEED_EMAILS)
+        return {
+            'users': users.count(),
+            'pets': Pet.objects.filter(owner__in=users).count(),
+            'inquiries': Inquiry.objects.filter(adopter__in=users).count(),
+            'messages': Message.objects.filter(sender__in=users).count(),
+            'friendships': Friendship.objects.filter(requester__in=users).count(),
+            'notifications': Notification.objects.filter(recipient__in=users).count(),
+            'events': AnalyticsEvent.objects.filter(user_id__in=users.values('id')).count(),
+        }
+
+    def test_second_run_does_not_duplicate(self):
+        before = self.counts()
+        self.assertEqual(before['users'], len(SEED_EMAILS))
+        self.assertEqual(before['pets'], 20)
+        self.seed()
+        self.assertEqual(self.counts(), before)
+
+    def test_flush_resets_to_the_same_counts_and_removes_old_files(self):
+        before = self.counts()
+        old_photo = Pet.objects.first().photo
+        name, storage = old_photo.name, old_photo.storage
+        self.seed('--flush')
+        self.assertEqual(self.counts(), before)
+        self.assertFalse(storage.exists(name))
+
+    def test_events_cover_every_type_within_the_last_30_days(self):
+        events = AnalyticsEvent.objects.all()
+        self.assertEqual(
+            set(events.values_list('event_type', flat=True)),
+            {'visit', 'application', 'message', 'adoption', 'listing_published', 'registered'},
+        )
+        now = timezone.now()
+        for occurred_at in events.values_list('occurred_at', flat=True):
+            self.assertGreaterEqual(occurred_at, now - timedelta(days=30))
+            self.assertLessEqual(occurred_at, now)
+
+    def test_flush_leaves_other_users_alone(self):
+        outsider = make_user('outsider', 99)
+        pet = make_pet(outsider)
+        event_id = uuid.uuid4()
+        AnalyticsEvent.objects.create(
+            id=event_id, user_id=outsider.pk, pet_id=pet.pk, event_type='visit',
+            occurred_at=timezone.now(), metadata={},
+        )
+        self.seed('--flush')
+        self.assertTrue(User.objects.filter(pk=outsider.pk).exists())
+        self.assertTrue(Pet.objects.filter(pk=pet.pk).exists())
+        self.assertTrue(AnalyticsEvent.objects.filter(pk=event_id).exists())
