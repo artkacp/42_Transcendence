@@ -19,6 +19,7 @@ export interface PetFilters {
   trait: string
   vaccinated: boolean
   neutered: boolean
+  ordering: string
   page: number
 }
 
@@ -42,6 +43,7 @@ export function getPets(filters: PetFilters) {
 
   if (filters.vaccinated) params.set('vaccinated', 'true')
   if (filters.neutered) params.set('neutered', 'true')
+  if (filters.ordering !== '-created_at') params.set('ordering', filters.ordering)
   if (filters.page > 1) params.set('page', String(filters.page))
 
   const query = params.toString()
