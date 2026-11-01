@@ -290,12 +290,23 @@ export function Friends() {
       .then((res) => { if (!ignore) setRequests(res) })
       .catch(() => { if (!ignore) setRequestsError(true) })
 
+    return () => { ignore = true }
+  }, [status, reload])
+
+  useEffect(() => {
+    if (status !== 'signed-in' || tab !== 'discover') return
+    let ignore = false
+
     getUsers()
-      .then((res) => { if (!ignore) setUsers(res) })
+      .then((res) => {
+        if (ignore) return
+        setUsers(res)
+        setUsersError(false)
+      })
       .catch(() => { if (!ignore) setUsersError(true) })
 
     return () => { ignore = true }
-  }, [status, reload])
+  }, [status, reload, tab])
 
   // Live incoming requests
   useSocketFrame('notification.created', (frame) => {
