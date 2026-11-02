@@ -98,7 +98,7 @@ export function Notifications() {
 
   if (status === 'signed-out') {
     return (
-      <div className="p-8">
+      <div className="sm:p-8">
         <EmptyState
           emoji="(︶ᴥ ...   ･ﾟ✧"
           title="Sign in to see your notifications"
@@ -173,7 +173,7 @@ export function Notifications() {
                           {timeAgo(n.created_at)}
                         </time>
                       </div>
-                      {n.body && <p className="mt-0.5 text-sm text-text-muted">{n.body}</p>}
+                      {n.body && <p className="mt-0.5 text-sm text-text-muted break-words">{n.body}</p>}
                     </div>
                   </Card>
                 </li>

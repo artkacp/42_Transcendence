@@ -153,7 +153,7 @@ export function PetPage() {
             </ul>
           )}
 
-          {pet.story && <p className="whitespace-pre-line text-text">{pet.story}</p>}
+          {pet.story && <p className="whitespace-pre-line text-text break-words">{pet.story}</p>}
 
           <dl className="grid grid-cols-2 gap-2 text-sm">
             <dt className="text-text-muted">Vaccinated</dt>
