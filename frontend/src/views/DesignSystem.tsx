@@ -313,6 +313,7 @@ export function DesignSystem() {
   const [toggleValue, setToggleValue] = useState(true)
   const [chipValue, setChipValue] = useState('dog')
   const [inputValue, setInputValue] = useState('')
+  const [textareaValue, setTextareaValue] = useState('Loves long walks and naps in the sun.')
   const [page, setPage] = useState(5)
   const [modalOpen, setModalOpen] = useState(false)
   const toast = useToast()
@@ -502,6 +503,17 @@ export function DesignSystem() {
         <Row label="States">
           <div className="w-full max-w-md">
             <Textarea label="Story" placeholder="Tell us about the fluffy one" />
+          </div>
+        </Row>
+        <Row label="With counter">
+          <div className="w-full max-w-md">
+            <Textarea
+              label="Story"
+              maxLength={200}
+              showCount
+              value={textareaValue}
+              onChange={(e) => setTextareaValue(e.target.value)}
+            />
           </div>
         </Row>
         <Row label="With error">
