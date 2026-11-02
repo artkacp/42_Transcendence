@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from accounts.serializers import UserMinimalSerializer
-from core.validators import max_file_size
+from core.validators import allowed_content_type, max_file_size
 
 from .models import AGE_BUCKETS, BREEDS, CITIES, ORDERINGS, SEX_CHOICES, SIZE_CHOICES, SPECIES_CHOICES, TRAITS, Pet
 
@@ -15,7 +15,9 @@ class PetSerializer(serializers.ModelSerializer):
     breed = serializers.ChoiceField(choices=ALL_BREEDS)
     city = serializers.ChoiceField(choices=CITIES)
     traits = serializers.ListField(child=serializers.ChoiceField(choices=TRAITS), max_length=4, required=False)
-    photo = serializers.ImageField(required=False, allow_null=True, validators=[max_file_size(5)])
+    photo = serializers.ImageField(
+        required=False, allow_null=True, validators=[max_file_size(5), allowed_content_type('pet_photo')],
+    )
 
     class Meta:
         model = Pet

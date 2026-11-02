@@ -107,6 +107,11 @@ class PublishTests(APITestCase):
         self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('photo', r.data['fields'])
 
+    def test_photo_rejects_disallowed_content_type(self):
+        r = self.publish(photo=image_file('small.bmp', format='BMP'))
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('photo', r.data['fields'])
+
     def test_photo_rejects_file_over_5mb(self):
         r = self.publish(photo=image_file('big.bmp', size=(1400, 1400), format='BMP'))
         self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)

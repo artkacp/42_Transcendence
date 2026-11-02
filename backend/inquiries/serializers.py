@@ -3,14 +3,14 @@ from pathlib import Path
 from rest_framework import serializers
 
 from accounts.serializers import UserMinimalSerializer
-from core.validators import max_file_size
+from core.validators import allowed_content_type, max_file_size
 from pets.serializers import PetSerializer
 
 from .models import ALLOWED_TYPES, STAGE_CHOICES, Attachment, Inquiry, Message
 
 
 class AttachmentSerializer(serializers.ModelSerializer):
-    file = serializers.FileField(write_only=True, validators=[max_file_size(5)])
+    file = serializers.FileField(write_only=True, validators=[max_file_size(5), allowed_content_type('attachment')])
 
     class Meta:
         model = Attachment

@@ -8,11 +8,13 @@ from asgiref.sync import async_to_sync, sync_to_async
 from channels.db import database_sync_to_async
 from channels.layers import get_channel_layer
 from channels.testing import WebsocketCommunicator
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
-from django.test import TransactionTestCase, override_settings
+from django.test import SimpleTestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -30,6 +32,7 @@ from pets.tests import PET_PAYLOAD
 from . import presence
 from .management.commands.seed_demo import SEED_EMAILS
 from .realtime import push
+from .validators import CONTENT_TYPES, allowed_content_type
 
 # The test runner adds testserver to ALLOWED_HOSTS
 ORIGIN = b'http://testserver'
@@ -544,3 +547,31 @@ class SeedDemoTests(TransactionTestCase):
         self.assertTrue(User.objects.filter(pk=outsider.pk).exists())
         self.assertTrue(Pet.objects.filter(pk=pet.pk).exists())
         self.assertTrue(AnalyticsEvent.objects.filter(pk=event_id).exists())
+
+
+class AllowedContentTypeTests(SimpleTestCase):
+
+    def upload(self, content_type):
+        return SimpleUploadedFile('file', b'data', content_type=content_type)
+
+    def test_each_kind_accepts_every_type_on_its_list(self):
+        for kind, content_types in CONTENT_TYPES.items():
+            validate = allowed_content_type(kind)
+            for content_type in content_types:
+                with self.subTest(kind=kind, content_type=content_type):
+                    validate(self.upload(content_type))
+
+    def test_each_kind_rejects_a_type_off_every_list(self):
+        for kind in CONTENT_TYPES:
+            with self.subTest(kind=kind), self.assertRaises(ValidationError):
+                allowed_content_type(kind)(self.upload('application/x-msdownload'))
+
+    def test_lists_are_not_shared_between_kinds(self):
+        allowed_content_type('attachment')(self.upload('application/pdf'))
+        for kind in ['pet_photo', 'avatar']:
+            with self.subTest(kind=kind), self.assertRaises(ValidationError):
+                allowed_content_type(kind)(self.upload('application/pdf'))
+
+    def test_unknown_kind_fails_when_the_validator_is_built(self):
+        with self.assertRaises(KeyError):
+            allowed_content_type('video')
