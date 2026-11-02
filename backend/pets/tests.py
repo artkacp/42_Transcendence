@@ -311,6 +311,39 @@ class UpdateTests(APITestCase):
         self.assertFalse(default_storage.exists(old_name))
         self.assertTrue(default_storage.exists(Pet.objects.get().photo.name))
 
+    def test_multipart_saves_text_and_photo_together(self):
+        r = self.patch({'name': 'Kobi', 'photo': image_file('kobi.png')}, format='multipart')
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.pet.refresh_from_db()
+        self.assertEqual(self.pet.name, 'Kobi')
+        self.assertTrue(self.pet.photo)
+
+    def test_rejected_photo_saves_no_text(self):
+        bad = SimpleUploadedFile('notes.png', b'hello', content_type='image/png')
+        r = self.patch({'name': 'Kobi', 'photo': bad}, format='multipart')
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.pet.refresh_from_db()
+        self.assertEqual(self.pet.name, 'Karo')
+
+    def test_multipart_blank_photo_removes_the_file(self):
+        self.patch({'photo': image_file('karo.png')}, format='multipart')
+        old_name = Pet.objects.get().photo.name
+        with self.captureOnCommitCallbacks(execute=True):
+            r = self.patch({'photo': ''}, format='multipart')
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertIsNone(r.data['photo'])
+        self.assertFalse(default_storage.exists(old_name))
+
+    def test_multipart_traits_can_be_emptied_or_left_alone(self):
+        self.patch({'traits': ['calm', 'shy']}, format='multipart')
+        self.patch({'name': 'Kobi'}, format='multipart')
+        self.pet.refresh_from_db()
+        self.assertEqual(self.pet.traits, ['calm', 'shy'])
+        r = self.patch({'traits': ''}, format='multipart')
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.pet.refresh_from_db()
+        self.assertEqual(self.pet.traits, [])
+
     def test_non_owner_or_adopted_with_invalid_body_gets_403(self):
         auth(self.client, self.bob)
         self.assertEqual(self.put(name='K').status_code, status.HTTP_403_FORBIDDEN)

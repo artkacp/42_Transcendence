@@ -8,13 +8,19 @@ from .models import AGE_BUCKETS, BREEDS, CITIES, ORDERINGS, SEX_CHOICES, SIZE_CH
 ALL_BREEDS = [breed for breeds in BREEDS.values() for breed in breeds]
 
 
+class TraitsField(serializers.ListField):
+    # Multipart has no empty list: a single blank value means "no traits"
+    def to_internal_value(self, data):
+        return super().to_internal_value([trait for trait in data if trait != ''])
+
+
 class PetSerializer(serializers.ModelSerializer):
     owner = UserMinimalSerializer(read_only=True)
     adopted_by = UserMinimalSerializer(read_only=True)
     inquiry_count = serializers.IntegerField(read_only=True, default=0)
     breed = serializers.ChoiceField(choices=ALL_BREEDS)
     city = serializers.ChoiceField(choices=CITIES)
-    traits = serializers.ListField(child=serializers.ChoiceField(choices=TRAITS), max_length=4, required=False)
+    traits = TraitsField(child=serializers.ChoiceField(choices=TRAITS), max_length=4, required=False)
     photo = serializers.ImageField(
         required=False, allow_null=True, validators=[max_file_size(5), allowed_content_type('pet_photo')],
     )

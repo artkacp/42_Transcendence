@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { ApiError } from '../api/client'
 import { deletePet, getMyPets } from '../api/pets'
 import { useAuth } from '../auth/auth-context'
@@ -31,6 +31,7 @@ function PetThumb({ pet }: { pet: Pet }) {
 interface ListingsTableProps {
   pets: Pet[]
   busy: boolean
+  onEdit: (pet: Pet) => void
   onRemove: (pet: Pet) => void
 }
 
@@ -42,12 +43,23 @@ function StatusBadge({ pet }: { pet: Pet }) {
   )
 }
 
-function RowActions({ pet, busy, onRemove }: { pet: Pet; busy: boolean; onRemove: (pet: Pet) => void }) {
+function RowActions({ pet, busy, onEdit, onRemove }: { pet: Pet } & Omit<ListingsTableProps, 'pets'>) {
   return (
     <>
       <Button size="sm" variant="secondary" onClick={() => navigate('pet', { id: pet.id })}>
         View & reply
       </Button>
+      {!pet.adopted_by && (
+        <Button
+          size="sm"
+          variant="ghost"
+          icon={<Pencil className="size-3.5" />}
+          onClick={() => onEdit(pet)}
+          aria-label={`Edit ${pet.name}`}
+        >
+          Edit
+        </Button>
+      )}
       <Button
         size="sm"
         variant="danger"
@@ -63,7 +75,7 @@ function RowActions({ pet, busy, onRemove }: { pet: Pet; busy: boolean; onRemove
 }
 
 // below sm: one card per listing instead of a sideways-scrolling table
-function ListingsCards({ pets, busy, onRemove }: ListingsTableProps) {
+function ListingsCards({ pets, busy, onEdit, onRemove }: ListingsTableProps) {
   return (
     <ul className="space-y-3 sm:hidden">
       {pets.map((pet) => (
@@ -80,7 +92,7 @@ function ListingsCards({ pets, busy, onRemove }: ListingsTableProps) {
             </div>
             <StatusBadge pet={pet} />
             <div className="flex flex-wrap justify-end gap-2">
-              <RowActions pet={pet} busy={busy} onRemove={onRemove} />
+              <RowActions pet={pet} busy={busy} onEdit={onEdit} onRemove={onRemove} />
             </div>
           </Card>
         </li>
@@ -89,7 +101,7 @@ function ListingsCards({ pets, busy, onRemove }: ListingsTableProps) {
   )
 }
 
-function ListingsTable({ pets, busy, onRemove }: ListingsTableProps) {
+function ListingsTable({ pets, busy, onEdit, onRemove }: ListingsTableProps) {
   return (
     <Card className="hidden overflow-x-auto sm:block">
       <table className="w-full min-w-[640px] text-left text-sm">
@@ -120,7 +132,7 @@ function ListingsTable({ pets, busy, onRemove }: ListingsTableProps) {
               </td>
               <td className="px-5 py-3">
                 <div className="flex justify-end gap-2">
-                  <RowActions pet={pet} busy={busy} onRemove={onRemove} />
+                  <RowActions pet={pet} busy={busy} onEdit={onEdit} onRemove={onRemove} />
                 </div>
               </td>
             </tr>
@@ -137,6 +149,8 @@ function YourListings() {
   const [error, setError] = useState('')
   const [removing, setRemoving] = useState(false)
   const [publishOpen, setPublishOpen] = useState(false)
+  const [editing, setEditing] = useState<Pet | null>(null)
+  const [editOpen, setEditOpen] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -180,6 +194,17 @@ function YourListings() {
     toast({ kind: 'create', title: 'Listing published', message: `${pet.name} is now listed for adoption.` })
   }
 
+  const openEdit = (pet: Pet) => {
+    setEditing(pet)
+    setEditOpen(true)
+  }
+
+  const handleSaved = (pet: Pet) => {
+    setEditOpen(false)
+    setPets((prev) => prev && prev.map((p) => (p.id === pet.id ? { ...pet, inquiry_count: p.inquiry_count } : p)))
+    toast({ kind: 'update', title: 'Listing updated', message: `${pet.name} was updated.` })
+  }
+
   return (
     <div className="space-y-6 sm:p-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -205,11 +230,12 @@ function YourListings() {
         />
       ) : (
         <>
-          <ListingsCards pets={pets} busy={removing} onRemove={removePet} />
-          <ListingsTable pets={pets} busy={removing} onRemove={removePet} />
+          <ListingsCards pets={pets} busy={removing} onEdit={openEdit} onRemove={removePet} />
+          <ListingsTable pets={pets} busy={removing} onEdit={openEdit} onRemove={removePet} />
         </>
       )}
       <PublishPetModal open={publishOpen} onClose={() => setPublishOpen(false)} onPublished={handlePublished} />
+      <PublishPetModal open={editOpen} pet={editing} onClose={() => setEditOpen(false)} onPublished={handleSaved} />
     </div>
   )
 }
