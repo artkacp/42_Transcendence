@@ -83,9 +83,9 @@ function AvatarEditor({ me }: { me: Me }) {
           }}
         />
       </div>
-      <div>
-        <p className="font-display text-2xl font-bold">{me.full_name}</p>
-        <p className="text-sm text-text-muted">@{me.handle}</p>
+      <div className="min-w-0">
+        <p className="font-display text-2xl font-bold break-words">{me.full_name}</p>
+        <p className="text-sm text-text-muted break-words">@{me.handle}</p>
         {me.avatar && (
           <Button
             size="sm"
@@ -328,7 +328,7 @@ function RehomingPets({ pets }: { pets: Pet[] }) {
             {pet.photo ? (
               <img src={pet.photo} alt="" className="size-8 rounded-xl object-cover" />
             ) : (
-              <span className="text-2xl" aria-hidden>
+              <span className="text-2xl whitespace-nowrap" aria-hidden>
                 {pet.species === 'dog' ? 'U・ᴥ・U' : '=^ ◗ ◗^='}
               </span>
             )}
@@ -382,8 +382,8 @@ function OtherProfile({ userId }: { userId: string }) {
             <OnlineLine user={user} />
           </div>
           {user.city && <Badge>{user.city}</Badge>}
-          {user.bio && <p className="max-w-md text-[15px] text-text">{user.bio}</p>}
-          <div className="mt-2 flex gap-2">
+          {user.bio && <p className="max-w-md text-[15px] text-text break-words">{user.bio}</p>}
+          <div className="mt-2 flex flex-wrap justify-center gap-2">
             <FriendAction user={user} onChanged={() => setReload((n) => n + 1)} />
           </div>
         </div>
@@ -401,7 +401,7 @@ export function Profile() {
 
   if (status === 'signed-out' || !user) {
     return (
-      <div className="p-8">
+      <div className="sm:p-8">
         <EmptyState
           emoji="(︶ᴥ ...   ･ﾟ✧"
           title="Sign in to see profiles"

@@ -444,10 +444,10 @@ export function DesignSystem() {
 
       <Section title="Chip">
         <Row label="Selectable">
-          <Chip active={chipValue === 'dog'} onClick={() => setChipValue('dog')}>
+          <Chip active={chipValue === 'dog'} onClick={() => setChipValue('dog')} className="whitespace-nowrap">
             Dogs <span className="ml-1 font-black [-webkit-text-stroke:0.5px_currentColor]" aria-hidden="true">U・ᴥ・U</span>
           </Chip>
-          <Chip active={chipValue === 'cat'} onClick={() => setChipValue('cat')}>
+          <Chip active={chipValue === 'cat'} onClick={() => setChipValue('cat')} className="whitespace-nowrap">
             Cats <span className="ml-1 font-black [-webkit-text-stroke:0.5px_currentColor]" aria-hidden="true">=^ ◗ ◗^=</span>
           </Chip>
         </Row>
@@ -476,6 +476,7 @@ export function DesignSystem() {
           <div className="w-full space-y-4">
             <EmptyState
               emoji="⎇(◔ _◑)"
+              className="[&>span]:font-black [&>span]:[-webkit-text-stroke:1.5px_currentColor]"
               title="No pals match those filters"
               hint="Try clearing the search — someone fluffy is out there."
               action={<Button variant="secondary" size="sm">Clear filters</Button>}

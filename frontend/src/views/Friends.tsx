@@ -336,7 +336,7 @@ export function Friends() {
 
   if (status === 'signed-out' || !user) {
     return (
-      <div className="p-8">
+      <div className="sm:p-8">
         <EmptyState
           emoji="(︶ᴥ ...   ･ﾟ✧"
           title="Sign in to see your friends"

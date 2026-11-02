@@ -20,7 +20,7 @@ function PetThumb({ pet }: { pet: Pet }) {
       {pet.photo ? (
         <img src={pet.photo} alt="" className="absolute inset-0 size-full object-cover" />
       ) : (
-        <span className="text-2xl" aria-hidden>
+        <span className="text-[11px] whitespace-nowrap" aria-hidden>
           {pet.species === 'dog' ? 'U・ᴥ・U' : '=^ ◗ ◗^='}
         </span>
       )}
@@ -34,9 +34,56 @@ interface ListingsTableProps {
   onRemove: (pet: Pet) => void
 }
 
+function RowActions({ pet, busy, onRemove }: { pet: Pet; busy: boolean; onRemove: (pet: Pet) => void }) {
+  return (
+    <>
+      <Button size="sm" variant="secondary" onClick={() => navigate('pet', { id: pet.id })}>
+        View & reply
+      </Button>
+      <Button
+        size="sm"
+        variant="danger"
+        icon={<Trash2 className="size-3.5" />}
+        disabled={busy}
+        onClick={() => onRemove(pet)}
+        aria-label={`Remove ${pet.name}`}
+      >
+        Remove
+      </Button>
+    </>
+  )
+}
+
+// below sm: one card per listing instead of a sideways-scrolling table
+function ListingsCards({ pets, busy, onRemove }: ListingsTableProps) {
+  return (
+    <ul className="space-y-3 sm:hidden">
+      {pets.map((pet) => (
+        <li key={pet.id}>
+          <Card className="space-y-3 p-4">
+            <div className="flex items-center gap-3">
+              <PetThumb pet={pet} />
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold text-text">{pet.name}</p>
+                <p className="truncate text-xs text-text-muted">
+                  {pet.breed} · {formatDate(pet.created_at)}
+                </p>
+              </div>
+            </div>
+            <Badge>{inquiryLabel(pet.inquiry_count)}</Badge>
+            <div className="flex flex-wrap justify-end gap-2">
+              <RowActions pet={pet} busy={busy} onRemove={onRemove} />
+            </div>
+          </Card>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 function ListingsTable({ pets, busy, onRemove }: ListingsTableProps) {
   return (
-    <Card className="relative overflow-x-auto">
+    <Card className="hidden overflow-x-auto sm:block">
       <table className="w-full min-w-[640px] text-left text-sm">
         <thead className="border-b border-border text-xs uppercase tracking-wide text-text-muted">
           <tr>
@@ -65,19 +112,7 @@ function ListingsTable({ pets, busy, onRemove }: ListingsTableProps) {
               </td>
               <td className="px-5 py-3">
                 <div className="flex justify-end gap-2">
-                  <Button size="sm" variant="secondary" onClick={() => navigate('pet', { id: pet.id })}>
-                    View & reply
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    icon={<Trash2 className="size-3.5" />}
-                    disabled={busy}
-                    onClick={() => onRemove(pet)}
-                    aria-label={`Remove ${pet.name}`}
-                  >
-                    Remove
-                  </Button>
+                  <RowActions pet={pet} busy={busy} onRemove={onRemove} />
                 </div>
               </td>
             </tr>
@@ -140,7 +175,7 @@ function YourListings() {
   }
 
   return (
-    <div className="space-y-6 p-8">
+    <div className="space-y-6 sm:p-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-4xl font-black tracking-tight">Your listings</h1>
@@ -163,7 +198,10 @@ function YourListings() {
           action={<Button onClick={openPublish}>Rehome a pet</Button>}
         />
       ) : (
-        <ListingsTable pets={pets} busy={removing} onRemove={setConfirming} />
+        <>
+          <ListingsCards pets={pets} busy={removing} onRemove={setConfirming} />
+          <ListingsTable pets={pets} busy={removing} onRemove={setConfirming} />
+        </>
       )}
       {confirming && (
         <Modal
@@ -195,7 +233,7 @@ export function Rehome() {
 
   if (status === 'signed-out') {
     return (
-      <div className="p-8">
+      <div className="sm:p-8">
         <EmptyState
           emoji="(︶ᴥ ...   ･ﾟ✧"
           title="Sign in to rehome a pet"
