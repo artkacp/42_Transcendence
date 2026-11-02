@@ -208,12 +208,16 @@ class FriendshipTests(APITestCase):
         r = self.client.delete(reverse('friendship-detail', args=[f.pk]))
         self.assertEqual(r.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(Friendship.objects.filter(pk=f.pk).exists())
+        self.assertTrue(self.alice.notifications.filter(title='Friend request declined').exists())
+        self.assertFalse(self.bob.notifications.exists())
 
     def test_requester_can_cancel_pending(self):
         f = Friendship.objects.create(requester=self.alice, addressee=self.bob)
         auth(self.client, self.alice)
         r = self.client.delete(reverse('friendship-detail', args=[f.pk]))
         self.assertEqual(r.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertTrue(self.bob.notifications.filter(title='Friend request cancelled').exists())
+        self.assertFalse(self.alice.notifications.exists())
 
     def test_either_party_can_unfriend(self):
         f = Friendship.objects.create(

@@ -13,6 +13,7 @@ from pets.models import (
     SPECIES_CHOICES,
     TRAITS,
 )
+from pets.serializers import TraitsField
 
 PUBLIC_PREFIX = '/api/public/v1/'
 ALL_BREEDS = [breed for breeds in BREEDS.values() for breed in breeds]
@@ -65,7 +66,7 @@ class PetInputSerializer(serializers.Serializer):
     sex = serializers.ChoiceField(choices=SEX_CHOICES)
     city = serializers.ChoiceField(choices=CITIES)
     story = serializers.CharField(min_length=20, max_length=MAX_STORY_LENGTH)
-    traits = serializers.ListField(child=serializers.ChoiceField(choices=TRAITS), max_length=4, required=False)
+    traits = TraitsField(child=serializers.ChoiceField(choices=TRAITS), max_length=4, required=False)
     is_vaccinated = serializers.BooleanField(required=False, help_text='Defaults to false.')
     is_neutered = serializers.BooleanField(required=False, help_text='Defaults to false.')
 

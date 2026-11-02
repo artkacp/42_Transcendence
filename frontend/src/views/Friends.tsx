@@ -26,7 +26,7 @@ const errorText = (err: unknown, fallback: string) =>
 // flex-wrap: on a narrow card the buttons drop to their own line instead of overflowing
 function PersonCard({ user, children }: { user: User; children: ReactNode }) {
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-surface p-3">
+    <div className="flex min-w-0 flex-wrap items-center gap-3 rounded-2xl border border-border bg-surface p-3">
       <div className="flex min-w-48 flex-1 items-center gap-3">
         <Avatar name={user.full_name} src={user.avatar} size="md" online={user.is_online} />
         <div className="min-w-0 flex-1">

@@ -29,6 +29,8 @@ const STAGE_OPTIONS = [
   { value: 'adopted', label: 'Adopted' },
 ]
 
+const MAX_MESSAGE_LENGTH = 2000
+
 const ASK_FOR_DOCUMENTS = 'Could you share the vet passport or other documents (PDF)?'
 
 // A file picked for the next message: uploading while attachment is null, staged once it is set
@@ -55,7 +57,7 @@ function Bubble({ message, mine }: { message: InquiryMessage; mine: boolean }) {
           mine ? 'bg-primary text-on-primary' : 'bg-surface-raised text-text'
         }`}
       >
-        {message.body && <p className="whitespace-pre-line break-words">{message.body}</p>}
+        {message.body && <p className="whitespace-pre-line wrap-anywhere">{message.body}</p>}
         {message.attachments.length > 0 && (
           <div className={`flex flex-col gap-2 ${message.body ? 'mt-2' : ''}`}>
             {message.attachments.map((a) => (
@@ -384,6 +386,7 @@ export function PetChat({ inquiry }: { inquiry: Inquiry }) {
           ref={inputRef}
           label="Your message"
           rows={2}
+          maxLength={MAX_MESSAGE_LENGTH}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={onKeyDown}
