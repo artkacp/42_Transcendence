@@ -9,7 +9,7 @@ A peer-to-peer adoption platform for dogs and cats: people rehoming a pet list i
 ## Features
 
 - **Browse and adopt** — search listings by species, breed, size, age and location; filter in real time; send an adoption application directly to the owner *(iskaraag, sarherna)*
-- **Rehome a pet** — publish a listing with photos, description and pet details *(iskaraag, sarherna)*
+- **Rehome a pet** — publish, edit or remove a listing with photos, description and pet details *(iskaraag, sarherna)*
 - **Chat** — real-time messaging between owner and applicant over WebSocket, scoped to each adoption inquiry *(oostapen, faikhan, sarherna)*
 - **Adoptions** — track the status of your applications as an adopter; manage incoming inquiries and move them through adoption stages as an owner *(faikhan, oostapen, sarherna)*
 - **Notifications** — in-app notifications for application status changes and adoption confirmations, delivered in real time *(iskaraag, sarherna)*
@@ -186,12 +186,12 @@ Total: **20 points** (7 Majors × 2 pts + 6 Minors × 1 pt). The subject require
 | User Interaction | Major | 2 | Adoption chat between owner and adopter over WebSocket; friend requests, accept and remove, friends list; own and other users' profiles | sarherna, faikhan, oostapen, akacprzy |
 | Real-time Features | Major | 2 | Django Channels WebSocket with first-frame JWT auth; group-based broadcasting (user, pet, browse, analytics); reconnect handling; live chat, presence, notifications and list updates | faikhan |
 | Public API | Major | 2 | API keys stored hashed and shown once; 60 requests/min throttle per key; GET, POST, PUT and DELETE on pets plus GET options; OpenAPI schema and Swagger UI | faikhan |
-| Prometheus / Grafana | Major | 2 | django-prometheus (request rate, latency, status codes); node-exporter (host metrics); Grafana "Pawfect Match — Ops" dashboard with alert rules; Grafana behind login | faikhan |
+| Prometheus / Grafana | Major | 2 | django-prometheus (request rate, latency, status codes); node-exporter (host metrics); Grafana "Pawfect Match — Ops" dashboard; 3 alert rules (backend down, high 5xx ratio, host CPU); Grafana behind login | faikhan |
 | Advanced Analytics Dashboard | Major | 2 | Platform-wide metrics from `analytics_event`; interactive Recharts charts; date range and pet filters; live updates over WebSocket; CSV export | akacprzy |
 | Notification system | Minor | 1 | Notifications on create, update and delete actions; real-time delivery over WebSocket; bell with unread count, notification center, toasts, mark as read | sarherna, iskaraag |
 | Custom Design System | Minor | 1 | 15+ reusable components (Button, IconButton, Card, Avatar, Badge, Chip, Input, Textarea, Select, Toggle, Tabs, Modal, Toast, Progress, Pagination, EmptyState); OKLCH color palette with semantic tokens; typography (Fraunces display, Outfit text); lucide icon set; showcased on the Design kit page | oostapen, iskaraag |
 | Advanced Search | Minor | 1 | Text search plus filters (species, sex, size, age, city, breed, traits, vaccinated, neutered); sort by newest, oldest, name or age; paginated results | iskaraag, sarherna |
-| File Upload | Minor | 1 | Avatars and pet photos (image types, size limits checked in the browser and on the server); chat attachments with images and documents; files served only to authorized users | sarherna, iskaraag, oostapen |
+| File Upload | Minor | 1 | Avatars and pet photos (image types, size limits checked in the browser and on the server); pet photos can be replaced or removed from the listing edit UI; chat attachments with images and documents, with upload progress; files served only to authorized users | sarherna, iskaraag, oostapen |
 | User Activity Analytics | Minor | 1 | Activity events recorded on every significant action; "Your activity" dashboard with personal stats as adopter and as rehomer | akacprzy, iskaraag |
 | ORM (SQLAlchemy) | Minor | 1 | SQLAlchemy 2.1 maps and writes the `analytics_event` table; Django ORM owns every other table | akacprzy |
 
@@ -351,7 +351,7 @@ The backend runs as **exactly one Daphne process**: no extra workers, no `docker
 | akacprzy | Database schema design; SQLAlchemy analytics write pipeline; django-prometheus instrumentation; platform analytics endpoint; per-user analytics endpoint; friends backend; friends view; analytics dashboard frontend |
 | faikhan | Docker, nginx and HTTPS setup; Prometheus and node-exporter; Grafana dashboard and alerts; WebSocket backend — JWT auth, presence, chat routing, pet subscriptions; public API — keys, throttle, CRUD, OpenAPI docs; SocketProvider frontend |
 | oostapen | Frontend scaffold and API client; auth flow frontend; pet page; live chat frontend, adopter Ask about + owner Inquiries over WebSocket; WebSocket client hooks (frame handler, reconnect refetch); animated logo, favicon and shell layout; design tokens and palettes; Design kit page; design system components |
-| iskaraag | Browse with filters, live updates and sorting; rehome and publish flow; rehome back in nav; notification center and toast; your activity view; Input, Textarea, Select, Toggle, Chip, Avatar, EmptyState, Modal, Toast design system components |
+| iskaraag | Browse with filters, live updates and sorting; rehome and publish flow; edit listing UI; rehome back in nav; notification center and toast; your activity view; Input, Textarea, Select, Toggle, Chip, Avatar, EmptyState, Modal, Toast design system components |
 
 **Challenges**
 
