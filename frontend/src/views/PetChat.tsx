@@ -1,19 +1,38 @@
 // src/views/PetChat.tsx
 // F3b · one inquiry thread under the pet, for the adopter and the owner alike.
 // History over REST, live over the socket; sends go by socket, or by REST when it isn't ready.
-import { useEffect, useRef, useState, type KeyboardEvent, type SubmitEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent, type SubmitEvent } from 'react'
+import { Paperclip, X } from 'lucide-react'
 import { ApiError } from '../api/client'
-import { getMessages, sendMessageRest } from '../api/inquiries'
+import { ACCEPT, checkFile, deleteAttachment, fileSize, uploadAttachment, UploadCancelled } from '../api/attachments'
+import { changeStage, getMessages, getMyInquiries, getPetInquiries, sendMessageRest } from '../api/inquiries'
+import { adoptPet } from '../api/pets'
 import { useAuth } from '../auth/auth-context'
-import type { InquiryMessage } from '../data/types'
-import { Button, Card, Textarea } from '../ds'
-import { useSocketFrame, useSocketReconnect, useSocketSend } from '../socket/SocketContext'
+import { ChatAttachment } from '../components/ChatAttachment'
+import { StageProgress } from '../components/StageProgress'
+import type { Attachment, Inquiry, InquiryMessage, InquiryStage } from '../data/types'
+import { Button, Card, IconButton, Modal, Progress, Select, Textarea } from '../ds'
+import { usePetSubscription, useSocketFrame, useSocketReconnect, useSocketSend } from '../socket/SocketContext'
 
 type Result = { inquiryId: string; messages: InquiryMessage[] } | { inquiryId: string; error: string }
 
 const timeOf = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
-const errorText = (err: unknown) => (err instanceof ApiError ? err.message : 'Could not send the message')
+const errorText = (err: unknown, fallback = 'Could not send the message') =>
+  err instanceof ApiError ? err.message : fallback
+
+const STAGE_OPTIONS = [
+  { value: 'conversation', label: 'Talking' },
+  { value: 'visit', label: 'Visit planned' },
+  { value: 'decision', label: 'Decision' },
+  { value: 'denied', label: 'Declined' },
+  { value: 'adopted', label: 'Adopted' },
+]
+
+const ASK_FOR_DOCUMENTS = 'Could you share the vet passport or other documents (PDF)?'
+
+// A file picked for the next message: uploading while attachment is null, staged once it is set
+type Staged = { key: number; name: string; size: number; progress: number; attachment: Attachment | null }
 
 // Appends unless the id is already there (the socket echo and the REST answer can both bring it)
 function withMessage(result: Result | null, message: InquiryMessage): Result | null {
@@ -37,18 +56,29 @@ function Bubble({ message, mine }: { message: InquiryMessage; mine: boolean }) {
         }`}
       >
         {message.body && <p className="whitespace-pre-line break-words">{message.body}</p>}
-        {message.attachments.map((a) => (
-          <p key={a.id} className="break-all opacity-80">
-            File: {a.original_name}
-          </p>
-        ))}
+        {message.attachments.length > 0 && (
+          <div className={`flex flex-col gap-2 ${message.body ? 'mt-2' : ''}`}>
+            {message.attachments.map((a) => (
+              <ChatAttachment key={a.id} attachment={a} />
+            ))}
+          </div>
+        )}
       </div>
     </li>
   )
 }
 
-export function PetChat({ inquiryId }: { inquiryId: string }) {
+export function PetChat({ inquiry }: { inquiry: Inquiry }) {
+  const inquiryId = inquiry.id
+  const { pet, adopter } = inquiry
   const { user } = useAuth()
+  const owner = user?.id === pet.owner.id
+  const [stage, setStage] = useState<InquiryStage>(inquiry.stage)
+  const [adoptedById, setAdoptedById] = useState<string | null>(pet.adopted_by?.id ?? null)
+  const [saving, setSaving] = useState(false)
+  const [stageError, setStageError] = useState<string | null>(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [adoptError, setAdoptError] = useState<string | null>(null)
   const sendFrame = useSocketSend()
   const [result, setResult] = useState<Result | null>(null)
   const [reload, setReload] = useState(0)
@@ -58,6 +88,18 @@ export function PetChat({ inquiryId }: { inquiryId: string }) {
   const [sendingRest, setSendingRest] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
   const logRef = useRef<HTMLOListElement>(null)
+  const [staged, setStaged] = useState<Staged[]>([])
+  const [fileError, setFileError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const nextKey = useRef(0)
+  // abort() of every upload still running, by staged key
+  const uploads = useRef(new Map<number, () => void>())
+
+  // leaving the chat stops running uploads; finished unsent ones are swept by the backend after 24h
+  useEffect(() => {
+    const running = uploads.current
+    return () => running.forEach((abort) => abort())
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -80,6 +122,7 @@ export function PetChat({ inquiryId }: { inquiryId: string }) {
     // our own echo confirms the pending send: only now is the input cleared
     if (pending !== null && message.sender.id === user?.id) {
       setDraft('')
+      setStaged([])
       setPending(null)
       setSendError(null)
     }
@@ -92,11 +135,63 @@ export function PetChat({ inquiryId }: { inquiryId: string }) {
     setSendError(frame.detail)
   })
 
+  useSocketFrame('inquiry.stage_changed', ({ inquiry_id, stage: next }) => {
+    if (inquiry_id === inquiryId) setStage(next)
+  })
+
+  // may arrive twice (pet group and browse): the first one wins
+  useSocketFrame('pet.adopted', ({ pet_id, adopted_by_id }) => {
+    if (pet_id === pet.id) setAdoptedById((v) => v ?? adopted_by_id)
+  })
+
+  usePetSubscription(pet.id)
+
   // frames were missed while offline: refetch, and stop waiting for an echo that may never come
   useSocketReconnect(() => {
     setPending(null)
     setReload((n) => n + 1)
+    const refetch = owner ? getPetInquiries(pet.id) : getMyInquiries()
+    refetch
+      .then((list) => {
+        const fresh = list.find((i) => i.id === inquiryId)
+        if (!fresh) return
+        setStage(fresh.stage)
+        setAdoptedById(fresh.pet.adopted_by?.id ?? null)
+      })
+      .catch(() => undefined)
   })
+
+  const onStageChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    const next = e.target.value
+    setStageError(null)
+    // the select stays bound to `stage`: after Cancel it shows the current stage again
+    if (next === 'adopted') {
+      setAdoptError(null)
+      setConfirmOpen(true)
+      return
+    }
+    if (next === stage) return
+    setSaving(true)
+    changeStage(inquiryId, next as InquiryStage)
+      .then((updated) => setStage(updated.stage))
+      .catch((err) => setStageError(errorText(err, 'Could not change the stage')))
+      .finally(() => setSaving(false))
+  }
+
+  const confirmAdoption = () => {
+    setSaving(true)
+    setAdoptError(null)
+    adoptPet(pet.id, inquiryId)
+      .then((updated) => {
+        setAdoptedById(updated.adopted_by?.id ?? adopter.id)
+        setConfirmOpen(false)
+      })
+      .catch((err) => setAdoptError(errorText(err, 'Could not complete the adoption')))
+      .finally(() => setSaving(false))
+  }
+
+  const adopted = adoptedById !== null
+  const adoptedHere = adoptedById === adopter.id
 
   const count = result && 'messages' in result ? result.messages.length : 0
   useEffect(() => {
@@ -105,6 +200,50 @@ export function PetChat({ inquiryId }: { inquiryId: string }) {
   }, [count])
 
   const busy = pending !== null || sendingRest
+  const uploading = staged.some((f) => !f.attachment)
+  const attachmentIds = staged.flatMap((f) => (f.attachment ? [f.attachment.id] : []))
+  const canSend = !busy && !adopted && !uploading && (draft.trim() !== '' || attachmentIds.length > 0)
+
+  const updateStaged = (key: number, change: Partial<Staged>) =>
+    setStaged((list) => list.map((f) => (f.key === key ? { ...f, ...change } : f)))
+
+  // checked here first (type, 5 MB), then uploaded one by one with their own progress
+  const onPickFiles = (e: ChangeEvent<HTMLInputElement>) => {
+    const files = [...(e.target.files ?? [])]
+    e.target.value = '' // the same file can be picked again
+    const problems: string[] = []
+    for (const file of files) {
+      const problem = checkFile(file)
+      if (problem) {
+        problems.push(problem)
+        continue
+      }
+      const key = nextKey.current++
+      const { done, abort } = uploadAttachment(file, (progress) => updateStaged(key, { progress }))
+      uploads.current.set(key, abort)
+      setStaged((list) => [...list, { key, name: file.name, size: file.size, progress: 0, attachment: null }])
+      done
+        .then((attachment) => updateStaged(key, { progress: 100, attachment }))
+        .catch((err) => {
+          setStaged((list) => list.filter((f) => f.key !== key))
+          if (!(err instanceof UploadCancelled)) setFileError(errorText(err, 'Could not upload the file'))
+        })
+        .finally(() => uploads.current.delete(key))
+    }
+    setFileError(problems.length > 0 ? problems.join(' · ') : null)
+  }
+
+  // ×: aborts a running upload, or unstages a finished one (the backend sweeps it if the DELETE fails)
+  const unstage = (file: Staged) => {
+    setStaged((list) => list.filter((f) => f.key !== file.key))
+    if (file.attachment) deleteAttachment(file.attachment.id).catch(() => undefined)
+    else uploads.current.get(file.key)?.()
+  }
+
+  const askForDocuments = () => {
+    setDraft(ASK_FOR_DOCUMENTS)
+    inputRef.current?.focus()
+  }
 
   // disabling the textarea drops its focus: give it back once the send is settled
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -117,18 +256,19 @@ export function PetChat({ inquiryId }: { inquiryId: string }) {
   const onSubmit = (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
     const body = draft.trim()
-    if (!body || busy) return
+    if (!canSend) return
     setSendError(null)
-    if (sendFrame({ type: 'chat.send', inquiry_id: inquiryId, body })) {
+    if (sendFrame({ type: 'chat.send', inquiry_id: inquiryId, body, attachment_ids: attachmentIds })) {
       setPending(body)
       return
     }
     // socket not ready: no echo will reach us, so the REST answer is the message
     setSendingRest(true)
-    sendMessageRest(inquiryId, body)
+    sendMessageRest(inquiryId, body, attachmentIds)
       .then((message) => {
         setResult((r) => withMessage(r, message))
         setDraft('')
+        setStaged([])
       })
       .catch((err) => setSendError(errorText(err)))
       .finally(() => setSendingRest(false))
@@ -146,7 +286,56 @@ export function PetChat({ inquiryId }: { inquiryId: string }) {
 
   return (
     <Card className="flex flex-col gap-4 p-5">
-      <h2 className="font-display text-lg font-bold text-text">Messages</h2>
+      <div className="flex flex-wrap items-center gap-3">
+        <h2 className="font-display text-lg font-bold text-text">Messages</h2>
+        {owner && !adopted && (
+          <Select
+            aria-label="Adoption stage"
+            options={STAGE_OPTIONS}
+            value={stage}
+            onChange={onStageChange}
+            disabled={saving}
+            className="w-auto"
+          />
+        )}
+        {adopted && !adoptedHere ? (
+          <p className="text-sm text-text-muted">Adopted by someone else</p>
+        ) : adoptedHere && owner ? (
+          <p className="text-sm text-text-muted">Adopted by {adopter.full_name}</p>
+        ) : (
+          <StageProgress stage={adoptedHere ? 'adopted' : stage} viewer={owner ? 'owner' : 'adopter'} />
+        )}
+      </div>
+      {stageError && (
+        <p role="alert" className="text-sm text-danger">
+          {stageError}
+        </p>
+      )}
+
+      {owner && (
+        <Modal
+          open={confirmOpen}
+          onClose={() => !saving && setConfirmOpen(false)}
+          title={`Give ${pet.name} to ${adopter.full_name}?`}
+          description="Other applicants will be told."
+          footer={
+            <>
+              <Button type="button" variant="secondary" disabled={saving} onClick={() => setConfirmOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="button" disabled={saving} onClick={confirmAdoption}>
+                Confirm adoption
+              </Button>
+            </>
+          }
+        >
+          {adoptError && (
+            <p role="alert" className="text-sm text-danger">
+              {adoptError}
+            </p>
+          )}
+        </Modal>
+      )}
 
       {!ready ? (
         <p role="status" className="text-text-muted">Loading…</p>
@@ -170,6 +359,27 @@ export function PetChat({ inquiryId }: { inquiryId: string }) {
       )}
 
       <form onSubmit={onSubmit} className="flex flex-col gap-2">
+        {!adopted && staged.length > 0 && (
+          <ul aria-label="Files to send" className="flex flex-col gap-2">
+            {staged.map((f) => (
+              <li key={f.key} className="flex items-center gap-3 rounded-xl bg-ink-900/5 px-3 py-2 text-sm">
+                <span className="flex min-w-0 flex-1 flex-col gap-1">
+                  <span className="truncate text-text" title={f.name}>
+                    {f.name} <span className="text-text-subtle">· {fileSize(f.size)}</span>
+                  </span>
+                  {!f.attachment && <Progress fluid size="sm" value={f.progress} label={`Uploading ${f.name}`} />}
+                </span>
+                <IconButton
+                  label={f.attachment ? `Remove ${f.name}` : `Cancel upload of ${f.name}`}
+                  disabled={busy}
+                  onClick={() => unstage(f)}
+                >
+                  <X className="size-4" />
+                </IconButton>
+              </li>
+            ))}
+          </ul>
+        )}
         <Textarea
           ref={inputRef}
           label="Your message"
@@ -177,16 +387,46 @@ export function PetChat({ inquiryId }: { inquiryId: string }) {
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={onKeyDown}
-          disabled={busy}
+          disabled={busy || adopted}
         />
+        {adopted && <p className="text-sm text-text-muted">This adoption is closed.</p>}
         {sendError && (
           <p role="alert" className="text-sm text-danger">
             {sendError}
           </p>
         )}
-        <Button type="submit" disabled={busy || !draft.trim()} className="self-end">
-          {busy ? 'Sending…' : 'Send'}
-        </Button>
+        {!adopted && fileError && (
+          <p role="alert" className="text-sm text-danger">
+            {fileError}
+          </p>
+        )}
+        <div className="flex items-center gap-2">
+          {!adopted && (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept={ACCEPT}
+                onChange={onPickFiles}
+                className="hidden"
+                tabIndex={-1}
+                aria-hidden="true"
+              />
+              <IconButton label="Attach files" disabled={busy} onClick={() => fileInputRef.current?.click()}>
+                <Paperclip className="size-4" />
+              </IconButton>
+              {!owner && (
+                <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={askForDocuments}>
+                  Ask for documents
+                </Button>
+              )}
+            </>
+          )}
+          <Button type="submit" disabled={!canSend} className="ml-auto">
+            {busy ? 'Sending…' : 'Send'}
+          </Button>
+        </div>
       </form>
     </Card>
   )

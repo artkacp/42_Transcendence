@@ -61,6 +61,24 @@ export function PetInquiries({ petId }: { petId: string }) {
     })
   })
 
+  useSocketFrame('inquiry.stage_changed', ({ inquiry_id, stage }) => {
+    setResult((r) => {
+      if (!r || 'error' in r || !r.inquiries.some((i) => i.id === inquiry_id)) return r
+      return { ...r, inquiries: r.inquiries.map((i) => (i.id === inquiry_id ? { ...i, stage } : i)) }
+    })
+  })
+
+  // idempotent: the winner is looked up among this pet's adopters
+  useSocketFrame('pet.adopted', ({ pet_id, adopted_by_id }) => {
+    if (pet_id !== petId) return
+    setResult((r) => {
+      if (!r || 'error' in r || r.petId !== petId) return r
+      const winner = r.inquiries.find((i) => i.adopter.id === adopted_by_id)?.adopter
+      if (!winner) return r
+      return { ...r, inquiries: r.inquiries.map((i) => ({ ...i, pet: { ...i.pet, adopted_by: winner } })) }
+    })
+  })
+
   useSocketReconnect(() => setReload((n) => n + 1))
 
   // derived, not stored: an answer for another pet means we are still loading
@@ -108,7 +126,7 @@ export function PetInquiries({ petId }: { petId: string }) {
       </Card>
 
       {/* key: a draft typed for one adopter never carries over to the next */}
-      {selected && <PetChat key={selected.id} inquiryId={selected.id} />}
+      {selected && <PetChat key={selected.id} inquiry={selected} />}
     </section>
   )
 }

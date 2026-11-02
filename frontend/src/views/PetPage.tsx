@@ -9,7 +9,8 @@ import { getMyInquiries, startInquiry } from '../api/inquiries'
 import { ApiError } from '../api/client'
 import { useAuth } from '../auth/auth-context'
 import { navigate, useIdParam, viewHref } from '../routing'
-import type { Pet } from '../data/types'
+import type { Inquiry, Pet } from '../data/types'
+import { useSocketFrame } from '../socket/SocketContext'
 import { PetChat } from './PetChat'
 import { PetInquiries } from './PetInquiries'
 
@@ -50,7 +51,7 @@ export function PetPage() {
   const { user } = useAuth()
   const [result, setResult] = useState<Result | null>(null)
   // kept with its pet id, so another pet's thread is never shown here
-  const [inquiry, setInquiry] = useState<{ petId: string; id: string } | null>(null)
+  const [inquiry, setInquiry] = useState<{ petId: string; inquiry: Inquiry } | null>(null)
   const [asking, setAsking] = useState(false)
   const [askError, setAskError] = useState<string | null>(null)
 
@@ -72,29 +73,39 @@ export function PetPage() {
   }, [id])
 
   const loaded = result && 'pet' in result && result.id === id ? result.pet : null
-  const canAsk = !!user && !!loaded && loaded.owner.id !== user.id && !loaded.adopted_by
+  // adopted pets too: the adopter still sees how their thread ended
+  const canFind = !!user && !!loaded && loaded.owner.id !== user.id
   const loadedId = loaded?.id
+  const loadedAdopted = !!loaded?.adopted_by
 
   // an earlier "Ask about" shows its chat right away. Errors stay silent: the button still works
   useEffect(() => {
-    if (!canAsk || !loadedId) return
+    if (!canFind || !loadedId) return
     let cancelled = false
     getMyInquiries()
       .then((mine) => {
         const found = mine.find((inq) => inq.pet.id === loadedId)
-        if (!cancelled && found) setInquiry({ petId: loadedId, id: found.id })
+        if (!cancelled && found) setInquiry({ petId: loadedId, inquiry: found })
       })
       .catch(() => undefined)
     return () => {
       cancelled = true
     }
-  }, [canAsk, loadedId])
+  }, [canFind, loadedId])
+
+  // "Already adopted" and the Ask button follow live; a second frame finds the pet already adopted
+  useSocketFrame('pet.adopted', ({ pet_id }) => {
+    if (pet_id !== loadedId || loadedAdopted) return
+    getPet(pet_id)
+      .then((pet) => setResult((r) => (r && r.id === id ? { id, pet } : r)))
+      .catch(() => undefined)
+  })
 
   const ask = (petId: string) => {
     setAsking(true)
     setAskError(null)
     startInquiry(petId)
-      .then((inq) => setInquiry({ petId, id: inq.id }))
+      .then((inq) => setInquiry({ petId, inquiry: inq }))
       .catch((err) => setAskError(err instanceof ApiError ? err.message : 'Could not start the conversation'))
       .finally(() => setAsking(false))
   }
@@ -108,7 +119,7 @@ export function PetPage() {
 
   const { pet } = result
   const mine = user?.id === pet.owner.id
-  const inquiryId = inquiry?.petId === pet.id ? inquiry.id : null
+  const myInquiry = inquiry?.petId === pet.id ? inquiry.inquiry : null
 
   return (
     <div className="flex flex-col gap-4">
@@ -157,7 +168,7 @@ export function PetPage() {
             <p className="text-sm text-text-muted">Already adopted</p>
           ) : mine ? (
             <p className="text-sm text-text-muted">This is your listing</p>
-          ) : inquiryId ? (
+          ) : myInquiry ? (
             <p className="text-sm text-text-muted">You asked about {pet.name}</p>
           ) : (
             <div className="flex flex-col items-start gap-2">
@@ -174,7 +185,7 @@ export function PetPage() {
         </div>
       </article>
 
-      {inquiryId && !pet.adopted_by && <PetChat key={inquiryId} inquiryId={inquiryId} />}
+      {myInquiry && <PetChat key={myInquiry.id} inquiry={myInquiry} />}
       {mine && <PetInquiries petId={pet.id} />}
     </div>
   )

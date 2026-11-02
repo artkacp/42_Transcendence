@@ -139,7 +139,7 @@ class PublicSchemaTests(APITestCase):
 
     def test_pets_list_documents_every_filter(self):
         parameters = self.list_parameters()
-        self.assertEqual(set(parameters), FILTERS | {'q', 'page'})
+        self.assertEqual(set(parameters), FILTERS | {'q', 'page', 'ordering'})
         for parameter in parameters.values():
             self.assertEqual(parameter['in'], 'query')
             self.assertTrue(parameter['description'])

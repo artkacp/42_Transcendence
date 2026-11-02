@@ -1,4 +1,4 @@
-import { api, del, get, patch } from './client'
+import { api, del, get, patch, post } from './client'
 import type { NewPet, Pet, PetSex, PetSize, Species } from '../data/types'
 
 export const getMyPets = () => get<Pet[]>('/api/pets/mine/')
@@ -36,3 +36,7 @@ export interface PetOptions {
 export const getPetOptions = () => get<PetOptions>('/api/pet-options/')
 
 export const getPet = (id: string) => get<Pet>(`/api/pets/${id}/`)
+
+// Owner only: gives the pet to the adopter of this inquiry
+export const adoptPet = (petId: string, inquiryId: string) =>
+  post<Pet>(`/api/pets/${petId}/adopt/`, { inquiry_id: inquiryId })

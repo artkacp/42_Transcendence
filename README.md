@@ -74,6 +74,22 @@ The first start builds the images, generates the local certificates, applies the
 
 To stop, press `Ctrl+C`, or run `docker compose down` from another terminal. `docker compose down -v` also deletes the database, the uploads and the monitoring data.
 
+### Demo data
+
+A fresh stack has empty analytics. To fill it with demo users, pets, conversations and 30 days of events:
+
+```sh
+docker compose exec -T backend python manage.py seed_demo
+```
+
+Sign in as `sara@example.com`, or as any other seed user such as `maya@example.com`. They all share one password: set `SEED_DEMO_PASSWORD` in `.env`, or leave it empty and the command generates one and prints it.
+
+Running it again changes nothing. `seed_demo --flush` deletes the seed accounts and everything they own, then seeds again; other accounts are left alone. The compose stack has no source bind mount, so rebuild first if the code changed: `docker compose up --build -d backend`.
+
+Seed avatars are [Open Peeps](https://www.openpeeps.com/) by Pablo Stanley (CC0 1.0), generated with [DiceBear](https://www.dicebear.com/styles/open-peeps/).
+
+Thanks to all of Alex's friends, who kindly shared the photos of their pets used in the demo data.
+
 ### Trusting the certificate
 
 On the first start, a one-shot `certgen` container creates a local certificate authority (CA) and a certificate for `localhost` signed by it. Trust the CA once in Chrome, and the site loads with a clean padlock and no warnings:

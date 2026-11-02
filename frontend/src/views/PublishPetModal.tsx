@@ -10,7 +10,7 @@ const MAX_TRAITS = 4
 const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const MAX_PHOTO_MB = 5
 
-const SPECIES_LABELS: Record<Species, string> = { dog: '🐶 Dog', cat: '🐱 Cat' }
+const SPECIES_LABELS: Record<Species, string> = { dog: 'Dog U・ᴥ・U', cat: 'Cat =^ ◗ ◗^=' }
 
 const capitalize = (value: string) => value.charAt(0).toUpperCase() + value.slice(1)
 
@@ -136,7 +136,7 @@ function PhotoPicker({ file, current, species, error, onChange }: PhotoPickerPro
             <img src={shown} alt={preview ? 'Selected photo' : 'Current photo'} className="absolute inset-0 size-full object-cover" />
           ) : (
             <span className="text-5xl" aria-hidden>
-              {species === 'dog' ? '🐕' : '🐈'}
+              {species === 'dog' ? 'U・ᴥ・U' : '=^ ◗ ◗^='}
             </span>
           )}
         </div>

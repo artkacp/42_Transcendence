@@ -19,13 +19,13 @@ import { useSocketFrame, useSocketReconnect } from '../socket/SocketContext'
  */
 
 const NAV: { view: View; label: string; icon: ReactNode }[] = [
-  { view: 'browse', label: 'Browse', icon: <Search className="size-[18px]" /> },
-  { view: 'analytics', label: 'Analytics', icon: <BarChart2 className="size-[18px]" /> },
-  { view: 'rehome', label: 'Rehome', icon: <HeartHandshake className="size-[18px]" /> },
-  { view: 'adoptions', label: 'Adoptions', icon: <PawPrint className="size-[18px]" /> },
-  { view: 'friends', label: 'Friends', icon: <Users className="size-[18px]" /> },
-  { view: 'profile', label: 'Profile', icon: <UserRound className="size-[18px]" /> },
-  { view: 'design', label: 'Design kit', icon: <SwatchBook className="size-[18px]" /> },
+  { view: 'browse', label: 'Browse', icon: <Search className="size-5" /> },
+  { view: 'analytics', label: 'Analytics', icon: <BarChart2 className="size-5" /> },
+  { view: 'rehome', label: 'Rehome', icon: <HeartHandshake className="size-5" /> },
+  { view: 'adoptions', label: 'Adoptions', icon: <PawPrint className="size-5" /> },
+  { view: 'friends', label: 'Friends', icon: <Users className="size-5" /> },
+  { view: 'profile', label: 'Profile', icon: <UserRound className="size-5" /> },
+  { view: 'design', label: 'Design kit', icon: <SwatchBook className="size-5" /> },
 ]
 // A real <a href> keeps middle-click / open-in-new-tab working;
 // a plain left click switches the view without a page reload.
@@ -109,7 +109,7 @@ function Me({ compact = false }: { compact?: boolean }) {
   if (status === 'signed-out') {
     return (
       <Link view="auth" className={item}>
-        <LogIn className="size-[18px]" />
+        <LogIn className="size-5" />
         Sign in
       </Link>
     )
@@ -124,7 +124,7 @@ function Me({ compact = false }: { compact?: boolean }) {
     <div className="flex flex-col gap-1">
       {!compact && <span className="truncate px-3.5 text-sm text-text">{user?.full_name}</span>}
       <button type="button" onClick={() => void handleSignOut()} className={item}>
-        <LogOut className="size-[18px]" />
+        <LogOut className="size-5" />
         Sign out
       </button>
     </div>

@@ -28,6 +28,7 @@ export function Browse() {
   const [trait, setTrait] = useState('all')
   const [vaccinatedOnly, setVaccinatedOnly] = useState(false)
   const [neuteredOnly, setNeuteredOnly] = useState(false)
+  const [ordering, setOrdering] = useState('-created_at')
   const [page, setPage] = useState(1)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [data, setData] = useState<Paginated<Pet> | null>(null)
@@ -49,14 +50,14 @@ export function Browse() {
     return () => clearTimeout(timer)
   }, [q, debouncedQ])
 
-  const requestKey = JSON.stringify([debouncedQ, species, sex, size, city, breed, ageBucket, trait, vaccinatedOnly, neuteredOnly, page, retry])
+  const requestKey = JSON.stringify([debouncedQ, species, sex, size, city, breed, ageBucket, trait, vaccinatedOnly, neuteredOnly, ordering, page, retry])
   const loading = settledKey !== requestKey
   const error = errorKey === requestKey
 
   useEffect(() => {
     if (status !== 'signed-in') return
     let ignore = false
-    getPets({ q: debouncedQ, species, sex, size, city, breed, ageBucket, trait, vaccinated: vaccinatedOnly, neutered: neuteredOnly, page })
+    getPets({ q: debouncedQ, species, sex, size, city, breed, ageBucket, trait, vaccinated: vaccinatedOnly, neutered: neuteredOnly, ordering, page })
       .then((res) => {
         if (ignore) return
         setData(res)
@@ -70,7 +71,7 @@ export function Browse() {
     return () => {
       ignore = true
     }
-  }, [status, requestKey, debouncedQ, species, sex, size, city, breed, ageBucket, trait, vaccinatedOnly, neuteredOnly, page, live])
+  }, [status, requestKey, debouncedQ, species, sex, size, city, breed, ageBucket, trait, vaccinatedOnly, neuteredOnly, ordering, page, live])
 
   const refresh = () => setLive((n) => n + 1)
   useSocketFrame('pet.published', refresh)
@@ -123,7 +124,7 @@ export function Browse() {
           <p className="py-16 text-center text-sm text-text-muted">Loading…</p>
         ) : (
           <EmptyState
-            emoji="🔒"
+            emoji="(︶ᴥ ...   ･ﾟ✧"
             title="Sign in to meet the pals"
             hint="Browsing is for members — it only takes a minute."
             action={<Button onClick={() => navigate('auth')}>Sign in</Button>}
@@ -168,10 +169,10 @@ export function Browse() {
             All pals
           </Chip>
           <Chip active={species === 'dog'} onClick={() => handleSpeciesChange('dog')}>
-            🐶 Dogs
+            Dogs <span className="ml-1 font-black [-webkit-text-stroke:0.5px_currentColor]" aria-hidden="true">U・ᴥ・U</span>
           </Chip>
           <Chip active={species === 'cat'} onClick={() => handleSpeciesChange('cat')}>
-            🐱 Cats
+            Cats <span className="ml-1 font-black [-webkit-text-stroke:0.5px_currentColor]" aria-hidden="true">=^ ◗ ◗^=</span>
           </Chip>
           <Button
             size="sm"
@@ -183,6 +184,19 @@ export function Browse() {
           >
             {activeFilterCount > 0 ? `Filters (${activeFilterCount})` : 'Filters'}
           </Button>
+          <Select
+            aria-label="Sort by"
+            className="ml-auto"
+            options={[
+              { value: '-created_at', label: 'Newest listings' },
+              { value: 'created_at', label: 'Oldest listings' },
+              { value: 'name', label: 'Name A–Z' },
+              { value: 'age_years', label: 'Youngest pets' },
+              { value: '-age_years', label: 'Oldest pets' },
+            ]}
+            value={ordering}
+            onChange={(e) => changeFilter(() => setOrdering(e.target.value))}
+          />
         </div>
 
         {filtersOpen && (
@@ -233,10 +247,10 @@ export function Browse() {
               onChange={(e) => changeFilter(() => setTrait(e.target.value))}
             />
             <Chip active={vaccinatedOnly} onClick={() => changeFilter(() => setVaccinatedOnly(!vaccinatedOnly))}>
-              💉 Vaccinated
+              (ᐢᴥᐢ)✓ Vaccinated
             </Chip>
             <Chip active={neuteredOnly} onClick={() => changeFilter(() => setNeuteredOnly(!neuteredOnly))}>
-              ✂️ Neutered
+              ✂ Neutered
             </Chip>
           </div>
         )}
@@ -244,7 +258,7 @@ export function Browse() {
 
       {error ? (
         <EmptyState
-          emoji="😿"
+          emoji="≧◒_◒≦"
           title="Couldn't load the pals"
           hint="Something went wrong on our side. Try again in a moment."
           action={
@@ -257,7 +271,7 @@ export function Browse() {
         <p className="py-16 text-center text-sm text-text-muted">Loading pals…</p>
       ) : count === 0 && hasFilters ? (
         <EmptyState
-          emoji="🔍"
+          emoji="⎇(◔ _◑)"
           title="No pals match those filters"
           hint="Try clearing the search — someone fluffy is out there."
           action={
@@ -268,7 +282,7 @@ export function Browse() {
         />
       ) : count === 0 ? (
         <EmptyState
-          emoji="🐾"
+          emoji="ᴥ..."
           title="No pals listed yet"
           hint="Be the first to find a pet a new home."
           action={
@@ -287,12 +301,12 @@ export function Browse() {
                     <img src={p.photo} alt={p.name} className="absolute inset-0 size-full object-cover" />
                   ) : (
                     <span className="text-7xl" aria-hidden>
-                      {p.species === 'dog' ? '🐕' : '🐈'}
+                      {p.species === 'dog' ? 'U・ᴥ・U' : '=^ ◗ ◗^='}
                     </span>
                   )}
                   {p.adopted_by && (
                     <Badge tone="success" className="absolute left-3 top-3">
-                      adopted 🎉
+                      adopted <span className="ml-1" aria-hidden="true">(︶ᴥ₍^◒◒^₎･ﾟ✧)</span>
                     </Badge>
                   )}
                   {user && p.owner.id === user.id && (

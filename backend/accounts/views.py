@@ -121,6 +121,11 @@ class UserViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     queryset = User.objects.all()
     serializer_class = UserProfileSerializer
 
+    # GET /users/ (everyone but the caller, with friend state, for Friends > Discover)
+    def list(self, request):
+        users = self.get_queryset().filter(is_active=True).exclude(pk=request.user.pk).order_by('full_name')
+        return Response(self.get_serializer(users, many=True).data)
+
     # GET /users/{id}/pets/
     @action(detail=True, methods=['get'])
     def pets(self, request, pk=None):

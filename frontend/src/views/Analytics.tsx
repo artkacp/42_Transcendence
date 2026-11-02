@@ -305,7 +305,7 @@ export function Analytics() {
           <p className="py-16 text-center text-sm text-text-muted">Loading…</p>
         ) : (
           <EmptyState
-            emoji="🔒"
+            emoji="(︶ᴥ ...   ･ﾟ✧"
             title="Sign in to view analytics"
             hint="Platform analytics are for members only."
             action={<Button onClick={() => navigate('auth')}>Sign in</Button>}
@@ -373,10 +373,10 @@ export function Analytics() {
               All species
             </Chip>
             <Chip active={species === 'dog'} onClick={() => { setSpecies('dog'); setBreed('') }}>
-              🐶 Dogs
+              Dogs <span className="ml-1 font-black [-webkit-text-stroke:0.5px_currentColor]" aria-hidden="true">U・ᴥ・U</span>
             </Chip>
             <Chip active={species === 'cat'} onClick={() => { setSpecies('cat'); setBreed('') }}>
-              🐱 Cats
+              Cats <span className="ml-1 font-black [-webkit-text-stroke:0.5px_currentColor]" aria-hidden="true">=^ ◗ ◗^=</span>
             </Chip>
           </div>
           <Button
@@ -454,10 +454,10 @@ export function Analytics() {
               onChange={(e) => setTrait(e.target.value)}
             />
             <Chip active={vaccinated} onClick={() => setVaccinated(!vaccinated)}>
-              💉 Vaccinated
+              (ᐢᴥᐢ)✓ Vaccinated
             </Chip>
             <Chip active={neutered} onClick={() => setNeutered(!neutered)}>
-              ✂️ Neutered
+              ✂ Neutered
             </Chip>
           </div>
         )}
@@ -466,7 +466,7 @@ export function Analytics() {
       {/* ── error / loading skeleton ── */}
       {error && (
         <EmptyState
-          emoji="😿"
+          emoji="≧◒_◒≦"
           title="Couldn't load analytics"
           hint="Something went wrong fetching data. Try again."
           action={
