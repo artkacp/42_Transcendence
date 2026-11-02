@@ -109,6 +109,7 @@ class AttachmentTests(InquiryTestCase):
         with self.settings(MEDIA_ROOT=media):
             for file in [
                 SimpleUploadedFile('virus.exe', b'MZ'),
+                SimpleUploadedFile('virus.pdf', b'MZ', content_type='application/x-msdownload'),
                 SimpleUploadedFile('big.pdf', b'0' * (5 * 1024 * 1024 + 1)),
             ]:
                 r = self.upload(file)

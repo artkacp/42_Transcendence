@@ -20,7 +20,7 @@ function PetThumb({ pet }: { pet: Pet }) {
       {pet.photo ? (
         <img src={pet.photo} alt="" className="absolute inset-0 size-full object-cover" />
       ) : (
-        <span className="text-2xl" aria-hidden>
+        <span className="text-[11px] whitespace-nowrap" aria-hidden>
           {pet.species === 'dog' ? 'U・ᴥ・U' : '=^ ◗ ◗^='}
         </span>
       )}
@@ -35,9 +35,75 @@ interface ListingsTableProps {
   onRemove: (pet: Pet) => void
 }
 
+function StatusBadge({ pet }: { pet: Pet }) {
+  return pet.adopted_by ? (
+    <Badge tone="success" className="whitespace-nowrap">adopted <span className="ml-1" aria-hidden="true">(︶ᴥ₍^◒◒^₎･ﾟ✧)</span></Badge>
+  ) : (
+    <Badge>{inquiryLabel(pet.inquiry_count)}</Badge>
+  )
+}
+
+function RowActions({ pet, busy, onEdit, onRemove }: { pet: Pet } & Omit<ListingsTableProps, 'pets'>) {
+  return (
+    <>
+      <Button size="sm" variant="secondary" onClick={() => navigate('pet', { id: pet.id })}>
+        View & reply
+      </Button>
+      {!pet.adopted_by && (
+        <Button
+          size="sm"
+          variant="ghost"
+          icon={<Pencil className="size-3.5" />}
+          onClick={() => onEdit(pet)}
+          aria-label={`Edit ${pet.name}`}
+        >
+          Edit
+        </Button>
+      )}
+      <Button
+        size="sm"
+        variant="danger"
+        icon={<Trash2 className="size-3.5" />}
+        disabled={busy}
+        onClick={() => onRemove(pet)}
+        aria-label={`Remove ${pet.name}`}
+      >
+        Remove
+      </Button>
+    </>
+  )
+}
+
+// below sm: one card per listing instead of a sideways-scrolling table
+function ListingsCards({ pets, busy, onEdit, onRemove }: ListingsTableProps) {
+  return (
+    <ul className="space-y-3 sm:hidden">
+      {pets.map((pet) => (
+        <li key={pet.id}>
+          <Card className="space-y-3 p-4">
+            <div className="flex items-center gap-3">
+              <PetThumb pet={pet} />
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold text-text">{pet.name}</p>
+                <p className="truncate text-xs text-text-muted">
+                  {pet.breed} · {formatDate(pet.created_at)}
+                </p>
+              </div>
+            </div>
+            <StatusBadge pet={pet} />
+            <div className="flex flex-wrap justify-end gap-2">
+              <RowActions pet={pet} busy={busy} onEdit={onEdit} onRemove={onRemove} />
+            </div>
+          </Card>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 function ListingsTable({ pets, busy, onEdit, onRemove }: ListingsTableProps) {
   return (
-    <Card className="overflow-x-auto">
+    <Card className="hidden overflow-x-auto sm:block">
       <table className="w-full min-w-[640px] text-left text-sm">
         <thead className="border-b border-border text-xs uppercase tracking-wide text-text-muted">
           <tr>
@@ -62,38 +128,11 @@ function ListingsTable({ pets, busy, onEdit, onRemove }: ListingsTableProps) {
               <td className="px-5 py-3 text-text-muted">{pet.breed}</td>
               <td className="px-5 py-3 text-text-muted">{formatDate(pet.created_at)}</td>
               <td className="px-5 py-3">
-                {pet.adopted_by ? (
-                  <Badge tone="success">adopted <span className="ml-1" aria-hidden="true">(︶ᴥ₍^◒◒^₎･ﾟ✧)</span></Badge>
-                ) : (
-                  <Badge>{inquiryLabel(pet.inquiry_count)}</Badge>
-                )}
+                <StatusBadge pet={pet} />
               </td>
               <td className="px-5 py-3">
                 <div className="flex justify-end gap-2">
-                  <Button size="sm" variant="secondary" onClick={() => navigate('pet', { id: pet.id })}>
-                    View & reply
-                  </Button>
-                  {!pet.adopted_by && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      icon={<Pencil className="size-3.5" />}
-                      onClick={() => onEdit(pet)}
-                      aria-label={`Edit ${pet.name}`}
-                    >
-                      Edit
-                    </Button>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    icon={<Trash2 className="size-3.5" />}
-                    disabled={busy}
-                    onClick={() => onRemove(pet)}
-                    aria-label={`Remove ${pet.name}`}
-                  >
-                    Remove
-                  </Button>
+                  <RowActions pet={pet} busy={busy} onEdit={onEdit} onRemove={onRemove} />
                 </div>
               </td>
             </tr>
@@ -167,7 +206,7 @@ function YourListings() {
   }
 
   return (
-    <div className="space-y-6 p-8">
+    <div className="space-y-6 sm:p-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-4xl font-black tracking-tight">Your listings</h1>
@@ -190,7 +229,10 @@ function YourListings() {
           action={<Button onClick={openPublish}>Rehome a pet</Button>}
         />
       ) : (
-        <ListingsTable pets={pets} busy={removing} onEdit={openEdit} onRemove={removePet} />
+        <>
+          <ListingsCards pets={pets} busy={removing} onEdit={openEdit} onRemove={removePet} />
+          <ListingsTable pets={pets} busy={removing} onEdit={openEdit} onRemove={removePet} />
+        </>
       )}
       <PublishPetModal open={publishOpen} onClose={() => setPublishOpen(false)} onPublished={handlePublished} />
       <PublishPetModal open={editOpen} pet={editing} onClose={() => setEditOpen(false)} onPublished={handleSaved} />
@@ -205,7 +247,7 @@ export function Rehome() {
 
   if (status === 'signed-out') {
     return (
-      <div className="p-8">
+      <div className="sm:p-8">
         <EmptyState
           emoji="(︶ᴥ ...   ･ﾟ✧"
           title="Sign in to rehome a pet"

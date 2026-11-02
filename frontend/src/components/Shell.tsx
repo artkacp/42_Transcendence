@@ -86,7 +86,7 @@ function Logo({ small = false }: { small?: boolean }) {
     <Link
       view="browse"
       glow
-      className="flex items-center gap-1 rounded-2xl px-3 py-1.5 [--focus-color:var(--color-terra-100)] [--focus-inner:var(--color-terra-100)] [--focus-edge:0px]"
+      className={`flex items-center gap-1 rounded-2xl ${small ? 'px-1.5' : 'px-3'} py-1.5 [--focus-color:var(--color-terra-100)] [--focus-inner:var(--color-terra-100)] [--focus-edge:0px]`}
     >
       <span aria-hidden="true" className={`font-logo font-bold whitespace-nowrap text-primary ${small ? 'text-lg' : 'text-xl'}`}>
         {frame}
@@ -101,8 +101,12 @@ function Logo({ small = false }: { small?: boolean }) {
 // who is signed in + the way out; nothing while we don't know yet
 function Me({ compact = false }: { compact?: boolean }) {
   const { status, user, signOut } = useAuth()
-  const item =
-    'flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-sm font-medium text-text-muted transition-all hover:bg-surface/60 hover:text-text focus-visible:outline-1 focus-visible:outline-text focus-visible:outline-offset-0'
+  const pad = 'px-3.5 py-2.5'
+  // compact (mobile top bar): icon-only round button below sm, matching the bell
+  const compactPad = 'size-10 justify-center sm:size-auto sm:px-3.5 sm:py-2.5'
+  const base =
+    'flex items-center gap-3 rounded-2xl text-sm font-medium text-text-muted transition-all hover:bg-surface/60 hover:text-text focus-visible:outline-1 focus-visible:outline-text focus-visible:outline-offset-0'
+  const item = `${base} ${pad}`
 
   if (status === 'loading') return null
 
@@ -123,9 +127,14 @@ function Me({ compact = false }: { compact?: boolean }) {
   return (
     <div className="flex flex-col gap-1">
       {!compact && <span className="truncate px-3.5 text-sm text-text">{user?.full_name}</span>}
-      <button type="button" onClick={() => void handleSignOut()} className={item}>
-        <LogOut className="size-5" />
-        Sign out
+      <button
+        type="button"
+        onClick={() => void handleSignOut()}
+        aria-label="Sign out"
+        className={compact ? `${base} ${compactPad}` : item}
+      >
+        <LogOut className="size-[18px] shrink-0" />
+        <span className={compact ? 'sr-only sm:not-sr-only' : undefined}>Sign out</span>
       </button>
     </div>
   )
@@ -208,14 +217,14 @@ export function Shell({ view, children }: { view: View; children: ReactNode }) {
       <div className="flex min-w-0 flex-col">
         {/* Top bar: logo and sign out on mobile, bell everywhere once signed in. */}
         <header
-          className={`sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-border bg-surface/90 px-4 py-3 backdrop-blur lg:px-8 ${
+          className={`sticky top-0 z-40 flex items-center justify-between gap-2 border-b border-border bg-surface/90 px-4 py-3 backdrop-blur lg:px-8 ${
             status === 'signed-in' ? '' : 'lg:hidden'
           }`}
         >
-          <div className="lg:hidden">
+          <div className="min-w-0 lg:hidden">
             <Logo small />
           </div>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex shrink-0 items-center gap-2">
             <NotificationBell active={view === 'notifications'} />
             <div className="lg:hidden">
               <Me compact />
@@ -226,9 +235,9 @@ export function Shell({ view, children }: { view: View; children: ReactNode }) {
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-6 pb-10 lg:px-8">{children}</main>
 
         <footer className="border-t border-border px-4 pt-4 pb-24 lg:px-8 lg:pb-4">
-          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 text-xs text-text-muted">
+          <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 text-center text-xs text-text-muted sm:flex-row sm:justify-between sm:text-left">
             <span>© 2026 Pawfect Match · 42 Warsaw</span>
-            <nav aria-label="Legal" className="flex gap-7">
+            <nav aria-label="Legal" className="flex justify-center gap-7">
               <Link
                 view="privacy"
                 aria-current={view === 'privacy' ? 'page' : undefined}
@@ -257,7 +266,7 @@ export function Shell({ view, children }: { view: View; children: ReactNode }) {
               view={n.view}
               aria-label={n.label}
               aria-current={view === n.view ? 'page' : undefined}
-              className={`flex flex-col items-center gap-0.5 rounded-xl px-3 py-1.5 text-[10px] font-medium transition-all ${
+              className={`flex flex-col items-center gap-0.5 rounded-xl px-2 py-1.5 text-[10px] sm:px-3 font-medium transition-all ${
                 view === n.view ? 'text-primary' : 'text-text-subtle'
               }`}
             >

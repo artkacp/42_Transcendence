@@ -135,7 +135,7 @@ function PhotoPicker({ file, current, species, error, onChange }: PhotoPickerPro
           {shown ? (
             <img src={shown} alt={preview ? 'Selected photo' : 'Current photo'} className="absolute inset-0 size-full object-cover" />
           ) : (
-            <span className="text-5xl" aria-hidden>
+            <span className="text-2xl whitespace-nowrap" aria-hidden>
               {species === 'dog' ? 'U・ᴥ・U' : '=^ ◗ ◗^='}
             </span>
           )}
