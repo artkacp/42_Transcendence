@@ -1,25 +1,31 @@
-import { api, del, get, patch, post } from './client'
+import { api, del, get, post } from './client'
 import type { NewPet, Pet, PetSex, PetSize, Species } from '../data/types'
 
 export const getMyPets = () => get<Pet[]>('/api/pets/mine/')
 
 export const deletePet = (id: string) => del<null>(`/api/pets/${id}/`)
 
-export function createPet(pet: NewPet, photo: File | null) {
+function petForm(pet: NewPet) {
   const form = new FormData()
   for (const [key, value] of Object.entries(pet)) {
     if (Array.isArray(value)) value.forEach((item) => form.append(key, item))
     else form.append(key, String(value))
   }
+  return form
+}
+
+export function createPet(pet: NewPet, photo: File | null) {
+  const form = petForm(pet)
   if (photo) form.append('photo', photo)
   return api<Pet>('/api/pets/', { method: 'POST', body: form })
 }
 
-export async function updatePet(id: string, pet: NewPet, photo: File | null, removePhoto: boolean) {
-  const updated = await patch<Pet>(`/api/pets/${id}/`, removePhoto ? { ...pet, photo: null } : pet)
-  if (!photo) return updated
-  const form = new FormData()
-  form.append('photo', photo)
+// One request, so the text and the photo are saved together or not at all
+export function updatePet(id: string, pet: NewPet, photo: File | null, removePhoto: boolean) {
+  const form = petForm(pet)
+  if (pet.traits.length === 0) form.append('traits', '')
+  if (photo) form.append('photo', photo)
+  else if (removePhoto) form.append('photo', '')
   return api<Pet>(`/api/pets/${id}/`, { method: 'PATCH', body: form })
 }
 
