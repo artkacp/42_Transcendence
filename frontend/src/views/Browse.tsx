@@ -305,6 +305,11 @@ export function Browse() {
                       {p.species === 'dog' ? 'U・ᴥ・U' : '=^ ◗ ◗^='}
                     </span>
                   )}
+                  {p.adopted_by && (
+                    <Badge tone="success" className="absolute left-3 top-3 whitespace-nowrap">
+                      adopted <span className="ml-1" aria-hidden="true">(︶ᴥ₍^◒◒^₎･ﾟ✧)</span>
+                    </Badge>
+                  )}
                   {user && p.owner.id === user.id && (
                     <Badge className="absolute right-3 top-3">your listing</Badge>
                   )}

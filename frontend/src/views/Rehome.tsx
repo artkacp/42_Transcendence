@@ -35,6 +35,14 @@ interface ListingsTableProps {
   onRemove: (pet: Pet) => void
 }
 
+function StatusBadge({ pet }: { pet: Pet }) {
+  return pet.adopted_by ? (
+    <Badge tone="success" className="whitespace-nowrap">adopted <span className="ml-1" aria-hidden="true">(︶ᴥ₍^◒◒^₎･ﾟ✧)</span></Badge>
+  ) : (
+    <Badge>{inquiryLabel(pet.inquiry_count)}</Badge>
+  )
+}
+
 function RowActions({ pet, busy, onEdit, onRemove }: { pet: Pet } & Omit<ListingsTableProps, 'pets'>) {
   return (
     <>
@@ -82,7 +90,7 @@ function ListingsCards({ pets, busy, onEdit, onRemove }: ListingsTableProps) {
                 </p>
               </div>
             </div>
-            <Badge>{inquiryLabel(pet.inquiry_count)}</Badge>
+            <StatusBadge pet={pet} />
             <div className="flex flex-wrap justify-end gap-2">
               <RowActions pet={pet} busy={busy} onEdit={onEdit} onRemove={onRemove} />
             </div>
@@ -120,7 +128,7 @@ function ListingsTable({ pets, busy, onEdit, onRemove }: ListingsTableProps) {
               <td className="px-5 py-3 text-text-muted">{pet.breed}</td>
               <td className="px-5 py-3 text-text-muted">{formatDate(pet.created_at)}</td>
               <td className="px-5 py-3">
-                <Badge>{inquiryLabel(pet.inquiry_count)}</Badge>
+                <StatusBadge pet={pet} />
               </td>
               <td className="px-5 py-3">
                 <div className="flex justify-end gap-2">
