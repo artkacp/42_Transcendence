@@ -3,7 +3,18 @@ from rest_framework import serializers
 from accounts.serializers import UserMinimalSerializer
 from core.validators import allowed_content_type, max_file_size
 
-from .models import AGE_BUCKETS, BREEDS, CITIES, ORDERINGS, SEX_CHOICES, SIZE_CHOICES, SPECIES_CHOICES, TRAITS, Pet
+from .models import (
+    AGE_BUCKETS,
+    BREEDS,
+    CITIES,
+    MAX_STORY_LENGTH,
+    ORDERINGS,
+    SEX_CHOICES,
+    SIZE_CHOICES,
+    SPECIES_CHOICES,
+    TRAITS,
+    Pet,
+)
 
 ALL_BREEDS = [breed for breeds in BREEDS.values() for breed in breeds]
 
@@ -29,7 +40,7 @@ class PetSerializer(serializers.ModelSerializer):
         read_only_fields = ['adopted_at']
         extra_kwargs = {
             'name': {'min_length': 2},
-            'story': {'min_length': 20},
+            'story': {'min_length': 20, 'max_length': MAX_STORY_LENGTH},
             'age_years': {'min_value': 0, 'max_value': 20},
         }
 

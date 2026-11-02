@@ -18,6 +18,7 @@ BREEDS = {
 TRAITS = ['friendly', 'playful', 'calm', 'shy', 'energetic', 'wild', 'cuddly', 'loyal', 'protective']
 AGE_BUCKETS = {'under_1': (0, 0), '1_3': (1, 3), '4_7': (4, 7), '8_plus': (8, 20)}
 ORDERINGS = ['-created_at', 'created_at', 'name', 'age_years', '-age_years']
+MAX_STORY_LENGTH = 2000
 
 
 class Pet(models.Model):

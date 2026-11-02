@@ -445,6 +445,19 @@ class ProfileTests(APITestCase):
         self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('city', r.data['fields'])
 
+    def test_patch_me_accepts_bio_of_500_characters(self):
+        r = self.client.patch(reverse('user-me'), {'bio': 'x' * 500})
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.alice.refresh_from_db()
+        self.assertEqual(self.alice.bio, 'x' * 500)
+
+    def test_patch_me_rejects_bio_over_500_characters(self):
+        r = self.client.patch(reverse('user-me'), {'bio': 'x' * 501})
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('bio', r.data['fields'])
+        self.alice.refresh_from_db()
+        self.assertEqual(self.alice.bio, '')
+
     def test_patch_me_ignores_handle(self):
         r = self.client.patch(reverse('user-me'), {'handle': 'hacked'})
         self.assertEqual(r.status_code, status.HTTP_200_OK)

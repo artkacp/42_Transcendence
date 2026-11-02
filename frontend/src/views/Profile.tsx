@@ -12,6 +12,7 @@ import { navigate, useUserParam } from '../routing'
 import { SelectField } from './PublishPetModal'
 
 const MAX_AVATAR_MB = 2
+const MAX_BIO_LENGTH = 500
 
 const errorText = (err: unknown, fallback: string) => (err instanceof ApiError ? err.message : fallback)
 
@@ -163,6 +164,8 @@ function ProfileForm({ me, cities }: { me: Me; cities: string[] }) {
       />
       <Textarea
         label="About you"
+        maxLength={MAX_BIO_LENGTH}
+        showCount
         value={draft.bio}
         onChange={(e) => update('bio', e.target.value)}
         error={errors.bio}

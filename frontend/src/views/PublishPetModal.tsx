@@ -9,6 +9,7 @@ const FORM_ID = 'publish-pet-form'
 const MAX_TRAITS = 4
 const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const MAX_PHOTO_MB = 5
+const MAX_STORY_LENGTH = 2000
 
 const SPECIES_LABELS: Record<Species, string> = { dog: 'Dog U・ᴥ・U', cat: 'Cat =^ ◗ ◗^=' }
 
@@ -292,6 +293,8 @@ function PublishForm({ petOptions, onPublished, onSubmittingChange }: PublishFor
       <Textarea
         label="Story"
         placeholder="What should adopters know about them?"
+        maxLength={MAX_STORY_LENGTH}
+        showCount
         value={draft.story}
         onChange={(e) => update('story', e.target.value)}
         error={errors.story}

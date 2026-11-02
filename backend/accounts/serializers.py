@@ -9,7 +9,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, Toke
 from core.validators import allowed_content_type, max_file_size
 from pets.models import CITIES
 
-from .models import Friendship, User
+from .models import MAX_BIO_LENGTH, Friendship, User
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -108,7 +108,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['full_name', 'city', 'bio']
-        extra_kwargs = {'full_name': {'min_length': 2}}
+        extra_kwargs = {'full_name': {'min_length': 2}, 'bio': {'max_length': MAX_BIO_LENGTH}}
 
 
 class AvatarSerializer(serializers.ModelSerializer):
