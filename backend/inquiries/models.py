@@ -17,20 +17,6 @@ ATTACHMENT_KIND_CHOICES = [
     ('document', 'Document'),
 ]
 
-# File extension -> content type stored and served on download
-ALLOWED_TYPES = {
-    '.png': 'image/png',
-    '.jpg': 'image/jpeg',
-    '.jpeg': 'image/jpeg',
-    '.webp': 'image/webp',
-    '.gif': 'image/gif',
-    '.pdf': 'application/pdf',
-    '.txt': 'text/plain',
-    '.md': 'text/markdown',
-    '.csv': 'text/csv',
-    '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-}
-
 MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024
 MAX_MESSAGE_LENGTH = 2000
 

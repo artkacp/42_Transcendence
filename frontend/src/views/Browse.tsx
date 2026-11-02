@@ -311,7 +311,7 @@ export function Browse() {
                 </div>
                 <div className="p-4">
                   <div className="flex items-baseline justify-between gap-2">
-                    <h3 className="font-display text-xl font-bold">
+                    <h3 className="min-w-0 font-display text-xl font-bold wrap-anywhere">
                       <a
                         href={viewHref('pet', { id: p.id })}
                         onClick={(e) => openPet(e, p.id)}

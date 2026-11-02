@@ -3,10 +3,10 @@ from pathlib import Path
 from rest_framework import serializers
 
 from accounts.serializers import UserMinimalSerializer
-from core.validators import allowed_content_type, max_file_size
+from core.validators import ALLOWED_TYPES, allowed_content_type, max_file_size
 from pets.serializers import PetSerializer
 
-from .models import ALLOWED_TYPES, MAX_MESSAGE_LENGTH, STAGE_CHOICES, Attachment, Inquiry, Message
+from .models import MAX_MESSAGE_LENGTH, STAGE_CHOICES, Attachment, Inquiry, Message
 
 
 class AttachmentSerializer(serializers.ModelSerializer):

@@ -370,6 +370,7 @@ class RemoveListingTests(InquiryTestCase):
         with self.captureOnCommitCallbacks(execute=True):
             r = self.remove()
         self.assertEqual(r.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(self.owner.notifications.filter(title='Listing removed').count(), 1)
         for model in [Pet, Inquiry, Message, Attachment]:
             self.assertFalse(model.objects.exists())
         self.assertFalse(default_storage.exists(self.pet.photo.name))

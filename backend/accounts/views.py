@@ -228,6 +228,12 @@ class FriendshipViewSet(viewsets.GenericViewSet):
             current.delete()
         if current.status == Friendship.STATUS_ACCEPTED:
             notify_both_friends(friendship, 'delete', 'Friend removed', 'You and {name} are no longer friends.')
+        elif friendship.addressee == request.user:
+            notify(friendship.requester, 'delete', 'Friend request declined',
+                   f'{request.user.full_name} declined your friend request.', subject=request.user)
+        else:
+            notify(friendship.addressee, 'delete', 'Friend request cancelled',
+                   f'{request.user.full_name} cancelled their friend request.', subject=request.user)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     # GET /friends/incoming/

@@ -137,7 +137,7 @@ export function PetPage() {
 
         <div className="flex flex-col gap-4">
           <header>
-            <h1 className="font-display text-3xl font-bold tracking-tight text-text">{pet.name}</h1>
+            <h1 className="font-display text-3xl font-bold tracking-tight text-text wrap-anywhere">{pet.name}</h1>
             <p className="text-text-muted">
               {pet.breed} · {pet.age_years} yr · {pet.sex} · {pet.size} · {pet.city}
             </p>
@@ -153,7 +153,7 @@ export function PetPage() {
             </ul>
           )}
 
-          {pet.story && <p className="whitespace-pre-line text-text break-words">{pet.story}</p>}
+          {pet.story && <p className="whitespace-pre-line text-text wrap-anywhere">{pet.story}</p>}
 
           <dl className="grid grid-cols-2 gap-2 text-sm">
             <dt className="text-text-muted">Vaccinated</dt>

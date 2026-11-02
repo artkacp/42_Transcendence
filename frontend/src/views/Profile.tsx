@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ComponentProps } from 'react'
 import { ArrowLeft, Camera, Check, PawPrint, Trash2, UserMinus, UserPlus, X } from 'lucide-react'
 import { ApiError } from '../api/client'
 import { acceptFriendRequest, deleteFriendship, sendFriendRequest } from '../api/friends'
-import { getPetOptions } from '../api/pets'
+import { getPetOptions, PHOTO_TYPES } from '../api/pets'
 import { getUser, getUserPets, removeAvatar, updateMe, uploadAvatar } from '../api/users'
 import { useAuth, type User as Me } from '../auth/auth-context'
 import type { Pet, ProfileChanges, UserProfile } from '../data/types'
@@ -16,14 +16,14 @@ const MAX_AVATAR_MB = 2
 const errorText = (err: unknown, fallback: string) => (err instanceof ApiError ? err.message : fallback)
 
 function avatarProblem(file: File) {
-  if (!file.type.startsWith('image/')) return 'Avatars must be an image file.'
+  if (!PHOTO_TYPES.includes(file.type)) return 'Avatars must be a JPG, PNG, WebP or GIF image.'
   if (file.size > MAX_AVATAR_MB * 1024 * 1024) return `Avatars must be under ${MAX_AVATAR_MB} MB.`
   return ''
 }
 
 function OnlineLine({ user }: { user: UserProfile }) {
   return (
-    <p className="text-sm text-text-muted">
+    <p className="text-sm text-text-muted wrap-anywhere">
       @{user.handle} ·{' '}
       {user.is_online ? <span className="font-semibold text-on-secondary">online now</span> : 'offline'}
     </p>
@@ -74,7 +74,7 @@ function AvatarEditor({ me }: { me: Me }) {
         <input
           ref={inputRef}
           type="file"
-          accept="image/*"
+          accept={PHOTO_TYPES.join(',')}
           hidden
           onChange={(e) => {
             const file = e.target.files?.[0]
@@ -84,8 +84,8 @@ function AvatarEditor({ me }: { me: Me }) {
         />
       </div>
       <div className="min-w-0">
-        <p className="font-display text-2xl font-bold break-words">{me.full_name}</p>
-        <p className="text-sm text-text-muted break-words">@{me.handle}</p>
+        <p className="font-display text-2xl font-bold wrap-anywhere">{me.full_name}</p>
+        <p className="text-sm text-text-muted wrap-anywhere">@{me.handle}</p>
         {me.avatar && (
           <Button
             size="sm"
@@ -377,12 +377,12 @@ function OtherProfile({ userId }: { userId: string }) {
       <Card className="p-8 text-center">
         <div className="flex flex-col items-center gap-3">
           <Avatar name={user.full_name} src={user.avatar} size="xl" online={user.is_online} />
-          <div>
-            <h1 className="font-display text-3xl font-black">{user.full_name}</h1>
+          <div className="max-w-full">
+            <h1 className="font-display text-3xl font-black wrap-anywhere">{user.full_name}</h1>
             <OnlineLine user={user} />
           </div>
           {user.city && <Badge>{user.city}</Badge>}
-          {user.bio && <p className="max-w-md text-[15px] text-text break-words">{user.bio}</p>}
+          {user.bio && <p className="max-w-md text-[15px] text-text wrap-anywhere">{user.bio}</p>}
           <div className="mt-2 flex flex-wrap justify-center gap-2">
             <FriendAction user={user} onChanged={() => setReload((n) => n + 1)} />
           </div>

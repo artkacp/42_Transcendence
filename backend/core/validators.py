@@ -1,16 +1,22 @@
 from rest_framework.exceptions import ValidationError
 
+# File extension -> content type stored and served on download
+ALLOWED_TYPES = {
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.webp': 'image/webp',
+    '.gif': 'image/gif',
+    '.pdf': 'application/pdf',
+    '.txt': 'text/plain',
+    '.md': 'text/markdown',
+    '.csv': 'text/csv',
+    '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+}
+
 ATTACHMENT_CONTENT_TYPES = [
-    'image/png',
-    'image/jpeg',
-    'image/webp',
-    'image/gif',
-    'application/pdf',
-    'text/plain',
-    'text/markdown',
-    'text/csv',
+    *ALLOWED_TYPES.values(),
     'application/vnd.ms-excel',  # what Windows browsers send for .csv
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 ]
 PET_PHOTO_CONTENT_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif']
 AVATAR_CONTENT_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif']
