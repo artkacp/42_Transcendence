@@ -1,5 +1,7 @@
 from rest_framework import mixins, viewsets
 
+from notifications.services import notify
+
 from .serializers import APIKeyCreateSerializer, APIKeySerializer
 
 
@@ -20,9 +22,13 @@ class APIKeyViewSet(
 
     # POST /keys/
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+        api_key = serializer.save(owner=self.request.user)
+        notify(api_key.owner, 'create', 'API key created', f'Your API key "{api_key.label}" was created.', subject=api_key)
 
     # DELETE /keys/{id}/ (revokes and keeps the row)
     def perform_destroy(self, api_key):
+        if api_key.revoked:
+            return
         api_key.revoked = True
         api_key.save(update_fields=['revoked'])
+        notify(api_key.owner, 'delete', 'API key revoked', f'Your API key "{api_key.label}" was revoked.', subject=api_key)

@@ -17,7 +17,7 @@ from accounts.tests import auth, image_file, make_pet, make_user
 from pets.models import Pet
 from pets.services import delete_pet
 
-from .models import Attachment, Inquiry, Message
+from .models import MAX_MESSAGE_LENGTH, Attachment, Inquiry, Message
 
 
 def listen(group):
@@ -211,6 +211,12 @@ class MessageTests(InquiryTestCase):
             self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
             self.assertIn('attachment_ids', r.data['fields'])
 
+    def test_message_over_the_length_limit_is_rejected(self):
+        r = self.send(self.inquiry, body='x' * (MAX_MESSAGE_LENGTH + 1))
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('body', r.data['fields'])
+        self.assertEqual(self.send(self.inquiry, body='x' * MAX_MESSAGE_LENGTH).status_code, status.HTTP_201_CREATED)
+
     def test_owner_reply_notifies_the_adopter(self):
         self.as_user(self.owner)
         self.send(self.inquiry, body='Hi there')
@@ -316,6 +322,15 @@ class AdoptTests(InquiryTestCase):
         self.pet.refresh_from_db()
         self.assertEqual(self.pet.adopted_by, self.adopter)
 
+    def test_adoption_closes_every_thread_of_the_pet(self):
+        self.adopt(self.inquiry.pk)
+        self.assertEqual(self.send(self.other_inquiry, body='Still free?').status_code, status.HTTP_403_FORBIDDEN)
+        self.as_user(self.adopter)
+        self.assertEqual(self.send(self.inquiry, body='Thanks!').status_code, status.HTTP_403_FORBIDDEN)
+        self.as_user(self.other)
+        self.assertEqual(self.send(self.other_inquiry, body='Still free?').status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(Message.objects.exists())
+
     def test_every_other_inquirer_is_told_it_went_to_someone_else(self):
         self.adopt(self.inquiry.pk)
         notification = self.other.notifications.get(title='Adopted by someone else')
@@ -355,6 +370,7 @@ class RemoveListingTests(InquiryTestCase):
         with self.captureOnCommitCallbacks(execute=True):
             r = self.remove()
         self.assertEqual(r.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(self.owner.notifications.filter(title='Listing removed').count(), 1)
         for model in [Pet, Inquiry, Message, Attachment]:
             self.assertFalse(model.objects.exists())
         self.assertFalse(default_storage.exists(self.pet.photo.name))

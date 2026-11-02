@@ -45,6 +45,8 @@ def start_inquiry(pet, adopter):
 # Shared by the REST fallback and the WebSocket chat.send handler
 def send_message(sender, inquiry_id, body, attachment_ids):
     inquiry = get_object_or_404(participant_inquiries(sender), pk=inquiry_id)
+    if inquiry.pet.adopted_by_id:
+        raise PermissionDenied('This adoption is closed.')
     if not body and not attachment_ids:
         raise ValidationError({'body': 'A message needs text or at least one attachment.'})
     attachments = Attachment.objects.filter(pk__in=attachment_ids, uploaded_by=sender, message=None)

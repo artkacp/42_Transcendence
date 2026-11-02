@@ -159,7 +159,7 @@ export function Notifications() {
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className={`text-sm ${n.is_read ? 'font-medium text-text-muted' : 'font-semibold text-text'}`}>
+                        <p className={`min-w-0 text-sm wrap-anywhere ${n.is_read ? 'font-medium text-text-muted' : 'font-semibold text-text'}`}>
                           {!n.is_read && <span className="sr-only">Unread: </span>}
                           {n.title}
                         </p>
@@ -173,7 +173,7 @@ export function Notifications() {
                           {timeAgo(n.created_at)}
                         </time>
                       </div>
-                      {n.body && <p className="mt-0.5 text-sm text-text-muted break-words">{n.body}</p>}
+                      {n.body && <p className="mt-0.5 text-sm text-text-muted wrap-anywhere">{n.body}</p>}
                     </div>
                   </Card>
                 </li>

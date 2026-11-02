@@ -281,6 +281,7 @@ class UpdateTests(APITestCase):
         self.pet.refresh_from_db()
         self.assertEqual(self.pet.city, 'Gdańsk')
         self.assertEqual(self.pet.name, 'Karo')
+        self.assertEqual(self.pet.owner.notifications.get().title, 'Listing updated')
 
     def test_non_owner_gets_403(self):
         auth(self.client, self.bob)

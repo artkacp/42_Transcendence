@@ -1,13 +1,12 @@
 import { useEffect, useId, useRef, useState, type ComponentProps } from 'react'
 import { ImagePlus, X } from 'lucide-react'
 import { ApiError } from '../api/client'
-import { createPet, getPetOptions, updatePet, type PetOptions } from '../api/pets'
+import { createPet, getPetOptions, PHOTO_TYPES, updatePet, type PetOptions } from '../api/pets'
 import type { NewPet, Pet, PetSex, PetSize, Species } from '../data/types'
 import { Button, Chip, Input, Modal, Select, Textarea, Toggle } from '../ds'
 
 const FORM_ID = 'publish-pet-form'
 const MAX_TRAITS = 4
-const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const MAX_PHOTO_MB = 5
 
 const SPECIES_LABELS: Record<Species, string> = { dog: 'Dog U・ᴥ・U', cat: 'Cat =^ ◗ ◗^=' }

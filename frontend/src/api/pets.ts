@@ -1,6 +1,8 @@
 import { api, del, get, post } from './client'
 import type { NewPet, Pet, PetSex, PetSize, Species } from '../data/types'
 
+export const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+
 export const getMyPets = () => get<Pet[]>('/api/pets/mine/')
 
 export const deletePet = (id: string) => del<null>(`/api/pets/${id}/`)

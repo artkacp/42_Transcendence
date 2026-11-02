@@ -36,6 +36,7 @@ def update_pet(pet, user, data, partial=False, context=None):
         # Only once the new row is committed: a rolled-back update must keep pointing at an existing file
         storage = pet.photo.storage
         transaction.on_commit(lambda: storage.delete(old_photo))
+    notify(user, 'update', 'Listing updated', f'Your changes to {pet.name} were saved.', subject=pet)
     return pet
 
 
@@ -46,6 +47,7 @@ def delete_pet(pet, user):
     for inquiry in pet.inquiries.select_related('adopter'):
         notify(inquiry.adopter, 'delete', 'Listing removed',
                f'{pet.owner.full_name} removed the listing for {pet.name}, so your adoption conversation was closed.')
+    notify(user, 'delete', 'Listing removed', f'{pet.name} is no longer listed.')
     fields = [attachment.file for attachment in Attachment.objects.filter(message__inquiry__pet=pet)] + [pet.photo]
     files = [(field.storage, field.name) for field in fields if field.name]
     pet_id = str(pet.pk)

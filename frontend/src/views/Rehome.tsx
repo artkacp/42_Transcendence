@@ -4,7 +4,7 @@ import { ApiError } from '../api/client'
 import { deletePet, getMyPets } from '../api/pets'
 import { useAuth } from '../auth/auth-context'
 import type { Pet } from '../data/types'
-import { Badge, Button, Card, EmptyState } from '../ds'
+import { Badge, Button, Card, EmptyState, Modal } from '../ds'
 import { useToast } from '../contexts/toast/ToastContext'
 import { navigate } from '../routing'
 import { PublishPetModal } from './PublishPetModal'
@@ -148,6 +148,8 @@ function YourListings() {
   const [pets, setPets] = useState<Pet[] | null>(null)
   const [error, setError] = useState('')
   const [removing, setRemoving] = useState(false)
+  const [confirming, setConfirming] = useState<Pet | null>(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
   const [publishOpen, setPublishOpen] = useState(false)
   const [editing, setEditing] = useState<Pet | null>(null)
   const [editOpen, setEditOpen] = useState(false)
@@ -183,7 +185,13 @@ function YourListings() {
       }
     } finally {
       setRemoving(false)
+      setConfirmOpen(false)
     }
+  }
+
+  const openRemove = (pet: Pet) => {
+    setConfirming(pet)
+    setConfirmOpen(true)
   }
 
   const openPublish = () => setPublishOpen(true)
@@ -202,7 +210,6 @@ function YourListings() {
   const handleSaved = (pet: Pet) => {
     setEditOpen(false)
     setPets((prev) => prev && prev.map((p) => (p.id === pet.id ? { ...pet, inquiry_count: p.inquiry_count } : p)))
-    toast({ kind: 'update', title: 'Listing updated', message: `${pet.name} was updated.` })
   }
 
   return (
@@ -230,9 +237,27 @@ function YourListings() {
         />
       ) : (
         <>
-          <ListingsCards pets={pets} busy={removing} onEdit={openEdit} onRemove={removePet} />
-          <ListingsTable pets={pets} busy={removing} onEdit={openEdit} onRemove={removePet} />
+          <ListingsCards pets={pets} busy={removing} onEdit={openEdit} onRemove={openRemove} />
+          <ListingsTable pets={pets} busy={removing} onEdit={openEdit} onRemove={openRemove} />
         </>
+      )}
+      {confirming && (
+        <Modal
+          open={confirmOpen}
+          onClose={() => setConfirmOpen(false)}
+          title={`Remove ${confirming.name}?`}
+          description="This permanently deletes the listing, its photo and every conversation about this pet, including messages and attachments. Anyone who asked about them will be notified. This can't be undone."
+          footer={
+            <>
+              <Button variant="secondary" disabled={removing} onClick={() => setConfirmOpen(false)}>
+                Cancel
+              </Button>
+              <Button variant="danger" disabled={removing} onClick={() => void removePet(confirming)}>
+                Remove listing
+              </Button>
+            </>
+          }
+        />
       )}
       <PublishPetModal open={publishOpen} onClose={() => setPublishOpen(false)} onPublished={handlePublished} />
       <PublishPetModal open={editOpen} pet={editing} onClose={() => setEditOpen(false)} onPublished={handleSaved} />

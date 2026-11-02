@@ -63,6 +63,10 @@ class APIKeyTests(APITestCase):
         self.assertEqual([k['label'] for k in r.data], ['Mine'])
         self.assertEqual(set(r.data[0]), LIST_FIELDS)
 
+    def test_create_notifies_the_owner(self):
+        self.create()
+        self.assertEqual(self.alice.notifications.get().body, 'Your API key "Script" was created.')
+
     def test_delete_revokes_and_keeps_row(self):
         key = make_key(self.alice)
         url = reverse('api-key-detail', args=[key.pk])
@@ -73,6 +77,7 @@ class APIKeyTests(APITestCase):
 
         r = self.client.delete(url)
         self.assertEqual(r.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(self.alice.notifications.filter(title='API key revoked').count(), 1)
 
     def test_delete_other_users_key_is_404(self):
         key = make_key(self.bob)
