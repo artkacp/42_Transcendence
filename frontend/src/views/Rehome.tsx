@@ -20,7 +20,7 @@ function PetThumb({ pet }: { pet: Pet }) {
       {pet.photo ? (
         <img src={pet.photo} alt="" className="absolute inset-0 size-full object-cover" />
       ) : (
-        <span className="text-2xl" aria-hidden>
+        <span className="text-[11px] whitespace-nowrap" aria-hidden>
           {pet.species === 'dog' ? 'U・ᴥ・U' : '=^ ◗ ◗^='}
         </span>
       )}

@@ -327,7 +327,7 @@ function RehomingPets({ pets }: { pets: Pet[] }) {
             {pet.photo ? (
               <img src={pet.photo} alt="" className="size-8 rounded-xl object-cover" />
             ) : (
-              <span className="text-2xl" aria-hidden>
+              <span className="text-2xl whitespace-nowrap" aria-hidden>
                 {pet.species === 'dog' ? 'U・ᴥ・U' : '=^ ◗ ◗^='}
               </span>
             )}

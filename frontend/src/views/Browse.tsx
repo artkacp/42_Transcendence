@@ -300,7 +300,7 @@ export function Browse() {
                   {p.photo ? (
                     <img src={p.photo} alt={p.name} className="absolute inset-0 size-full object-cover" />
                   ) : (
-                    <span className="text-7xl" aria-hidden>
+                    <span className="text-5xl whitespace-nowrap" aria-hidden>
                       {p.species === 'dog' ? 'U・ᴥ・U' : '=^ ◗ ◗^='}
                     </span>
                   )}

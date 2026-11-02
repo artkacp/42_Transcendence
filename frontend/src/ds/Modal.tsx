@@ -11,7 +11,7 @@ const sizes: Record<Size, string> = {
 }
 
 export interface ModalProps
-  extends Omit<ComponentProps<'dialog'>, 'open' | 'title' | 'onClose' | 'onClick' | 'aria-labelledby' | 'aria-describedby'> {
+  extends Omit<ComponentProps<'dialog'>, 'open' | 'title' | 'onClose' | 'onClick' | 'onPointerDown' | 'aria-labelledby' | 'aria-describedby'> {
   open: boolean
   onClose: () => void
   title: string
@@ -56,6 +56,7 @@ export function Modal({
   const titleId = useId()
   const descriptionId = useId()
   const scrollY = useRef(0)
+  const pressedOnBackdrop = useRef(false)
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -81,9 +82,14 @@ export function Modal({
         else easeScrollTo(scrollY.current, CLOSE_MS, CLOSE_DELAY_MS)
         onClose()
       }}
+      onPointerDown={(event) => {
+        pressedOnBackdrop.current = event.target === event.currentTarget
+      }}
       onClick={(event) => {
-        //the panel fills the dialog, so a click that lands on the dialog itself is on the backdrop
-        if (event.target === event.currentTarget) close()
+        //the panel fills the dialog, so a click that lands on the dialog itself is on the backdrop;
+        //a drag that starts inside (e.g. selecting text) and ends outside also lands here, so the press must be on the backdrop too
+        if (pressedOnBackdrop.current && event.target === event.currentTarget) close()
+        pressedOnBackdrop.current = false
       }}
       className={`modal-fade m-auto w-[calc(100%-2rem)] ${sizes[size]} overflow-hidden rounded-3xl border border-border bg-surface p-0 text-text shadow-[0_0_28px_6px_color-mix(in_oklch,var(--color-cream-300)_70%,transparent)] backdrop:bg-overlay/40 backdrop:backdrop-blur-[2px] ${className}`}
     >
