@@ -8,9 +8,7 @@ Reference: full detail on every decision and open question is in the TRD — htt
 
 ## Pending
 
-| # | Topic | Context | Owner |
-|---|-------|---------|-------|
-| 2 | PM and PO roles | Not yet formally assigned. sarherna acting as initial PM. | All |
+None.
 
 ---
 
@@ -32,3 +30,5 @@ Reference: full detail on every decision and open question is in the TRD — htt
 | 5, 6, 8 | Additional modules (OAuth, 2FA, Advanced permissions, i18n) | **Dropped.** ORM Minor and Real-time Features Major confirmed (both already implemented). OAuth, 2FA, Advanced permissions, and i18n will not be pursued. Confirmed module total: 20 pts. | 2026-10-29 |
 | 10 | Branch naming convention | **Adopted in practice.** Convention defined in note 022 and used consistently throughout the project. | 2026-10-29 |
 | Q-19 | Where friend requests surface in the UI | **Requests tab in the Friends view** (`?view=friends`, PR #81) + **add/accept button on other users' profile pages** (PR #76, F7). | 2026-10-29 |
+| 2 | PM and PO roles | **PO: sarherna (also Technical Lead). PM: akacprzy.** Documented in the README. | 2026-11-02 |
+| F-5 | Deleting sent chat attachments | **Not supported, by design.** A sent attachment is part of the conversation history, so it stays until the listing is deleted, which removes its files too. Unsent attachments can be removed by the uploader. | 2026-11-02 |

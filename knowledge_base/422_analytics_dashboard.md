@@ -80,11 +80,30 @@ Most chart series are fully scoped to the active pet feature filters. The except
 
 All queries run against the `analytics_event` table via Django ORM (read-only access — see note 520, Q-26). Pet feature filters are applied as JSONB conditions on the `metadata` column. `COUNT DISTINCT` is used wherever unique users or pets are needed.
 
+Demo data from `seed_demo` is written straight to this table through the SQLAlchemy session, with the signal handlers disconnected, so its events can be backdated over 30 days.
+
+---
+
+## Live updates
+
+The dashboard joins the `analytics` WebSocket group by sending `analytics.subscribe` (see note 430). It leaves with `analytics.unsubscribe` and joins again after a reconnect.
+
+Every recorded event (`visit`, `application`, `message`, `adoption`, `listing_published`, `registered`) sends an `analytics.ping` to the group once its transaction commits. The frame carries no data: the page refetches this endpoint with its current filters.
+
+Refetches are throttled on the frontend: the first ping starts a 2-second window and later pings join it. A 60-second interval is the fallback for a missed ping.
+
+---
+
+## CSV export
+
+The Export CSV button builds the file in the browser from the response already on screen, so it contains the same filtered data as the charts: KPIs first, then one section per chart. No extra endpoint is involved. The date range goes in the file name (`analytics_<start>_to_<end>.csv`); the other filters aren't written to the file.
+
 ---
 
 ## References
 
 - Note 421 — Per-user analytics endpoint (`/api/analytics/me/`)
+- Note 430 — WebSocket contract
 - Note 520 — SQLAlchemy setup and `analytics_event` schema
 - Note 530 — Data modeling (JSONB metadata snapshot)
 - Q-26 — Django read access on `analytics_event` confirmed

@@ -8,11 +8,11 @@ A peer-to-peer adoption platform for dogs and cats: people rehoming a pet list i
 
 ## Features
 
-- **Browse and adopt** — search listings by species, breed, size, age and location; filter in real time; send an adoption application directly to the owner *(iskaraag, sarherna)*
+- **Browse and adopt** — search listings by species, breed, size, age and location; filter in real time; sort and page through results; send an adoption application directly to the owner *(iskaraag, sarherna)*
 - **Rehome a pet** — publish, edit or remove a listing with photos, description and pet details *(iskaraag, sarherna)*
-- **Chat** — real-time messaging between owner and applicant over WebSocket, scoped to each adoption inquiry *(oostapen, faikhan, sarherna)*
+- **Chat** — real-time messaging between owner and applicant over WebSocket, scoped to each adoption inquiry, with image and document attachments *(oostapen, faikhan, sarherna)*
 - **Adoptions** — track the status of your applications as an adopter; manage incoming inquiries and move them through adoption stages as an owner *(faikhan, oostapen, sarherna)*
-- **Notifications** — in-app notifications for application status changes and adoption confirmations, delivered in real time *(iskaraag, sarherna)*
+- **Notifications** — in-app notifications for create, update and delete actions (listings, adoption inquiries, messages, adoption stages, friends, profile changes, API keys), delivered in real time *(iskaraag, sarherna)*
 - **Friends** — send and accept friend requests, see who is online, browse your friends list and discover new people *(akacprzy, sarherna)*
 - **Analytics dashboard** — platform-wide adoption metrics and charts (visits, applications, adoptions, active users over time), filterable by pet type and date range, with CSV export *(akacprzy)*
 - **Personal stats** — per-user activity summary: pets viewed, applications sent, listings published, adoptions completed *(akacprzy, iskaraag)*
@@ -50,7 +50,7 @@ All tables use UUID primary keys. The `analytics_event` table is owned by SQLAlc
 | full_name | varchar(150) | |
 | handle | varchar(50) | Unique, auto-generated from full name |
 | city | varchar(100) | Optional |
-| bio | text | Optional |
+| bio | text | Optional, max. 500 chars |
 | avatar | file | Optional |
 | is_online | boolean | Updated by WebSocket presence |
 | last_seen_at | timestamptz | |
@@ -68,7 +68,7 @@ All tables use UUID primary keys. The `analytics_event` table is owned by SQLAlc
 | status | varchar(10) | `pending` / `accepted` |
 | created_at | timestamptz | |
 
-Constraints: `unique(requester, addressee)`; `requester ≠ addressee`.
+Constraints: one row per pair of users, in either direction (unique on `LEAST`/`GREATEST` of the two ids); `requester ≠ addressee`.
 
 ### pets_pet
 
@@ -83,7 +83,7 @@ Constraints: `unique(requester, addressee)`; `requester ≠ addressee`.
 | size | varchar(10) | `small` / `medium` / `large` |
 | sex | varchar(10) | `male` / `female` |
 | city | varchar(100) | |
-| story | text | Min. 20 chars |
+| story | text | Min. 20, max. 2000 chars |
 | traits | varchar[] | Up to 4 values |
 | photo | file | Optional |
 | is_vaccinated | boolean | |
@@ -115,7 +115,7 @@ Constraint: `unique(pet, adopter)`.
 | id | UUID | Primary key |
 | inquiry_id | UUID | FK → inquiries_inquiry |
 | sender_id | UUID | FK → accounts_user |
-| body | text | |
+| body | text | Max. 2000 chars |
 | created_at | timestamptz | |
 
 ### inquiries_attachment
@@ -191,7 +191,7 @@ Total: **20 points** (7 Majors × 2 pts + 6 Minors × 1 pt). The subject require
 | Notification system | Minor | 1 | Notifications on create, update and delete actions; real-time delivery over WebSocket; bell with unread count, notification center, toasts, mark as read | sarherna, iskaraag |
 | Custom Design System | Minor | 1 | 15+ reusable components (Button, IconButton, Card, Avatar, Badge, Chip, Input, Textarea, Select, Toggle, Tabs, Modal, Toast, Progress, Pagination, EmptyState); OKLCH color palette with semantic tokens; typography (Fraunces display, Outfit text); lucide icon set; showcased on the Design kit page | oostapen, iskaraag |
 | Advanced Search | Minor | 1 | Text search plus filters (species, sex, size, age, city, breed, traits, vaccinated, neutered); sort by newest, oldest, name or age; paginated results | iskaraag, sarherna |
-| File Upload | Minor | 1 | Avatars and pet photos (image types, size limits checked in the browser and on the server); pet photos can be replaced or removed from the listing edit UI; chat attachments with images and documents, with upload progress; files served only to authorized users | sarherna, iskaraag, oostapen |
+| File Upload | Minor | 1 | Avatars and pet photos (image types, size limits checked in the browser and on the server); pet photos can be replaced or removed from the listing edit UI; chat attachments with images and documents, with file type and size checks in the browser and on the server, upload progress, preview or download, and removal before sending; sent attachments stay with the conversation and are deleted with the listing; attachments served only to the people in the conversation | sarherna, iskaraag, oostapen |
 | User Activity Analytics | Minor | 1 | Activity events recorded on every significant action; "Your activity" dashboard with personal stats as adopter and as rehomer | akacprzy, iskaraag |
 | ORM (SQLAlchemy) | Minor | 1 | SQLAlchemy 2.1 maps and writes the `analytics_event` table; Django ORM owns every other table | akacprzy |
 
