@@ -95,8 +95,8 @@ export function Modal({
     >
       <div className="flex max-h-[calc(100dvh-2rem)] flex-col">
         <header className="flex items-start justify-between gap-4 px-6 pt-6 pb-4">
-          <div className="space-y-1">
-            <h2 id={titleId} className="font-display text-xl text-text">
+          <div className="min-w-0 space-y-1">
+            <h2 id={titleId} className="font-display text-xl text-text wrap-anywhere">
               {title}
             </h2>
             {description && (

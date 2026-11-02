@@ -149,6 +149,7 @@ function YourListings() {
   const [error, setError] = useState('')
   const [removing, setRemoving] = useState(false)
   const [confirming, setConfirming] = useState<Pet | null>(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
   const [publishOpen, setPublishOpen] = useState(false)
   const [editing, setEditing] = useState<Pet | null>(null)
   const [editOpen, setEditOpen] = useState(false)
@@ -184,8 +185,13 @@ function YourListings() {
       }
     } finally {
       setRemoving(false)
-      setConfirming(null)
+      setConfirmOpen(false)
     }
+  }
+
+  const openRemove = (pet: Pet) => {
+    setConfirming(pet)
+    setConfirmOpen(true)
   }
 
   const openPublish = () => setPublishOpen(true)
@@ -204,7 +210,6 @@ function YourListings() {
   const handleSaved = (pet: Pet) => {
     setEditOpen(false)
     setPets((prev) => prev && prev.map((p) => (p.id === pet.id ? { ...pet, inquiry_count: p.inquiry_count } : p)))
-    toast({ kind: 'update', title: 'Listing updated', message: `Your changes to ${pet.name} were saved.` })
   }
 
   return (
@@ -232,19 +237,19 @@ function YourListings() {
         />
       ) : (
         <>
-          <ListingsCards pets={pets} busy={removing} onEdit={openEdit} onRemove={setConfirming} />
-          <ListingsTable pets={pets} busy={removing} onEdit={openEdit} onRemove={setConfirming} />
+          <ListingsCards pets={pets} busy={removing} onEdit={openEdit} onRemove={openRemove} />
+          <ListingsTable pets={pets} busy={removing} onEdit={openEdit} onRemove={openRemove} />
         </>
       )}
       {confirming && (
         <Modal
-          open
-          onClose={() => !removing && setConfirming(null)}
+          open={confirmOpen}
+          onClose={() => setConfirmOpen(false)}
           title={`Remove ${confirming.name}?`}
           description="This permanently deletes the listing, its photo and every conversation about this pet, including messages and attachments. Anyone who asked about them will be notified. This can't be undone."
           footer={
             <>
-              <Button variant="secondary" disabled={removing} onClick={() => setConfirming(null)}>
+              <Button variant="secondary" disabled={removing} onClick={() => setConfirmOpen(false)}>
                 Cancel
               </Button>
               <Button variant="danger" disabled={removing} onClick={() => void removePet(confirming)}>
