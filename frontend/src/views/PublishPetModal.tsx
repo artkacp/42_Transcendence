@@ -8,6 +8,7 @@ import { Button, Chip, Input, Modal, Select, Textarea, Toggle } from '../ds'
 const FORM_ID = 'publish-pet-form'
 const MAX_TRAITS = 4
 const MAX_PHOTO_MB = 5
+const MAX_STORY_LENGTH = 2000
 
 const SPECIES_LABELS: Record<Species, string> = { dog: 'Dog U・ᴥ・U', cat: 'Cat =^ ◗ ◗^=' }
 
@@ -319,6 +320,8 @@ function PublishForm({ petOptions, pet, onPublished, onSubmittingChange }: Publi
       <Textarea
         label="Story"
         placeholder="What should adopters know about them?"
+        maxLength={MAX_STORY_LENGTH}
+        showCount
         value={draft.story}
         onChange={(e) => update('story', e.target.value)}
         error={errors.story}

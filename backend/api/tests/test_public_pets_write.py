@@ -93,6 +93,17 @@ class PublicPetWriteTests(APITestCase):
         self.assertEqual(set(r.data['fields']), {'species', 'story'})
         self.assertEqual(Pet.objects.count(), 2)
 
+    def test_post_story_of_2000_characters_is_201(self):
+        r = self.post({**PET_PAYLOAD, 'story': 'x' * 2000})
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(r.data['story'], 'x' * 2000)
+
+    def test_post_story_over_2000_characters_is_400(self):
+        r = self.post({**PET_PAYLOAD, 'story': 'x' * 2001})
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(set(r.data['fields']), {'story'})
+        self.assertEqual(Pet.objects.count(), 2)
+
     def test_post_without_a_key_is_401(self):
         r = self.post(key=False)
         self.assertEqual(r.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -120,6 +131,20 @@ class PublicPetWriteTests(APITestCase):
         r = self.put(self.mine, species='cat')
         self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('breed', r.data['fields'])
+
+    def test_put_story_of_2000_characters_is_200(self):
+        r = self.put(self.mine, story='x' * 2000)
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.mine.refresh_from_db()
+        self.assertEqual(self.mine.story, 'x' * 2000)
+
+    def test_put_story_over_2000_characters_is_400(self):
+        story = self.mine.story
+        r = self.put(self.mine, story='x' * 2001)
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(set(r.data['fields']), {'story'})
+        self.mine.refresh_from_db()
+        self.assertEqual(self.mine.story, story)
 
     def test_patch_is_405(self):
         r = self.send('patch', reverse('public-pet-detail', args=[self.mine.pk]), {'name': 'Kobi'})
@@ -195,6 +220,7 @@ class PublicWriteSchemaTests(APITestCase):
                 self.assertEqual(set(multipart['required']),
                                  {'name', 'species', 'breed', 'age_years', 'size', 'sex', 'city', 'story'})
                 self.assertEqual(json_body['properties']['story']['minLength'], 20)
+                self.assertEqual(json_body['properties']['story']['maxLength'], 2000)
 
     def test_documented_body_has_the_app_rules(self):
         def rules(field):

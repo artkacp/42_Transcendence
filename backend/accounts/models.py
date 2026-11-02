@@ -8,6 +8,8 @@ from django.utils.text import slugify
 
 from core.uploads import UploadTo
 
+MAX_BIO_LENGTH = 500
+
 
 class UserManager(BaseUserManager):
     def generate_handle(self, full_name):

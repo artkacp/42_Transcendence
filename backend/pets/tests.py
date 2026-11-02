@@ -8,7 +8,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from accounts.tests import auth, image_file, make_pet, make_user
+from accounts.tests import auth, image_file, make_pet, make_user, multiline
 from inquiries.models import Inquiry
 
 from .models import AGE_BUCKETS, BREEDS, CITIES, TRAITS, Pet
@@ -101,6 +101,31 @@ class PublishTests(APITestCase):
         r = self.publish(traits=['friendly', 'playful', 'calm', 'shy', 'loyal'])
         self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('traits', r.data['fields'])
+
+    def test_story_of_2000_characters_accepted(self):
+        r = self.publish(story='x' * 2000)
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Pet.objects.get().story, 'x' * 2000)
+
+    def test_story_over_2000_characters_rejected(self):
+        r = self.publish(story='x' * 2001)
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('story', r.data['fields'])
+        self.assertFalse(Pet.objects.exists())
+
+    def test_story_line_break_counts_as_one_character(self):
+        r = self.publish(story=multiline(2001))
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('story', r.data['fields'])
+        r = self.publish(story=multiline(2000))
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Pet.objects.get().story, multiline(2000))
+
+    # A browser's multipart body turns every \n of the textarea into \r\n
+    def test_story_crlf_from_a_browser_form_is_stored_as_lf(self):
+        r = self.publish(story=multiline(2000).replace('\n', '\r\n'))
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Pet.objects.get().story, multiline(2000))
 
     def test_photo_rejects_non_image(self):
         r = self.publish(photo=SimpleUploadedFile('notes.txt', b'hello', content_type='text/plain'))
@@ -282,6 +307,26 @@ class UpdateTests(APITestCase):
         self.assertEqual(self.pet.city, 'Gdańsk')
         self.assertEqual(self.pet.name, 'Karo')
         self.assertEqual(self.pet.owner.notifications.get().title, 'Listing updated')
+
+    def test_story_of_2000_characters_accepted_on_put_and_patch(self):
+        self.assertEqual(self.put(story='x' * 2000).status_code, status.HTTP_200_OK)
+        self.assertEqual(self.patch({'story': 'y' * 2000}).status_code, status.HTTP_200_OK)
+        self.pet.refresh_from_db()
+        self.assertEqual(self.pet.story, 'y' * 2000)
+
+    def test_story_over_2000_characters_rejected_on_put_and_patch(self):
+        story = self.pet.story
+        for r in (self.put(story='x' * 2001), self.patch({'story': 'x' * 2001})):
+            self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertIn('story', r.data['fields'])
+        self.pet.refresh_from_db()
+        self.assertEqual(self.pet.story, story)
+
+    def test_multipart_story_crlf_is_stored_as_lf(self):
+        r = self.patch({'story': multiline(2000).replace('\n', '\r\n')}, format='multipart')
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.pet.refresh_from_db()
+        self.assertEqual(self.pet.story, multiline(2000))
 
     def test_non_owner_gets_403(self):
         auth(self.client, self.bob)
