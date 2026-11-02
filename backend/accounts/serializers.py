@@ -6,6 +6,7 @@ from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.exceptions import InvalidToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 
+from core.fields import MultilineCharField
 from core.validators import allowed_content_type, max_file_size
 from pets.models import CITIES
 
@@ -104,11 +105,12 @@ class UserProfileSerializer(UserMinimalSerializer):
 
 class UserUpdateSerializer(serializers.ModelSerializer):
     city = serializers.ChoiceField(choices=CITIES, allow_null=True, required=False)
+    bio = MultilineCharField(max_length=MAX_BIO_LENGTH, allow_blank=True, required=False)
 
     class Meta:
         model = User
         fields = ['full_name', 'city', 'bio']
-        extra_kwargs = {'full_name': {'min_length': 2}, 'bio': {'max_length': MAX_BIO_LENGTH}}
+        extra_kwargs = {'full_name': {'min_length': 2}}
 
 
 class AvatarSerializer(serializers.ModelSerializer):

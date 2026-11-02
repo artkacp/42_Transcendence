@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from accounts.serializers import UserMinimalSerializer
+from core.fields import MultilineCharField
 from core.validators import allowed_content_type, max_file_size
 
 from .models import (
@@ -31,6 +32,7 @@ class PetSerializer(serializers.ModelSerializer):
     inquiry_count = serializers.IntegerField(read_only=True, default=0)
     breed = serializers.ChoiceField(choices=ALL_BREEDS)
     city = serializers.ChoiceField(choices=CITIES)
+    story = MultilineCharField(min_length=20, max_length=MAX_STORY_LENGTH)
     traits = TraitsField(child=serializers.ChoiceField(choices=TRAITS), max_length=4, required=False)
     photo = serializers.ImageField(
         required=False, allow_null=True, validators=[max_file_size(5), allowed_content_type('pet_photo')],
@@ -46,7 +48,6 @@ class PetSerializer(serializers.ModelSerializer):
         read_only_fields = ['adopted_at']
         extra_kwargs = {
             'name': {'min_length': 2},
-            'story': {'min_length': 20, 'max_length': MAX_STORY_LENGTH},
             'age_years': {'min_value': 0, 'max_value': 20},
         }
 

@@ -40,6 +40,12 @@ def image_file(name='avatar.png', size=(10, 10), format='PNG'):
     return SimpleUploadedFile(name, buffer.getvalue(), content_type=f'image/{format.lower()}')
 
 
+# Exactly `length` characters, every other one a line break. Starts and ends with a letter,
+# so DRF's whitespace trimming leaves the length alone.
+def multiline(length):
+    return ('x\n' * length)[:length - 1] + 'x'
+
+
 def make_pet(owner, **overrides):
     return Pet.objects.create(**{
         'owner': owner,
@@ -461,6 +467,21 @@ class ProfileTests(APITestCase):
         self.assertIn('bio', r.data['fields'])
         self.alice.refresh_from_db()
         self.assertEqual(self.alice.bio, '')
+
+    def test_patch_me_counts_a_bio_line_break_as_one_character(self):
+        r = self.client.patch(reverse('user-me'), {'bio': multiline(501)}, format='json')
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('bio', r.data['fields'])
+        r = self.client.patch(reverse('user-me'), {'bio': multiline(500)}, format='json')
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.alice.refresh_from_db()
+        self.assertEqual(self.alice.bio, multiline(500))
+
+    def test_patch_me_stores_crlf_line_breaks_as_lf(self):
+        r = self.client.patch(reverse('user-me'), {'bio': multiline(500).replace('\n', '\r\n')}, format='json')
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.alice.refresh_from_db()
+        self.assertEqual(self.alice.bio, multiline(500))
 
     def test_patch_me_ignores_handle(self):
         r = self.client.patch(reverse('user-me'), {'handle': 'hacked'})
