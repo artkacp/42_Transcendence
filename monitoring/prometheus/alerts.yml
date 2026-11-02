@@ -23,3 +23,15 @@ groups:
         annotations:
           summary: Backend 5xx responses above 5% for more than 5 minutes
           description: "{{ $value | humanizePercentage }} of backend responses over the last 5 minutes were 5xx."
+
+  - name: host
+    rules:
+      # 10m so the CPU spike from `docker compose up --build` doesn't fire it.
+      - alert: HostHighCpu
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{job="node",mode="idle"}[5m])) * 100) > 90
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Host CPU above 90% for more than 10 minutes
+          description: "Host CPU use averaged {{ $value | humanize }}% across all cores over the last 5 minutes."
