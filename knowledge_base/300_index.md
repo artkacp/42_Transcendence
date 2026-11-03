@@ -8,6 +8,7 @@ and frontend conventions.
 
 - 310 — Design System Conventions
 - 311 — Design System: Component Ownership
+- 312 — Design System: Paw Grammar (kaomoji instead of emoji)
 
 ## Tooling traps (320–329)
 
