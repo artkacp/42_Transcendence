@@ -108,7 +108,7 @@ export function Activity() {
         <p className="py-16 text-center text-sm text-text-muted">Loading…</p>
       ) : status !== 'signed-in' ? (
         <EmptyState
-          emoji="🔒"
+          emoji="(︶ᴥ ...   ･ﾟ✧"
           title="Sign in to see your activity"
           hint="Your stats are private and only visible to you."
           action={<Button onClick={() => navigate('auth')}>Sign in</Button>}
