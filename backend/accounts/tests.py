@@ -239,6 +239,13 @@ class FriendshipTests(APITestCase):
         r = self.client.delete(reverse('friendship-detail', args=[f.pk]))
         self.assertEqual(r.status_code, status.HTTP_404_NOT_FOUND)
 
+    def test_malformed_friendship_id_not_found_not_500(self):
+        auth(self.client, self.alice)
+        for name, send in (('friendship-detail', self.client.delete), ('friendship-accept', self.client.post)):
+            with self.subTest(name):
+                r = send(reverse(name, args=['not-a-uuid']))
+                self.assertEqual(r.status_code, status.HTTP_404_NOT_FOUND)
+
     def test_second_unfriend_not_found_without_notifying_again(self):
         f = Friendship.objects.create(
             requester=self.alice, addressee=self.bob, status=Friendship.STATUS_ACCEPTED

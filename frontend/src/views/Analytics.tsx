@@ -18,7 +18,7 @@ import { Download, SlidersHorizontal, TrendingUp, TrendingDown, Minus } from 'lu
 import { getPlatformAnalytics, type AnalyticsResponse, type AnalyticsFilters } from '../api/analytics'
 import { ApiError } from '../api/client'
 import { useAuth } from '../auth/auth-context'
-import { useSocketFrame, useSocketReconnect, useSocketSend } from '../socket/SocketContext'
+import { useSocketFrame, useSocketReconnect, useSocketSend, useSocketStatus } from '../socket/SocketContext'
 import { CITIES, BREEDS_BY_SPECIES, ALL_TRAITS, AGE_BUCKETS } from '../data/constants'
 import type { Species } from '../data/types'
 import { Button, Card, Chip, Select, EmptyState, Input, Badge } from '../ds'
@@ -226,15 +226,19 @@ export function Analytics() {
   const error = errorKey === requestKey
 
   const send = useSocketSend()
+  const socketStatus = useSocketStatus()
 
   // Join the analytics group while on this page; leave on unmount
+  // Waits for the socket: after a reload this page can mount first, and a frame sent then is lost.
+  // A reconnect passes through 'connecting', so this also joins again after one.
   useEffect(() => {
+    if (socketStatus !== 'ready') return
     send({ type: 'analytics.subscribe' })
     return () => { send({ type: 'analytics.unsubscribe' }) }
-  }, [send])
+  }, [send, socketStatus])
 
   // Live updates: refetch on analytics.ping (opt-in group above)
-  // and on reconnect (catches missed events + re-joins the group). 60s interval is a fallback if a ping is lost.
+  // and on reconnect (catches missed events). 60s interval is a fallback if a ping is lost.
   // Pings are throttled: the first one starts a 2s window, the rest of the burst joins that one refetch
   const pingTimer = useRef<number | undefined>(undefined)
   useSocketFrame('analytics.ping', () => {
@@ -245,10 +249,7 @@ export function Analytics() {
     }, 2_000)
   })
   useEffect(() => () => window.clearTimeout(pingTimer.current), [])
-  useSocketReconnect(() => {
-    send({ type: 'analytics.subscribe' })
-    setRetry((r) => r + 1)
-  })
+  useSocketReconnect(() => setRetry((r) => r + 1))
   useEffect(() => {
     if (status !== 'signed-in') return
     const id = setInterval(() => setRetry((r) => r + 1), 60_000)

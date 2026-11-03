@@ -48,15 +48,16 @@ function Message({ text }: { text: string }) {
 
 export function PetPage() {
   const id = useIdParam()
-  const { user } = useAuth()
+  const { status, user } = useAuth()
   const [result, setResult] = useState<Result | null>(null)
   // kept with its pet id, so another pet's thread is never shown here
   const [inquiry, setInquiry] = useState<{ petId: string; inquiry: Inquiry } | null>(null)
   const [asking, setAsking] = useState(false)
   const [askError, setAskError] = useState<string | null>(null)
 
+  // Waits for the session: on a reload this runs before the boot refresh, and Chrome logs the 401
   useEffect(() => {
-    if (!id) return
+    if (!id || status !== 'signed-in') return
     let cancelled = false
     getPet(id)
       .then((pet) => {
@@ -70,7 +71,7 @@ export function PetPage() {
     return () => {
       cancelled = true
     }
-  }, [id])
+  }, [id, status])
 
   const loaded = result && 'pet' in result && result.id === id ? result.pet : null
   // adopted pets too: the adopter still sees how their thread ended
@@ -110,6 +111,14 @@ export function PetPage() {
       .finally(() => setAsking(false))
   }
 
+  if (status === 'signed-out') {
+    return (
+      <div className="flex flex-col items-start gap-4">
+        <p className="text-text-muted">Sign in to see this pet.</p>
+        <Button onClick={() => navigate('auth')}>Sign in</Button>
+      </div>
+    )
+  }
   if (!id) return <Message text="No pet selected" />
   // derived, not stored: an answer for another id means we are still loading
   if (!result || result.id !== id) {
