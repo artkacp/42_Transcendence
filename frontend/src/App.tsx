@@ -1,5 +1,6 @@
 import { lazy, Suspense, type ComponentType } from 'react'
 import { useView, type View } from './routing'
+import { useAuth } from './auth/auth-context'
 import { Shell } from './components/Shell'
 import { Auth } from './views/Auth'
 import { Browse } from './views/Browse'
@@ -36,6 +37,7 @@ const PAGES: Record<View, ComponentType> = {
 
 function App() {
   const view = useView()
+  const { status } = useAuth()
   const Page = PAGES[view]
   const labOpen = PaletteLab !== null && new URLSearchParams(window.location.search).has('lab')
 
@@ -44,7 +46,8 @@ function App() {
       <div className={labOpen ? 'pr-80' : ''}>
         <Shell view={view}>
           <Suspense fallback={null}>
-            <Page />
+            {/* Child effects run before AuthProvider's boot effect: a page mounted now would fetch with no token */}
+            {status === 'loading' ? null : <Page />}
           </Suspense>
         </Shell>
       </div>

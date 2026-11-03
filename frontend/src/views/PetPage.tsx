@@ -3,7 +3,7 @@
 // the owner gets the inquiries for the pet instead.
 import { useEffect, useState, type MouseEvent } from 'react'
 import { ArrowLeft } from 'lucide-react'
-import { Avatar, Button } from '../ds'
+import { Avatar, Button, EmptyState } from '../ds'
 import { getPet } from '../api/pets'
 import { getMyInquiries, startInquiry } from '../api/inquiries'
 import { ApiError } from '../api/client'
@@ -46,7 +46,28 @@ function Message({ text }: { text: string }) {
   )
 }
 
+// The pet API needs a token: signed out, show the way in instead of a request that 401s.
+// App renders no page while auth is still loading, so this only has to handle signed-out.
 export function PetPage() {
+  const { status } = useAuth()
+
+  if (status === 'signed-out') {
+    return (
+      <div className="sm:p-8">
+        <EmptyState
+          emoji="(︶ᴥ ...   ･ﾟ✧"
+          title="Sign in to see this pet"
+          hint="Pet pages live behind your account."
+          action={<Button onClick={() => navigate('auth')}>Sign in</Button>}
+        />
+      </div>
+    )
+  }
+
+  return <PetView />
+}
+
+function PetView() {
   const id = useIdParam()
   const { status, user } = useAuth()
   const [result, setResult] = useState<Result | null>(null)
