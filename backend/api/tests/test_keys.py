@@ -1,5 +1,9 @@
 import hashlib
+import io
 
+from django.core.cache import caches
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -115,3 +119,64 @@ class APIKeyTests(APITestCase):
         key.refresh_from_db()
         self.assertFalse(key.revoked)
         self.assertEqual(APIKey.objects.count(), 1)
+
+
+class CreateAPIKeyCommandTests(APITestCase):
+
+    def setUp(self):
+        caches['throttle'].clear()
+        self.alice = make_user('alice', 1)
+
+    def run_command(self, user, label='Script'):
+        out = io.StringIO()
+        call_command('create_api_key', user, '--label', label, stdout=out)
+        return out.getvalue()
+
+    def printed_key(self, out):
+        return next(line.split()[1] for line in out.splitlines() if line.startswith('Key:'))
+
+    def test_creates_key_by_email_and_prints_it_once(self):
+        out = self.run_command('ALICE@test.com')
+        full_key = self.printed_key(out)
+        row = APIKey.objects.get()
+
+        self.assertEqual(row.owner, self.alice)
+        self.assertEqual(row.label, 'Script')
+        self.assertIsNone(row.rate_per_minute)
+        self.assertTrue(full_key.startswith(row.prefix + '.'))
+        self.assertEqual(row.key_hash, hashlib.sha256(full_key.encode()).hexdigest())
+        self.assertTrue(check_key(full_key, row.key_hash))
+        self.assertIn(f'Prefix: {row.prefix}', out)
+        self.assertIn('cannot be shown again', out)
+
+    def test_finds_user_by_handle(self):
+        self.run_command('alice')
+        self.assertEqual(APIKey.objects.get().owner, self.alice)
+
+    def test_printed_key_authenticates(self):
+        full_key = self.printed_key(self.run_command('alice'))
+        r = self.client.get(reverse('public-options'), HTTP_X_API_KEY=full_key)
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+
+    def test_notifies_the_owner(self):
+        self.run_command('alice')
+        self.assertEqual(self.alice.notifications.get().body, 'Your API key "Script" was created.')
+
+    def test_unknown_user_fails(self):
+        with self.assertRaisesMessage(CommandError, 'No user with handle or email "nobody@test.com".') as cm:
+            self.run_command('nobody@test.com')
+        self.assertEqual(cm.exception.returncode, 1)
+        self.assertFalse(APIKey.objects.exists())
+
+    def test_inactive_user_fails(self):
+        self.alice.is_active = False
+        self.alice.save(update_fields=['is_active'])
+        with self.assertRaisesMessage(CommandError, 'inactive'):
+            self.run_command('alice')
+        self.assertFalse(APIKey.objects.exists())
+
+    def test_label_is_validated(self):
+        for label in ['', 'x' * 101]:
+            with self.subTest(label=label), self.assertRaisesMessage(CommandError, 'Invalid label'):
+                self.run_command('alice', label)
+        self.assertFalse(APIKey.objects.exists())
