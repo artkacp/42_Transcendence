@@ -2,29 +2,254 @@
 
 # Pawfect Match
 
+## Description
+
 A peer-to-peer adoption platform for dogs and cats: people rehoming a pet list it, and people looking to adopt browse the listings and talk to the owner directly.
 
 ## Features
 
-- **Browse and adopt** — search listings by species, breed, size, age and location; filter in real time; send an adoption application directly to the owner
-- **Rehome a pet** — publish a listing with photos, description and pet details; manage incoming inquiries and move applications through adoption stages
-- **Chat** — real-time messaging between owner and applicant over WebSocket, scoped to each inquiry
-- **Notifications** — in-app notifications for new messages, application status changes and adoption confirmations
-- **Friends** — add other users, see who is online, start private conversations
-- **Analytics dashboard** — platform-wide adoption metrics and charts (visits, applications, adoptions, active users over time), filterable by pet type and date range
-- **Personal stats** — per-user activity summary: pets viewed, applications sent, listings published, adoptions completed
+- **Browse and adopt** — search listings by species, breed, size, age and location; filter in real time; sort and page through results; send an adoption application directly to the owner *(iskaraag, sarherna)*
+- **Rehome a pet** — publish, edit or remove a listing with photos, description and pet details *(iskaraag, sarherna)*
+- **Chat** — real-time messaging between owner and applicant over WebSocket, scoped to each adoption inquiry, with image and document attachments *(oostapen, faikhan, sarherna)*
+- **Adoptions** — track the status of your applications as an adopter; manage incoming inquiries and move them through adoption stages as an owner *(faikhan, oostapen, sarherna)*
+- **Notifications** — in-app notifications for create, update and delete actions (listings, adoption inquiries, messages, adoption stages, friends, profile changes, API keys), delivered in real time *(iskaraag, sarherna)*
+- **Friends** — send and accept friend requests, see who is online, browse your friends list and discover new people *(akacprzy, sarherna)*
+- **Analytics dashboard** — platform-wide adoption metrics and charts (visits, applications, adoptions, active users over time), filterable by pet type and date range, with CSV export *(akacprzy)*
+- **Personal stats** — per-user activity summary: pets viewed, applications sent, listings published, adoptions completed *(akacprzy, iskaraag)*
+- **User profiles** — view your own profile and other users' profiles; edit bio, city and avatar *(sarherna, oostapen)*
 
-## Tech stack
+## Tech Stack
 
 | Layer | Technology |
-|---|---|
-| Backend | Django 4.2, Django REST Framework, Django Channels (Daphne) |
+|-------|------------|
+| Backend | Django 5.2, Django REST Framework 3.18 |
+| Real-time | Django Channels 4.3, Daphne 4.2 (ASGI server) |
 | Database | PostgreSQL |
-| ORM | Django ORM + SQLAlchemy 2.0 (analytics store) |
-| Real-time | WebSocket via Django Channels, in-memory channel layer |
+| ORM | Django ORM (all tables) + SQLAlchemy 2.1 (analytics only) |
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS v4 |
-| Infrastructure | Docker, nginx (reverse proxy + static files), HTTPS (local CA) |
-| Monitoring | Prometheus, Grafana |
+| File handling | Pillow 12, Django FileField |
+| Infrastructure | Docker, nginx (reverse proxy + TLS termination + static files) |
+| Monitoring | Prometheus (django-prometheus + node-exporter), Grafana |
+
+The backend is a single Django application served by Daphne, handling both REST requests and WebSocket connections in one process. Django Channels adds WebSocket support without a separate server or message broker. The in-memory channel layer keeps the setup simple — see [Architecture: one backend process](#architecture-one-backend-process).
+
+PostgreSQL is used for its native array and JSONB column types (pet traits, event metadata) and for the GIN trigram index that speeds up text search on pets.
+
+SQLAlchemy 2.1 is used alongside Django ORM to satisfy the ORM module requirement. It owns the `analytics_event` table exclusively; Django ORM owns all other tables. The schema is created by a Django `RunSQL` migration; SQLAlchemy maps the existing table and never emits DDL.
+
+## Database Schema
+
+All tables use UUID primary keys. The `analytics_event` table is owned by SQLAlchemy; all others are managed by Django migrations.
+
+### accounts_user
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | Primary key |
+| email | varchar(254) | Unique |
+| full_name | varchar(150) | |
+| handle | varchar(50) | Unique, auto-generated from full name |
+| city | varchar(100) | Optional |
+| bio | text | Optional, max. 500 chars |
+| avatar | file | Optional |
+| is_online | boolean | Updated by WebSocket presence |
+| last_seen_at | timestamptz | |
+| date_joined | timestamptz | |
+| is_active | boolean | |
+| is_staff | boolean | |
+
+### accounts_friendship
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | Primary key |
+| requester_id | UUID | FK → accounts_user |
+| addressee_id | UUID | FK → accounts_user |
+| status | varchar(10) | `pending` / `accepted` |
+| created_at | timestamptz | |
+
+Constraints: one row per pair of users, in either direction (unique on `LEAST`/`GREATEST` of the two ids); `requester ≠ addressee`.
+
+### pets_pet
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | Primary key |
+| owner_id | UUID | FK → accounts_user |
+| name | varchar(100) | |
+| species | varchar(10) | `dog` / `cat` |
+| breed | varchar(100) | |
+| age_years | smallint | 0–40 |
+| size | varchar(10) | `small` / `medium` / `large` |
+| sex | varchar(10) | `male` / `female` |
+| city | varchar(100) | |
+| story | text | Min. 20, max. 2000 chars |
+| traits | varchar[] | Up to 4 values |
+| photo | file | Optional |
+| is_vaccinated | boolean | |
+| is_neutered | boolean | |
+| adopted_by_id | UUID | FK → accounts_user, nullable |
+| adopted_at | timestamptz | Nullable |
+| search_text | text | Denormalised for GIN trigram search |
+| created_at | timestamptz | |
+
+Indexes: `GIN(search_text)` (trigram ops), `(species, size, city)`, `(-created_at)`.
+
+### inquiries_inquiry
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | Primary key |
+| pet_id | UUID | FK → pets_pet |
+| adopter_id | UUID | FK → accounts_user |
+| stage | varchar(15) | `conversation` / `visit` / `decision` / `denied` |
+| last_message_at | timestamptz | Nullable |
+| created_at | timestamptz | |
+
+Constraint: `unique(pet, adopter)`.
+
+### inquiries_message
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | Primary key |
+| inquiry_id | UUID | FK → inquiries_inquiry |
+| sender_id | UUID | FK → accounts_user |
+| body | text | Max. 2000 chars |
+| created_at | timestamptz | |
+
+### inquiries_attachment
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | Primary key |
+| message_id | UUID | FK → inquiries_message, nullable |
+| uploaded_by_id | UUID | FK → accounts_user |
+| file | file | |
+| original_name | varchar(255) | |
+| content_type | varchar(100) | |
+| size_bytes | integer | Max 5 MB |
+| kind | varchar(10) | `image` / `document` |
+| created_at | timestamptz | |
+
+### notifications_notification
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | Primary key |
+| recipient_id | UUID | FK → accounts_user |
+| kind | varchar(10) | `create` / `update` / `delete` / `info` |
+| title | varchar(200) | |
+| body | text | |
+| is_read | boolean | |
+| subject_type | varchar(50) | Optional — type of the related object |
+| subject_id | UUID | Optional — id of the related object |
+| created_at | timestamptz | |
+
+Indexes: `(recipient, -created_at)`; partial `(recipient) WHERE is_read = false`.
+
+### api_apikey
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | Primary key |
+| owner_id | UUID | FK → accounts_user |
+| label | varchar(100) | |
+| prefix | varchar(8) | Unique — first 8 chars of the key, used for lookup |
+| key_hash | varchar(64) | SHA-256 hex digest of the full key |
+| rate_per_minute | integer | Nullable — null means 60 req/min default |
+| created_at | timestamptz | |
+| last_used_at | timestamptz | Nullable |
+| revoked | boolean | |
+
+### analytics_event
+
+Owned by SQLAlchemy. Created via Django `RunSQL` migration.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | Primary key |
+| user_id | UUID | References accounts_user (no FK constraint) |
+| pet_id | UUID | Optional (no FK constraint) |
+| event_type | varchar(30) | e.g. `pet_viewed`, `application_sent`, `listing_published` |
+| occurred_at | timestamptz | Server default: `now()` |
+| metadata | JSONB | Additional event data |
+
+## Modules
+
+Total: **20 points** (7 Majors × 2 pts + 6 Minors × 1 pt). The subject requires 14 points to pass.
+
+| Module | Type | Pts | Implementation | Implementer(s) |
+|--------|------|-----|----------------|----------------|
+| Framework (Django + React) | Major | 2 | Django 5.2 + DRF for the REST API; React 19 + TypeScript + Vite for the frontend | sarherna, akacprzy, faikhan, oostapen, iskaraag |
+| Standard User Management | Major | 2 | Registration and login with JWT (access token in memory, refresh token in an httpOnly cookie); profile page with editable info; avatar upload with a default avatar; friends with online status | sarherna, oostapen, akacprzy |
+| User Interaction | Major | 2 | Adoption chat between owner and adopter over WebSocket; friend requests, accept and remove, friends list; own and other users' profiles | sarherna, faikhan, oostapen, akacprzy |
+| Real-time Features | Major | 2 | Django Channels WebSocket with first-frame JWT auth; group-based broadcasting (user, pet, browse, analytics); reconnect handling; live chat, presence, notifications and list updates | faikhan |
+| Public API | Major | 2 | API keys stored hashed and shown once; 60 requests/min throttle per key; GET, POST, PUT and DELETE on pets plus GET options; OpenAPI schema and Swagger UI | faikhan |
+| Prometheus / Grafana | Major | 2 | django-prometheus (request rate, latency, status codes); node-exporter (host metrics); Grafana "Pawfect Match — Ops" dashboard; 3 alert rules (backend down, high 5xx ratio, host CPU); Grafana behind login | faikhan |
+| Advanced Analytics Dashboard | Major | 2 | Platform-wide metrics from `analytics_event`; interactive Recharts charts; date range and pet filters; live updates over WebSocket; CSV export | akacprzy |
+| Notification system | Minor | 1 | Notifications on create, update and delete actions; real-time delivery over WebSocket; bell with unread count, notification center, toasts, mark as read | sarherna, iskaraag |
+| Custom Design System | Minor | 1 | 15+ reusable components (Button, IconButton, Card, Avatar, Badge, Chip, Input, Textarea, Select, Toggle, Tabs, Modal, Toast, Progress, Pagination, EmptyState); OKLCH color palette with semantic tokens; typography (Fraunces display, Outfit text); lucide icon set; showcased on the Design kit page | oostapen, iskaraag |
+| Advanced Search | Minor | 1 | Text search plus filters (species, sex, size, age, city, breed, traits, vaccinated, neutered); sort by newest, oldest, name or age; paginated results | iskaraag, sarherna |
+| File Upload | Minor | 1 | Avatars and pet photos (image types, size limits checked in the browser and on the server); pet photos can be replaced or removed from the listing edit UI; chat attachments with images and documents, with file type and size checks in the browser and on the server, upload progress, preview or download, and removal before sending; sent attachments stay with the conversation and are deleted with the listing; attachments served only to the people in the conversation | sarherna, iskaraag, oostapen |
+| User Activity Analytics | Minor | 1 | Activity events recorded on every significant action; "Your activity" dashboard with personal stats as adopter and as rehomer | akacprzy, iskaraag |
+| ORM (SQLAlchemy) | Minor | 1 | SQLAlchemy 2.1 maps and writes the `analytics_event` table; Django ORM owns every other table | akacprzy |
+
+
+## Team Information
+
+| Login | Role | Area |
+|-------|------|------|
+| sarherna | Product Owner, Technical Lead | Backend: auth, user management, pets, inquiries, adoption stages, notifications service, profile view |
+| akacprzy | Project Manager | Database schema, analytics write pipeline, analytics endpoints, friends backend and view |
+| faikhan | Developer | DevOps, Docker, nginx, HTTPS, WebSocket backend, public API, Prometheus/Grafana |
+| oostapen | Developer | Frontend: auth flow, API client, routing, pet page, live chat UI (adopter + owner), design system foundation |
+| iskaraag | Developer | Frontend: browse, rehome, notifications, design system components |
+
+All team members contributed as developers across the full stack.
+
+## Project Management
+
+Work is tracked in Notion (implementation plan and Kanban board). Each task has a scope definition, requirement references and acceptance criteria.
+
+Code review is handled through GitHub pull requests — all code is merged via PR, no direct pushes to main. Each PR goes through at least one review before merging.
+
+Team communication is via Slack. The team meets weekly or bi-weekly to sync on progress and decisions.
+
+## Public API
+
+Third-party clients can access pet data using an API key. Keys are tied to a user account and rate-limited to 60 requests per minute by default.
+
+### Getting a key
+
+Use the REST endpoint to create a key:
+
+```sh
+# 1. Sign in and copy "access" from the response
+curl -k -s -X POST https://localhost:8443/api/auth/login/ \
+  -H 'Content-Type: application/json' \
+  -d '{"email": "user@example.com", "password": "yourpassword"}'
+
+# 2. Create an API key
+curl -k -s -X POST https://localhost:8443/api/keys/ \
+  -H "Authorization: Bearer <access_token>" \
+  -H 'Content-Type: application/json' \
+  -d '{"label": "my-key"}'
+```
+
+The response includes the full key once — it is not shown again. It is stored hashed (SHA-256).
+
+### Using the API
+
+```sh
+curl -k -s https://localhost:8443/api/public/v1/pets/ \
+  -H 'X-API-Key: <your-key>'
+```
+
+### Documentation
+
+- OpenAPI schema: `https://localhost:8443/api/public/v1/schema/`
+- Swagger UI: `https://localhost:8443/api/public/v1/docs/`
 
 ## Instructions
 
@@ -133,3 +358,60 @@ docker compose exec grafana grafana cli admin reset-admin-password <new-password
 ## Architecture: one backend process
 
 The backend runs as **exactly one Daphne process**: no extra workers, no `docker compose up --scale backend=…`, no Redis, and no Celery or other task queue. Real-time messaging (the Channels in-memory channel layer), the online-presence registry and the public API's rate-limit counters all live in that one process's memory, so a second process would silently split them instead of failing.
+
+## Individual Contributions
+
+| Login | Key contributions |
+|-------|------------------|
+| sarherna | Backend domain model (accounts, pets, inquiries, adoption stages, notifications service); profile view; technical architecture and initial project setup |
+| akacprzy | Database schema design; SQLAlchemy analytics write pipeline; django-prometheus instrumentation; platform analytics endpoint; per-user analytics endpoint; friends backend; friends view; analytics dashboard frontend |
+| faikhan | Docker, nginx and HTTPS setup; Prometheus and node-exporter; Grafana dashboard and alerts; WebSocket backend — JWT auth, presence, chat routing, pet subscriptions; public API — keys, throttle, CRUD, OpenAPI docs; SocketProvider frontend |
+| oostapen | Frontend scaffold and API client; auth flow frontend; pet page; live chat frontend, adopter Ask about + owner Inquiries over WebSocket; WebSocket client hooks (frame handler, reconnect refetch); animated logo, favicon and shell layout; design tokens and palettes; Design kit page; design system components |
+| iskaraag | Browse with filters, live updates and sorting; rehome and publish flow; edit listing UI; rehome back in nav; notification center and toast; your activity view; Input, Textarea, Select, Toggle, Chip, Avatar, EmptyState, Modal, Toast design system components |
+
+**Challenges**
+
+**sarherna:** Planning: Bringing the project's requirements from the idea to an actual tangible system design and plan. And handling authentication: Got to read for a while and sit in focus to understand how does JWT authentication and cryptography work in this use case.
+
+**akacprzy:** This project was the first time I wrote any frontend code. Before it, everything I'd done was backend or data. Learning it was like learning a whole new programming language.
+
+**faikhan:** My biggest challenge was making the whole backend work inside a single Daphne ASGI process. We deliberately had no Redis, no Celery and no multiple workers, so the WebSocket channel layer, user presence tracking and the public API throttle all keep their state in the memory of one process. That made the deployment simple, with one container behind nginx.
+A second challenge was serving HTTPS without a public domain or root access: I set up a local certificate authority with nginx on port 8443, and kept the CA’s private key out of the repository.
+
+**oostapen:** Live chat was my hardest part. Messages arrive from two sources: the WebSocket (chat.message, echoed to the sender too) and the REST history (newest first, paged). I had to merge them without duplicates, keep socket handlers from reading stale React state (handler kept in a ref), and refetch after a reconnect, because the server keeps no history of frames sent while a client was offline. Building it as one flow for both sides, adopter "Ask about" and owner "Inquiries", meant testing every change with two users in two browsers at the same time.
+
+**iskaraag:** My biggest challenge was starting this project without knowing React, TypeScript or Tailwind. Learning a new stack while building real features for a team, with deadlines and reviews. On top of that I was working full time, so finding time to code was hard and most of my work happened late at night. Going from copying examples to understanding why my code works took most of the effort.
+
+## Resources
+
+- [Django documentation](https://docs.djangoproject.com/en/5.2/)
+- [Django REST Framework](https://www.django-rest-framework.org/)
+- [Django Channels](https://channels.readthedocs.io/) / [Daphne](https://github.com/django/daphne)
+- [SQLAlchemy 2.x](https://docs.sqlalchemy.org/en/20/)
+- [React documentation](https://react.dev/)
+- [TypeScript handbook](https://www.typescriptlang.org/docs/handbook/intro.html)
+- [Tailwind CSS v4](https://tailwindcss.com/docs)
+- [Lucide icons](https://lucide.dev/)
+- [Prometheus](https://prometheus.io/docs/) / [Grafana](https://grafana.com/docs/)
+- [nginx documentation](https://nginx.org/en/docs/) (reverse proxy, WebSocket upgrade headers)
+- [OpenSSL documentation](https://www.openssl.org/docs/) (local CA and certificate signing)
+- [Docker Compose documentation](https://docs.docker.com/compose/)
+- [W3Schools](https://www.w3schools.com/) — HTML, CSS and JavaScript basics
+- [React Beginner Course 2025 — Vite, Tailwind CSS, TypeScript](https://www.youtube.com/watch?v=siTUv1L9ymM)
+
+## AI Usage
+
+This project was developed with the assistance of AI tools.
+
+**sarherna:** I used AI as a support tool, following the subject's AI guidelines. I stayed responsible for every decision and for anything that went into the project.
+For the prototype, I created a set of custom AI skills that helped me define the app's features, applying my own UX knowledge to decide what to build and how it should work. I then used that work to shape the design system. The final colors were selected by oostapen.
+For development, I used AI to help implement features, fix bugs, write tests, and handle repetitive tasks. I thought through each problem before prompting, gave the tool the project context and code style to follow, and rejected or corrected results that were wrong or too generic.
+During validation, I reviewed and tested AI-assisted work before submitting it, both with automated tests and by hand in the running app. My teammates then reviewed the changes through pull requests, and I only kept code that I understand and can explain.
+
+**akacprzy:** Used AI tools throughout the project: to get up to speed on unfamiliar topics quickly, to review my own code before posting PRs and catch edge cases I might have missed, to draft documentation and KB notes which I then edited for accuracy and tone. Lastly, to get summaries of my teammates issued work to keep track of project progress and status and catch up quickly after breaks. Mostly used Claude and Gemini.
+
+**faikhan:** I used Claude in two ways. A planning assistant helped me break down my tasks, decide between architecture options and diagnose deployment problems. Claude Code generated much of the implementation (Docker/Compose config, nginx config, the public API) from prompts I wrote. I reviewed, tested and integrated the output myself, and every change went through PR review by teammates.
+
+**oostapen:** Claude (chat) as a planning partner: reading the backend contract, splitting work into small PRs, reviewing plans and diffs, explaining React and browser details I didn't know yet. Claude Code for reviewing and debugging code and helping with Git. Chat GPT for cumulative notes. Design decisions (palettes, tokens, the kaomoji UI language, UX checks) are mine.
+
+**iskaraag:** I used Claude as a step-by-step guide while learning the stack: it explained concepts, suggested how to structure a feature, helped me read the backend code I depended on and pointed out problems during my own reviews. I wrote and integrated the code myself, checked every step with tsc, oxlint and browser tests.

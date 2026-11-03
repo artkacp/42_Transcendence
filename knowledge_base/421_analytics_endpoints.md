@@ -48,6 +48,12 @@ All counts come from the `analytics_event` table, queried via SQLAlchemy. Event 
 
 The `metadata` JSONB column stores a snapshot of the pet's context at event time, including the owner's user ID. This makes rehomer stats survivable after a pet is deleted.
 
+Events from `seed_demo` are written straight to the table through the SQLAlchemy session, with the signal handlers disconnected, and count here like any other event.
+
+### Frontend
+
+Shown on the "Your activity" page (`?view=activity`), linked from your own profile and from the analytics page.
+
 ### Authentication
 
 Standard JWT authentication. Unauthenticated requests return 401.
