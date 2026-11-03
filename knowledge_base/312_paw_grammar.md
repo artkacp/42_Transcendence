@@ -38,8 +38,8 @@ Not converted yet (arrived from parallel branches, follow-up `style/paw-new-view
 | 🔒 | `(︶ᴥ ... ･ﾟ✧` | Activity, signed out |
 | 😿 | `≧◒_◒≦` | Activity error, Friends Discover "Couldn't load people" |
 | 🔍 | `⎇(◔ _◑)` | Friends Discover "No one matches that search" |
-| 🐾 | to choose | Activity |
-| 🌟 | to choose | Friends Discover "Nobody else here yet" |
+| 🐾 | `◖°.･◗` | Activity |
+| 🌟 | `ʕ•ᴥ ･ﾟ✧ ＾＾` | Friends Discover "Nobody else here yet" |
 
 ---
 
