@@ -108,14 +108,14 @@ export function Activity() {
         <p className="py-16 text-center text-sm text-text-muted">Loading…</p>
       ) : status !== 'signed-in' ? (
         <EmptyState
-          emoji="🔒"
+          emoji="(︶ᴥ ...   ･ﾟ✧"
           title="Sign in to see your activity"
           hint="Your stats are private and only visible to you."
           action={<Button onClick={() => navigate('auth')}>Sign in</Button>}
         />
       ) : error ? (
         <EmptyState
-          emoji="😿"
+          emoji="≧◒_◒≦"
           title="Could not load your activity"
           hint="Something went wrong on our side."
           action={<Button onClick={tryAgain}>Try again</Button>}
@@ -125,7 +125,7 @@ export function Activity() {
       ) : (
         isEmpty(data) ? (
           <EmptyState
-            emoji="🐾"
+            emoji="◖°.･◗"
             title="No activity yet"
             hint="Browse pets or list one for adoption, your numbers will show up here."
             action={

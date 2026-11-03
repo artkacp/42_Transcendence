@@ -219,7 +219,7 @@ function DiscoverList({ users, onChanged }: { users: UserProfile[]; onChanged: (
   if (users.length === 0) {
     return (
       <EmptyState
-        emoji="🌟"
+        emoji="ʕ•ᴥ ･ﾟ✧ ＾＾"
         title="Nobody else here yet"
         hint="New members will show up here."
       />
@@ -239,7 +239,7 @@ function DiscoverList({ users, onChanged }: { users: UserProfile[]; onChanged: (
       />
       {matches.length === 0 ? (
         <EmptyState
-          emoji="🔍"
+          emoji="⎇(◔ _◑)"
           title="No one matches that search"
           hint="Try a different name or handle."
         />
@@ -422,7 +422,7 @@ export function Friends() {
           <>
             {usersError ? (
               <EmptyState
-                emoji="😿"
+                emoji="≧◒_◒≦"
                 title="Couldn't load people"
                 hint="Something went wrong. Try again in a moment."
                 action={<Button variant="secondary" onClick={load}>Retry</Button>}
