@@ -239,7 +239,7 @@ function DiscoverList({ users, onChanged }: { users: UserProfile[]; onChanged: (
       />
       {matches.length === 0 ? (
         <EmptyState
-          emoji="🔍"
+          emoji="⎇(◔ _◑)"
           title="No one matches that search"
           hint="Try a different name or handle."
         />
