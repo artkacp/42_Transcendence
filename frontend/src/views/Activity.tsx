@@ -115,7 +115,7 @@ export function Activity() {
         />
       ) : error ? (
         <EmptyState
-          emoji="😿"
+          emoji="≧◒_◒≦"
           title="Could not load your activity"
           hint="Something went wrong on our side."
           action={<Button onClick={tryAgain}>Try again</Button>}
