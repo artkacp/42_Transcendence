@@ -3,7 +3,7 @@
 // the owner gets the inquiries for the pet instead.
 import { useEffect, useState, type MouseEvent } from 'react'
 import { ArrowLeft } from 'lucide-react'
-import { Button } from '../ds'
+import { Avatar, Button } from '../ds'
 import { getPet } from '../api/pets'
 import { getMyInquiries, startInquiry } from '../api/inquiries'
 import { ApiError } from '../api/client'
@@ -161,7 +161,18 @@ export function PetPage() {
             <dt className="text-text-muted">Neutered</dt>
             <dd className="text-text">{pet.is_neutered ? 'yes' : 'no'}</dd>
             <dt className="text-text-muted">Listed by</dt>
-            <dd className="text-text">{pet.owner.full_name}</dd>
+            <dd className="flex min-w-0 items-center gap-2 text-text">
+              {pet.owner.avatar && (
+                <Avatar name={pet.owner.full_name} src={pet.owner.avatar} size="sm" aria-hidden="true" />
+              )}
+              <button
+                type="button"
+                className="block max-w-full truncate text-left font-semibold hover:text-primary focus-visible:outline-none focus-visible:underline"
+                onClick={() => navigate('profile', { user: pet.owner.id })}
+              >
+                {pet.owner.full_name}
+              </button>
+            </dd>
           </dl>
 
           {pet.adopted_by ? (
