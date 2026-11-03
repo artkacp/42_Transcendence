@@ -125,7 +125,7 @@ export function Activity() {
       ) : (
         isEmpty(data) ? (
           <EmptyState
-            emoji="🐾"
+            emoji="◖°.･◗"
             title="No activity yet"
             hint="Browse pets or list one for adoption, your numbers will show up here."
             action={
