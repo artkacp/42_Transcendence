@@ -219,7 +219,7 @@ function DiscoverList({ users, onChanged }: { users: UserProfile[]; onChanged: (
   if (users.length === 0) {
     return (
       <EmptyState
-        emoji="🌟"
+        emoji="ʕ•ᴥ ･ﾟ✧ ＾＾"
         title="Nobody else here yet"
         hint="New members will show up here."
       />
