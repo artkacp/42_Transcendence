@@ -239,6 +239,14 @@ curl -k -s -X POST https://localhost:8443/api/keys/ \
 
 The response includes the full key once — it is not shown again. It is stored hashed (SHA-256).
 
+Or create one from the terminal, without signing in (handle or email of an existing user):
+
+```sh
+docker compose exec backend python manage.py create_api_key user@example.com --label my-key
+```
+
+The command prints the full key once, with the same hashing and limits as the endpoint.
+
 ### Using the API
 
 ```sh

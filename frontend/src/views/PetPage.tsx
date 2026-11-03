@@ -3,7 +3,7 @@
 // the owner gets the inquiries for the pet instead.
 import { useEffect, useState, type MouseEvent } from 'react'
 import { ArrowLeft } from 'lucide-react'
-import { Button, EmptyState } from '../ds'
+import { Avatar, Button, EmptyState } from '../ds'
 import { getPet } from '../api/pets'
 import { getMyInquiries, startInquiry } from '../api/inquiries'
 import { ApiError } from '../api/client'
@@ -69,15 +69,16 @@ export function PetPage() {
 
 function PetView() {
   const id = useIdParam()
-  const { user } = useAuth()
+  const { status, user } = useAuth()
   const [result, setResult] = useState<Result | null>(null)
   // kept with its pet id, so another pet's thread is never shown here
   const [inquiry, setInquiry] = useState<{ petId: string; inquiry: Inquiry } | null>(null)
   const [asking, setAsking] = useState(false)
   const [askError, setAskError] = useState<string | null>(null)
 
+  // Waits for the session: on a reload this runs before the boot refresh, and Chrome logs the 401
   useEffect(() => {
-    if (!id) return
+    if (!id || status !== 'signed-in') return
     let cancelled = false
     getPet(id)
       .then((pet) => {
@@ -91,7 +92,7 @@ function PetView() {
     return () => {
       cancelled = true
     }
-  }, [id])
+  }, [id, status])
 
   const loaded = result && 'pet' in result && result.id === id ? result.pet : null
   // adopted pets too: the adopter still sees how their thread ended
@@ -131,6 +132,14 @@ function PetView() {
       .finally(() => setAsking(false))
   }
 
+  if (status === 'signed-out') {
+    return (
+      <div className="flex flex-col items-start gap-4">
+        <p className="text-text-muted">Sign in to see this pet.</p>
+        <Button onClick={() => navigate('auth')}>Sign in</Button>
+      </div>
+    )
+  }
   if (!id) return <Message text="No pet selected" />
   // derived, not stored: an answer for another id means we are still loading
   if (!result || result.id !== id) {
@@ -182,7 +191,18 @@ function PetView() {
             <dt className="text-text-muted">Neutered</dt>
             <dd className="text-text">{pet.is_neutered ? 'yes' : 'no'}</dd>
             <dt className="text-text-muted">Listed by</dt>
-            <dd className="text-text">{pet.owner.full_name}</dd>
+            <dd className="flex min-w-0 items-center gap-2 text-text">
+              {pet.owner.avatar && (
+                <Avatar name={pet.owner.full_name} src={pet.owner.avatar} size="sm" aria-hidden="true" />
+              )}
+              <button
+                type="button"
+                className="block max-w-full truncate text-left font-semibold hover:text-primary focus-visible:outline-none focus-visible:underline"
+                onClick={() => navigate('profile', { user: pet.owner.id })}
+              >
+                {pet.owner.full_name}
+              </button>
+            </dd>
           </dl>
 
           {pet.adopted_by ? (
