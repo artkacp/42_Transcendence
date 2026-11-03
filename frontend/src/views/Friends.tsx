@@ -422,7 +422,7 @@ export function Friends() {
           <>
             {usersError ? (
               <EmptyState
-                emoji="😿"
+                emoji="≧◒_◒≦"
                 title="Couldn't load people"
                 hint="Something went wrong. Try again in a moment."
                 action={<Button variant="secondary" onClick={load}>Retry</Button>}
